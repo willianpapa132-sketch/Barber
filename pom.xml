@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>bruninho</groupId>
-	<artifactId>Barber</artifactId>
+	<artifactId>barbearia</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>Barbearia</name>
+	<description>Sistema de agendamento e gestão de barbearia</description>
 	<url/>
 	<licenses>
 		<license/>

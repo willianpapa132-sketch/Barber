@@ -1,15 +1,15 @@
-create table app_user (
+create table app_usuario (
     id bigserial primary key,
-    username varchar(80) not null unique,
-    password_hash varchar(255) not null,
+    login varchar(80) not null unique,
+    senha_hash varchar(255) not null,
     nome varchar(120) not null,
-    role varchar(20) not null,
-    active boolean not null default true,
-    created_at timestamp not null default now(),
-    updated_at timestamp not null default now()
+    perfil varchar(20) not null,
+    ativo boolean not null default true,
+    criado_em timestamp not null default now(),
+    atualizado_em timestamp not null default now()
 );
 
-create table barber_shop_config (
+create table configuracao_barbearia (
     id bigint primary key,
     nome varchar(160) not null,
     telefone varchar(30),
@@ -18,135 +18,135 @@ create table barber_shop_config (
     horizonte_dias integer not null
 );
 
-create table shop_hours (
+create table horario_funcionamento (
     id bigserial primary key,
-    day_of_week integer not null,
-    open_time time not null,
-    close_time time not null,
-    closed boolean not null default false,
-    unique(day_of_week)
+    dia_semana integer not null,
+    hora_abertura time not null,
+    hora_fechamento time not null,
+    fechado boolean not null default false,
+    unique(dia_semana)
 );
 
-create table service_catalog (
+create table servico (
     id bigserial primary key,
     nome varchar(120) not null,
     descricao varchar(600),
     preco numeric(12,2) not null,
     duracao_minutos integer not null,
-    active boolean not null default true,
-    created_at timestamp not null default now(),
-    updated_at timestamp not null default now(),
-    constraint ck_service_price check (preco >= 0),
-    constraint ck_service_duration check (duracao_minutos > 0)
+    ativo boolean not null default true,
+    criado_em timestamp not null default now(),
+    atualizado_em timestamp not null default now(),
+    constraint ck_servico_preco check (preco >= 0),
+    constraint ck_servico_duracao check (duracao_minutos > 0)
 );
 
-create table barber (
+create table barbeiro (
     id bigserial primary key,
     nome varchar(120) not null,
     telefone varchar(30),
-    active boolean not null default true,
-    user_id bigint not null unique references app_user(id),
-    version bigint not null default 0
+    ativo boolean not null default true,
+    usuario_id bigint not null unique references app_usuario(id),
+    versao bigint not null default 0
 );
 
-create table barber_service (
-    barber_id bigint not null references barber(id),
-    service_id bigint not null references service_catalog(id),
-    primary key (barber_id, service_id)
+create table barbeiro_servico (
+    barbeiro_id bigint not null references barbeiro(id),
+    servico_id bigint not null references servico(id),
+    primary key (barbeiro_id, servico_id)
 );
 
-create table barber_work_schedule (
+create table jornada_barbeiro (
     id bigserial primary key,
-    barber_id bigint not null references barber(id),
-    day_of_week integer not null,
-    start_time time not null,
-    end_time time not null,
-    break_start time,
-    break_end time,
-    active boolean not null default true,
-    unique(barber_id, day_of_week)
+    barbeiro_id bigint not null references barbeiro(id),
+    dia_semana integer not null,
+    hora_inicio time not null,
+    hora_fim time not null,
+    intervalo_inicio time,
+    intervalo_fim time,
+    ativo boolean not null default true,
+    unique(barbeiro_id, dia_semana)
 );
 
-create table barber_block (
+create table bloqueio_barbeiro (
     id bigserial primary key,
-    barber_id bigint not null references barber(id),
-    block_date date not null,
-    start_time time,
-    end_time time,
-    reason varchar(255),
-    created_at timestamp not null default now()
+    barbeiro_id bigint not null references barbeiro(id),
+    data_bloqueio date not null,
+    hora_inicio time,
+    hora_fim time,
+    motivo varchar(255),
+    criado_em timestamp not null default now()
 );
 
-create table customer (
+create table cliente (
     id bigserial primary key,
     nome varchar(120) not null,
     telefone varchar(30) not null,
     telefone_normalizado varchar(20) not null,
-    created_at timestamp not null default now(),
-    updated_at timestamp not null default now()
+    criado_em timestamp not null default now(),
+    atualizado_em timestamp not null default now()
 );
-create index idx_customer_search on customer (telefone_normalizado, nome);
+create index idx_cliente_busca on cliente (telefone_normalizado, nome);
 
-create table appointment (
+create table agendamento (
     id bigserial primary key,
-    confirmation_code varchar(32) not null unique,
-    customer_id bigint references customer(id),
-    barber_id bigint not null references barber(id),
-    service_id bigint not null references service_catalog(id),
-    customer_name varchar(120) not null,
-    customer_phone varchar(30) not null,
-    service_name_snapshot varchar(120) not null,
-    service_price_snapshot numeric(12,2) not null,
-    service_duration_minutes_snapshot integer not null,
-    start_at timestamp not null,
-    end_at timestamp not null,
+    codigo_confirmacao varchar(32) not null unique,
+    cliente_id bigint references cliente(id),
+    barbeiro_id bigint not null references barbeiro(id),
+    servico_id bigint not null references servico(id),
+    nome_cliente varchar(120) not null,
+    telefone_cliente varchar(30) not null,
+    nome_servico_snapshot varchar(120) not null,
+    preco_servico_snapshot numeric(12,2) not null,
+    duracao_servico_minutos_snapshot integer not null,
+    inicio_em timestamp not null,
+    fim_em timestamp not null,
     status varchar(30) not null,
-    payment_received boolean not null default false,
-    created_by_user_id bigint references app_user(id),
-    created_at timestamp not null default now(),
-    updated_at timestamp not null default now(),
-    cancelled_reason varchar(255)
+    pagamento_recebido boolean not null default false,
+    criado_por_usuario_id bigint references app_usuario(id),
+    criado_em timestamp not null default now(),
+    atualizado_em timestamp not null default now(),
+    motivo_cancelamento varchar(255)
 );
-create index idx_appointment_barber_time on appointment (barber_id, start_at, end_at);
-create index idx_appointment_status on appointment (status);
+create index idx_agendamento_barbeiro_horario on agendamento (barbeiro_id, inicio_em, fim_em);
+create index idx_agendamento_status on agendamento (status);
 
-create table cash_session (
+create table sessao_caixa (
     id bigserial primary key,
-    opened_at timestamp not null default now(),
-    closed_at timestamp,
-    opened_by_user_id bigint not null references app_user(id),
-    closed_by_user_id bigint references app_user(id),
-    initial_cash numeric(12,2) not null,
-    expected_cash numeric(12,2),
-    counted_cash numeric(12,2),
-    difference_cash numeric(12,2),
+    aberto_em timestamp not null default now(),
+    fechado_em timestamp,
+    aberto_por_usuario_id bigint not null references app_usuario(id),
+    fechado_por_usuario_id bigint references app_usuario(id),
+    dinheiro_inicial numeric(12,2) not null,
+    dinheiro_esperado numeric(12,2),
+    dinheiro_contado numeric(12,2),
+    diferenca_dinheiro numeric(12,2),
     status varchar(20) not null
 );
-create unique index ux_cash_session_one_open on cash_session(status) where status = 'ABERTO';
+create unique index ux_sessao_caixa_uma_aberta on sessao_caixa(status) where status = 'ABERTO';
 
-create table cash_movement (
+create table movimento_caixa (
     id bigserial primary key,
-    cash_session_id bigint not null references cash_session(id),
-    appointment_id bigint references appointment(id),
-    original_movement_id bigint references cash_movement(id),
-    type varchar(30) not null,
-    payment_method varchar(30),
-    amount numeric(12,2) not null,
-    description varchar(255) not null,
-    category varchar(80),
-    created_by_user_id bigint not null references app_user(id),
-    created_at timestamp not null default now(),
-    reversal_reason varchar(255),
-    reversed boolean not null default false
+    sessao_caixa_id bigint not null references sessao_caixa(id),
+    agendamento_id bigint references agendamento(id),
+    movimento_original_id bigint references movimento_caixa(id),
+    tipo varchar(30) not null,
+    forma_pagamento varchar(30),
+    valor numeric(12,2) not null,
+    descricao varchar(255) not null,
+    categoria varchar(80),
+    criado_por_usuario_id bigint not null references app_usuario(id),
+    criado_em timestamp not null default now(),
+    motivo_estorno varchar(255),
+    estornado boolean not null default false
 );
-create unique index ux_one_active_receipt_per_appointment
-    on cash_movement(appointment_id)
-    where type = 'RECEBIMENTO_SERVICO' and reversed = false;
+create unique index ux_um_recebimento_ativo_por_agendamento
+    on movimento_caixa(agendamento_id)
+    where tipo = 'RECEBIMENTO_SERVICO' and estornado = false;
 
-insert into barber_shop_config(id, nome, telefone, endereco, min_antecedencia_minutos, horizonte_dias)
+insert into configuracao_barbearia(id, nome, telefone, endereco, min_antecedencia_minutos, horizonte_dias)
 values (1, 'Barbearia', '', '', 30, 60);
 
-insert into shop_hours(day_of_week, open_time, close_time, closed) values
+insert into horario_funcionamento(dia_semana, hora_abertura, hora_fechamento, fechado) values
 (1, '09:00', '18:00', false),
 (2, '09:00', '18:00', false),
 (3, '09:00', '18:00', false),

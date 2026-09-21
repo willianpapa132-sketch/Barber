@@ -1,109 +1,92 @@
-# Documentacao Tecnica do Sistema
+# Documentação Técnica
 
-Este documento explica o que cada classe representa, onde ficam as regras de negocio, quais telas existem e quais funcionalidades cada controller entrega.
+Este documento descreve a estrutura técnica do Sistema de Barbearia, as principais classes, regras de negócio, migrations e telas.
 
-## Visao Geral
+## Visão Geral
 
-O sistema foi organizado em camadas:
+O projeto é uma aplicação Spring Boot MVC com Thymeleaf, Spring Security, Spring Data JPA, Flyway e PostgreSQL.
 
-- `domain`: entidades JPA e enums que representam os dados principais do sistema.
-- `repository`: interfaces Spring Data JPA para consultar e gravar dados.
-- `service`: regras de negocio e operacoes transacionais.
-- `web`: controllers MVC que recebem requisicoes, montam telas e chamam servicos.
-- `web.form`: DTOs de formulario usados para evitar mass assignment.
-- `config`: configuracoes da aplicacao, seguranca e inicializacao.
-- `templates`: telas Thymeleaf.
+Camadas principais:
 
-O banco e criado pelo Flyway em `src/main/resources/db/migration/V1__schema_inicial.sql`. O JPA esta configurado para validar o esquema, nao para cria-lo em producao.
+- `config`: configuração da aplicação, segurança e carga inicial.
+- `domain`: entidades JPA e enums.
+- `repository`: interfaces Spring Data JPA.
+- `service`: regras de negócio transacionais.
+- `web`: controllers MVC.
+- `web.form`: DTOs de formulário.
+- `templates`: páginas Thymeleaf.
+- `static`: CSS e outros arquivos estáticos.
 
-## Classe Principal
+Classe principal:
 
-### `BarberApplication`
+```text
+bruninho.Barbeiro.BarbeiroApplication
+```
 
-Classe de entrada da aplicacao Spring Boot.
-
-Responsabilidades:
-
-- Inicializar o contexto Spring.
-- Carregar controllers, services, repositories, entidades e configuracoes.
-
-Nao possui regra de negocio.
-
-## Configuracao
+## Configuração
 
 ### `AppProperties`
 
-Representa configuracoes lidas de `application.properties` e variaveis de ambiente.
+Lê propriedades do prefixo `app`.
 
 Campos principais:
 
-- `app.zone`: fuso horario usado pelo sistema.
-- `app.demo-data`: liga ou desliga dados demonstrativos.
-- `app.initial-admin.*`: dados para criar o primeiro administrador.
+- `app.zone`: fuso horário da aplicação.
+- `app.demo-data`: cria ou não dados demonstrativos.
+- `app.initial-admin.*`: dados do administrador inicial.
 
 ### `SecurityConfig`
 
-Configura a seguranca da aplicacao.
-
-Responsabilidades:
-
-- Habilitar login por sessao.
-- Configurar logout seguro.
-- Habilitar CSRF nos formularios.
-- Definir permissoes por rota.
-- Criar o `PasswordEncoder` com BCrypt.
-- Carregar usuarios ativos pelo banco.
+Configura autenticação por sessão, BCrypt, CSRF, logout e permissões.
 
 Regras de acesso:
 
-- `/`, `/agendar/**`, `/css/**`, `/js/**`, `/login`: publico.
-- `/admin/**`: somente `ADMIN`.
-- `/barbeiro/**`: somente `BARBEIRO`.
-- Demais rotas: exigem autenticacao.
+- Público: `/`, `/agendar/**`, `/planos/**`, `/css/**`, `/js/**`, `/login`.
+- Administrador: `/admin/**`.
+- Barbeiro: `/barbeiro/**`.
+- Demais rotas exigem autenticação.
 
 ### `DataInitializer`
 
-Executa ao iniciar a aplicacao.
+Executa na inicialização.
 
 Responsabilidades:
 
-- Criar o administrador inicial, se as variaveis forem informadas e o usuario ainda nao existir.
-- Criar dados demonstrativos quando `APP_DEMO_DATA=true`.
+- Garante uma linha em `configuracao_barbearia`.
+- Garante horários padrão em `horario_funcionamento`.
+- Cria administrador inicial se configurado e ainda inexistente.
+- Cria dados demonstrativos quando `APP_DEMO_DATA=true`.
 
-Importante: a senha do administrador inicial nao e redefinida se o usuario ja existir.
+## Entidades
 
-## Entidades e Enums de Dominio
+### `Usuario`
 
-### `AppUser`
+Tabela: `app_usuario`.
 
-Representa um usuario que pode fazer login.
+Representa usuários autenticáveis do sistema.
 
-Campos importantes:
+Campos principais:
 
-- `username`
-- `passwordHash`
+- `login`
+- `senhaHash`
 - `nome`
-- `role`
-- `active`
+- `perfil`
+- `ativo`
+- `criadoEm`
+- `atualizadoEm`
 
-Pode ser administrador ou barbeiro. Usuarios inativos nao conseguem autenticar.
+### `Perfil`
 
-### `Role`
-
-Enum com os perfis do sistema:
+Enum de autorização:
 
 - `ADMIN`
 - `BARBEIRO`
 
-### `ServiceCatalog`
+### `Servico`
 
-Representa um servico oferecido pela barbearia.
+Tabela: `servico`.
 
-Exemplos:
-
-- Corte masculino.
-- Barba.
-- Corte + barba.
+Representa um serviço oferecido pela barbearia.
 
 Campos principais:
 
@@ -111,172 +94,32 @@ Campos principais:
 - `descricao`
 - `preco`
 - `duracaoMinutos`
-- `active`
+- `ativo`
 
-Regra importante: servicos nao sao excluidos fisicamente no fluxo normal. Eles podem ser desativados para preservar historico.
+Serviços são desativados em vez de excluídos fisicamente no fluxo normal, preservando histórico.
 
-### `Barber`
+### `Barbeiro`
 
-Representa um barbeiro/profissional.
+Tabela: `barbeiro`.
 
-Campos principais:
-
-- `nome`
-- `telefone`
-- `active`
-- `user`
-- `services`
-- `version`
-
-O campo `version` permite controle de concorrencia otimista no JPA. No agendamento, a linha do barbeiro tambem e bloqueada pessimisticamente para evitar duas reservas no mesmo horario.
-
-### `BarberWorkSchedule`
-
-Representa a jornada semanal de um barbeiro.
-
-Campos principais:
-
-- `barber`
-- `dayOfWeek`
-- `startTime`
-- `endTime`
-- `breakStart`
-- `breakEnd`
-- `active`
-
-Usada para calcular horarios disponiveis.
-
-### `BarberBlock`
-
-Representa bloqueios, folgas ou indisponibilidades em uma data especifica.
-
-Campos principais:
-
-- `barber`
-- `blockDate`
-- `startTime`
-- `endTime`
-- `reason`
-
-Se `startTime` e `endTime` forem nulos, o bloqueio pode representar a data inteira.
-
-### `Customer`
-
-Representa um cliente cadastrado pelo administrador.
+Representa o profissional que executa serviços.
 
 Campos principais:
 
 - `nome`
 - `telefone`
-- `telefoneNormalizado`
+- `ativo`
+- `usuario`
+- `versao`
+- `servicos`
 
-Regra importante: agendamento publico nao altera automaticamente um cliente existente por telefone. Isso evita sobrescrever cadastro interno com dados digitados no fluxo publico.
+Relacionamento de serviços: tabela `barbeiro_servico`.
 
-### `Appointment`
+### `ConfiguracaoBarbearia`
 
-Representa um atendimento/agendamento.
+Tabela: `configuracao_barbearia`.
 
-Campos principais:
-
-- `confirmationCode`
-- `customer`
-- `barber`
-- `service`
-- `customerName`
-- `customerPhone`
-- `serviceNameSnapshot`
-- `servicePriceSnapshot`
-- `serviceDurationMinutesSnapshot`
-- `startAt`
-- `endAt`
-- `status`
-- `paymentReceived`
-
-Regra importante: o agendamento salva copia do nome, preco e duracao do servico no momento da reserva. Alteracoes futuras no catalogo nao alteram historico.
-
-### `AppointmentStatus`
-
-Enum com os status do atendimento:
-
-- `AGENDADO`
-- `CONCLUIDO`
-- `CANCELADO`
-- `NAO_COMPARECEU`
-
-Status de pagamento fica separado em `paymentReceived`.
-
-### `CashSession`
-
-Representa uma abertura de caixa.
-
-Campos principais:
-
-- `openedAt`
-- `closedAt`
-- `openedByUser`
-- `closedByUser`
-- `initialCash`
-- `expectedCash`
-- `countedCash`
-- `differenceCash`
-- `status`
-
-Regra importante: so pode existir uma sessao de caixa aberta por vez. O banco possui indice unico parcial para garantir isso.
-
-### `CashSessionStatus`
-
-Enum com status do caixa:
-
-- `ABERTO`
-- `FECHADO`
-
-### `CashMovement`
-
-Representa uma movimentacao financeira.
-
-Campos principais:
-
-- `cashSession`
-- `appointment`
-- `originalMovement`
-- `type`
-- `paymentMethod`
-- `amount`
-- `description`
-- `category`
-- `createdByUser`
-- `reversalReason`
-- `reversed`
-
-Regra importante: movimentacoes nao sao apagadas. Correcao e feita por estorno.
-
-### `CashMovementType`
-
-Enum com tipos de movimento:
-
-- `RECEBIMENTO_SERVICO`
-- `ENTRADA_MANUAL`
-- `SAIDA_MANUAL`
-- `SUPRIMENTO`
-- `SANGRIA`
-- `ESTORNO`
-
-### `PaymentMethod`
-
-Enum com formas informativas de recebimento:
-
-- `DINHEIRO`
-- `PIX`
-- `CARTAO_DEBITO`
-- `CARTAO_CREDITO`
-
-Pix e cartao nao aumentam o saldo fisico esperado em dinheiro.
-
-### `BarberShopConfig`
-
-Representa configuracoes gerais da barbearia.
-
-Campos principais:
+Define parâmetros globais:
 
 - `nome`
 - `telefone`
@@ -284,697 +127,322 @@ Campos principais:
 - `minAntecedenciaMinutos`
 - `horizonteDias`
 
-### `ShopHours`
+### `HorarioFuncionamento`
 
-Representa horario geral de funcionamento da barbearia por dia da semana.
+Tabela: `horario_funcionamento`.
+
+Define abertura e fechamento da barbearia por dia da semana.
+
+### `JornadaBarbeiro`
+
+Tabela: `jornada_barbeiro`.
+
+Define a jornada semanal do barbeiro, incluindo intervalo.
+
+### `BloqueioBarbeiro`
+
+Tabela: `bloqueio_barbeiro`.
+
+Representa folgas, bloqueios ou indisponibilidades em uma data.
+
+### `Cliente`
+
+Tabela: `cliente`.
+
+Representa um cliente cadastrado.
 
 Campos principais:
 
-- `dayOfWeek`
-- `openTime`
-- `closeTime`
-- `closed`
+- `nome`
+- `telefone`
+- `telefoneNormalizado`
 
-## Repositories
+O fluxo público de agendamento não sobrescreve automaticamente um cliente existente por telefone.
 
-Repositories sao interfaces Spring Data JPA. Eles nao devem conter regra de negocio complexa; sua funcao e consultar e persistir dados.
+### `Agendamento`
 
-### `AppUserRepository`
+Tabela: `agendamento`.
 
-Consulta usuarios do sistema.
+Representa um atendimento reservado.
 
-Metodos principais:
+Campos principais:
 
-- `findByUsername`
-- `existsByUsername`
+- `codigoConfirmacao`
+- `cliente`
+- `barbeiro`
+- `servico`
+- `planoMensal`
+- `nomeCliente`
+- `telefoneCliente`
+- `nomeServicoSnapshot`
+- `precoServicoSnapshot`
+- `duracaoServicoMinutosSnapshot`
+- `inicioEm`
+- `fimEm`
+- `status`
+- `pagamentoRecebido`
 
-Usado por seguranca, inicializacao e cadastro de barbeiro.
+O agendamento grava snapshot do serviço para preservar o histórico se o catálogo for alterado.
 
-### `ServiceCatalogRepository`
+### `StatusAgendamento`
 
-Consulta servicos.
+Valores:
 
-Metodos principais:
+- `AGENDADO`
+- `CONCLUIDO`
+- `CANCELADO`
+- `NAO_COMPARECEU`
 
-- `findByActiveTrueOrderByNome`
-- `findAllByOrderByNome`
+### `SessaoCaixa`
 
-### `BarberRepository`
+Tabela: `sessao_caixa`.
 
-Consulta barbeiros.
+Representa abertura e fechamento de caixa.
 
-Metodos principais:
+Campos principais:
 
-- `findByActiveTrueOrderByNome`
-- `findByUserUsername`
-- `findActiveByService`
-- `lockById`
+- `abertoEm`
+- `fechadoEm`
+- `abertoPorUsuario`
+- `fechadoPorUsuario`
+- `dinheiroInicial`
+- `dinheiroEsperado`
+- `dinheiroContado`
+- `diferencaDinheiro`
+- `status`
 
-`lockById` aplica bloqueio pessimista na linha do barbeiro durante agendamento.
+Só pode existir uma sessão de caixa aberta por vez.
 
-### `BarberWorkScheduleRepository`
+### `MovimentoCaixa`
 
-Consulta jornadas dos barbeiros.
+Tabela: `movimento_caixa`.
 
-Metodos principais:
+Representa entradas, saídas, recebimentos e estornos.
 
-- `findByBarberIdOrderByDayOfWeek`
-- `deleteByBarberId`
+Campos principais:
 
-### `BarberBlockRepository`
+- `sessaoCaixa`
+- `agendamento`
+- `movimentoOriginal`
+- `tipo`
+- `formaPagamento`
+- `valor`
+- `descricao`
+- `categoria`
+- `criadoPorUsuario`
+- `estornado`
 
-Consulta bloqueios de barbeiros.
+### `ConfiguracaoPlanoMensal`
 
-Metodos principais:
+Tabela: `configuracao_plano_mensal`.
 
-- `findByBarberIdAndBlockDate`
-- `findByBarberIdOrderByBlockDateDescStartTimeDesc`
+Define o plano mensal de cada barbeiro:
 
-### `CustomerRepository`
+- `valorMensal`
+- `cortesPorMes`
+- `cortesPorSemana`
+- `ativo`
 
-Consulta clientes.
+### `PlanoMensalCliente`
 
-Metodo principal:
+Tabela: `plano_mensal_cliente`.
 
-- `findTop30ByNomeContainingIgnoreCaseOrTelefoneNormalizadoContainingOrderByNome`
+Representa a adesão de um cliente a um plano mensal de um barbeiro.
 
-Usado na pesquisa administrativa por nome ou telefone.
+## Repositórios
 
-### `AppointmentRepository`
+Principais repositórios:
 
-Consulta agendamentos.
+- `UsuarioRepositorio`
+- `ServicoRepositorio`
+- `BarbeiroRepositorio`
+- `ClienteRepositorio`
+- `AgendamentoRepositorio`
+- `JornadaBarbeiroRepositorio`
+- `BloqueioBarbeiroRepositorio`
+- `SessaoCaixaRepositorio`
+- `MovimentoCaixaRepositorio`
+- `ConfiguracaoBarbeariaRepositorio`
+- `ConfiguracaoPlanoMensalRepositorio`
+- `PlanoMensalClienteRepositorio`
+- `HorarioFuncionamentoRepositorio`
 
-Metodos principais:
+As consultas customizadas usam JPQL sobre as entidades em português.
 
-- `findConflicts`: procura sobreposicoes para disponibilidade.
-- `findAgenda`: agenda de um barbeiro no periodo.
-- `search`: filtro administrativo.
-- `findByCustomerIdOrderByStartAtDesc`
-- `countByStatusAndStartAtBetween`
+## Serviços
 
-### `CashSessionRepository`
+### `AdminCatalogoServico`
 
-Consulta sessoes de caixa.
+Centraliza gravações administrativas de serviços, barbeiros, jornadas padrão e clientes.
 
-Metodos principais:
+### `AgendamentoServico`
 
-- `findByStatus`
-- `lockOpenSession`
-
-`lockOpenSession` bloqueia a sessao aberta para registrar movimentos de forma consistente.
-
-### `CashMovementRepository`
-
-Consulta movimentacoes financeiras.
-
-Metodos principais:
-
-- `findByAppointmentIdAndTypeAndReversedFalse`
-- `findByCreatedAtBetweenOrderByCreatedAtDesc`
-- `findByCashSessionIdOrderByCreatedAt`
-
-### `BarberShopConfigRepository`
-
-Consulta a configuracao geral da barbearia.
-
-### `ShopHoursRepository`
-
-Consulta horario geral de funcionamento.
-
-Metodo principal:
-
-- `findByDayOfWeek`
-
-## Services e Regras de Negocio
-
-### `BusinessException`
-
-Excecao de negocio usada para mensagens claras ao usuario.
-
-Exemplos:
-
-- Horario indisponivel.
-- Caixa fechado.
-- Recebimento duplicado.
-- Telefone invalido.
-
-### `PhoneNormalizer`
-
-Normaliza e valida telefone.
+Cria agendamentos públicos e manuais, remarca horários e troca status.
 
 Regras:
 
-- Remove caracteres nao numericos.
-- Exige telefone brasileiro com DDD.
-- Aceita 10 ou 11 digitos.
+- Valida telefone.
+- Bloqueia pessimisticamente o barbeiro antes da gravação.
+- Valida disponibilidade.
+- Associa plano mensal ativo quando aplicável.
+- Gera código de confirmação.
 
-### `CurrentUserService`
+### `DisponibilidadeServico`
 
-Obtem o usuario autenticado no banco.
+Calcula horários disponíveis e valida conflitos.
 
-Usado em operacoes que precisam registrar autor, como caixa e acoes administrativas.
+Considera:
 
-### `AvailabilityService`
+- Horário de funcionamento.
+- Jornada do barbeiro.
+- Intervalo.
+- Bloqueios.
+- Duração do serviço.
+- Agendamentos existentes.
+- Antecedência mínima.
+- Horizonte máximo de agenda.
 
-Calcula horarios disponiveis e valida se um horario pode ser reservado.
+### `CaixaServico`
 
-Regras aplicadas:
+Controla abertura, fechamento, recebimentos, movimentações manuais e estornos.
 
-- Servico precisa existir e estar ativo.
-- Barbeiro precisa existir e estar ativo.
-- Barbeiro precisa executar o servico escolhido.
-- Data nao pode ultrapassar horizonte configurado.
-- Horario deve respeitar passos de 15 minutos.
-- Horario deve respeitar funcionamento da loja.
-- Horario deve respeitar jornada do barbeiro.
-- Atendimento nao pode atravessar intervalo.
-- Atendimento nao pode bater com bloqueio ou folga.
-- Atendimento nao pode sobrepor outro `AGENDADO` ou `CONCLUIDO`.
-- `CANCELADO` e `NAO_COMPARECEU` nao bloqueiam agenda.
+### `PlanoMensalServico`
 
-Observacao: a verificacao usa intervalos com inicio inclusivo e fim exclusivo. Um atendimento que termina as 10h permite outro iniciar as 10h.
+Controla configuração e adesão de planos mensais, além do limite de uso semanal e mensal.
 
-### `AppointmentService`
+### `UsuarioAtualServico`
 
-Cria e altera agendamentos.
+Resolve o usuário autenticado atual.
 
-Metodos principais:
+### `NormalizadorTelefone`
 
-- `createPublic`: cria agendamento vindo da area publica.
-- `createManual`: cria agendamento pelo administrador.
-- `reschedule`: remarca agendamento.
-- `changeStatus`: muda status do atendimento.
+Valida e normaliza telefones.
 
-Regras importantes:
+## Controllers
 
-- Revalida disponibilidade no servidor.
-- Bloqueia a linha do barbeiro antes de confirmar.
-- Salva snapshot de nome, preco e duracao do servico.
-- Gera codigo aleatorio nao sequencial.
-- Nao altera cliente cadastrado automaticamente no agendamento publico.
-- Permite transicoes de status apenas a partir de `AGENDADO` para `CONCLUIDO`, `CANCELADO` ou `NAO_COMPARECEU`.
+### `InicioControlador`
 
-### `AdminCatalogService`
+Entrega a página pública inicial.
 
-Centraliza cadastros administrativos.
+### `AgendamentoPublicoControlador`
 
-Metodos principais:
+Fluxo público de agendamento.
 
-- `saveService`: cria ou atualiza servico.
-- `saveBarber`: cria barbeiro, usuario de acesso e associacao com servicos.
-- `defaultSchedule`: cria jornada padrao para barbeiro.
-- `saveCustomer`: cria ou atualiza cliente.
+### `PlanoMensalPublicoControlador`
 
-Regras importantes:
+Fluxo público de adesão a planos mensais.
 
-- Senha de barbeiro e gravada com hash seguro.
-- Telefone de barbeiro e cliente e validado.
-- Servico tem preco e duracao validados pelo formulario e pelo banco.
+### `PainelAdminControlador`
 
-### `CashService`
+Painel administrativo: dashboard, serviços, barbeiros, clientes e agenda.
 
-Controla as regras de caixa.
+### `AdminConfiguracoesControlador`
 
-Metodos principais:
+Configurações da barbearia, jornada, bloqueios e mensalidades.
 
-- `open`: abre caixa.
-- `receipt`: registra recebimento de atendimento concluido.
-- `manual`: registra entrada, saida, suprimento ou sangria.
-- `reverse`: estorna movimento.
-- `close`: fecha caixa.
-- `expectedCash`: calcula saldo fisico esperado.
+### `CaixaControlador`
 
-Regras importantes:
+Telas e ações do caixa.
 
-- So existe um caixa aberto por vez.
-- Caixa fechado nao aceita movimento.
-- Atendimento precisa estar `CONCLUIDO` para ser recebido.
-- Agendar ou concluir nao gera receita automaticamente.
-- Recebimento duplicado e bloqueado por regra de servico e indice unico no banco.
-- Estorno nao apaga nem altera o lancamento original; cria outro movimento referenciando o original.
-- Depois do estorno, o atendimento pode receber novo pagamento.
-- Dinheiro aumenta saldo fisico.
-- Pix e cartao entram em receita recebida, mas nao aumentam dinheiro na gaveta.
-- Suprimento aumenta dinheiro fisico, mas nao e receita de servico.
-- Sangria reduz dinheiro fisico, mas nao e despesa de servico.
+### `AreaBarbeiroControlador`
 
-## Forms / DTOs de Tela
+Agenda do barbeiro autenticado.
 
-### `PublicAppointmentForm`
+## Telas
 
-Formulario do agendamento publico.
-
-Campos:
-
-- `serviceId`
-- `barberId`
-- `date`
-- `time`
-- `customerName`
-- `customerPhone`
-
-### `AppointmentForm`
-
-Formulario de agendamento manual pelo administrador.
-
-Campos:
-
-- `customerId`
-- `customerName`
-- `customerPhone`
-- `serviceId`
-- `barberId`
-- `date`
-- `time`
-
-### `ServiceForm`
-
-Formulario de servico.
-
-Campos:
-
-- `nome`
-- `descricao`
-- `preco`
-- `duracaoMinutos`
-- `active`
-
-### `BarberForm`
-
-Formulario de barbeiro.
-
-Campos:
-
-- `nome`
-- `telefone`
-- `username`
-- `password`
-- `active`
-- `serviceIds`
-
-### `CustomerForm`
-
-Formulario de cliente.
-
-Campos:
-
-- `nome`
-- `telefone`
-
-### `CashForms`
-
-Agrupa formularios do caixa:
-
-- `OpenCashForm`: abertura de caixa.
-- `ReceiptForm`: recebimento de atendimento.
-- `ManualMovementForm`: movimento manual.
-- `CloseCashForm`: fechamento.
-- `ReversalForm`: estorno.
-
-## Controllers e Funcionalidades
-
-### `RootController`
-
-Rotas:
-
-- `GET /`
-- `GET /login`
-- `GET /pos-login`
-
-Funcionalidades:
-
-- Exibe pagina inicial publica.
-- Exibe tela de login.
-- Redireciona usuario autenticado para `/admin` ou `/barbeiro/agenda` conforme perfil.
-
-Telas usadas:
+Públicas:
 
 - `public/home.html`
-- `login.html`
-
-### `PublicBookingController`
-
-Base: `/agendar`
-
-Rotas:
-
-- `GET /agendar`
-- `POST /agendar`
-- `GET /agendar/confirmado`
-
-Funcionalidades:
-
-- Lista servicos ativos.
-- Lista barbeiros ativos que executam o servico escolhido.
-- Mostra horarios disponiveis para servico, barbeiro e data.
-- Recebe nome e telefone do cliente.
-- Confirma agendamento publico.
-- Mostra codigo aleatorio de confirmacao.
-
-Telas usadas:
-
 - `public/agendar.html`
 - `public/confirmado.html`
+- `public/planos.html`
+- `public/plano-confirmado.html`
 
-Regra importante: a tela publica nao mostra dados de outros clientes e nao permite consultar agendamento por telefone.
-
-### `AdminController`
-
-Base: `/admin`
-
-Rotas principais:
-
-- `GET /admin`
-- `GET /admin/servicos`
-- `POST /admin/servicos`
-- `POST /admin/servicos/{id}`
-- `GET /admin/barbeiros`
-- `POST /admin/barbeiros`
-- `GET /admin/clientes`
-- `POST /admin/clientes`
-- `GET /admin/agenda`
-- `POST /admin/agenda`
-- `POST /admin/agenda/{id}/status`
-
-Funcionalidades:
-
-- Dashboard administrativo.
-- Cadastro e ativacao/desativacao de servicos.
-- Cadastro de barbeiros e usuario de acesso.
-- Associacao de barbeiro com servicos.
-- Jornada padrao ao cadastrar barbeiro.
-- Cadastro e pesquisa de clientes.
-- Visualizacao de agenda.
-- Criacao manual de agendamento.
-- Conclusao, cancelamento e falta.
-
-Telas usadas:
+Admin:
 
 - `admin/dashboard.html`
 - `admin/servicos.html`
 - `admin/barbeiros.html`
 - `admin/clientes.html`
 - `admin/agenda.html`
-
-### `CashController`
-
-Base: `/admin/caixa`
-
-Rotas:
-
-- `GET /admin/caixa`
-- `POST /admin/caixa/abrir`
-- `POST /admin/caixa/receber`
-- `POST /admin/caixa/movimento`
-- `POST /admin/caixa/estornar/{id}`
-- `POST /admin/caixa/fechar`
-
-Funcionalidades:
-
-- Abrir caixa.
-- Listar movimentos da sessao aberta.
-- Registrar recebimento de atendimento concluido.
-- Registrar entrada manual.
-- Registrar saida manual.
-- Registrar suprimento.
-- Registrar sangria.
-- Estornar lancamento.
-- Fechar caixa com dinheiro contado.
-
-Tela usada:
-
 - `admin/caixa.html`
-
-Somente administradores acessam.
-
-### `AdminSettingsController`
-
-Base: `/admin`
-
-Rotas:
-
-- `GET /admin/configuracoes`
-- `POST /admin/configuracoes`
-- `GET /admin/relatorios`
-
-Funcionalidades:
-
-- Configurar nome, telefone, endereco, antecedencia minima e horizonte de agendamento.
-- Exibir relatorios financeiros e operacionais por periodo.
-
-Telas usadas:
-
-- `admin/configuracoes.html`
 - `admin/relatorios.html`
+- `admin/configuracoes.html`
+- `admin/mensalidades.html`
 
-Observacao: os relatorios financeiros usam a data da movimentacao financeira. Os relatorios de atendimento usam a data do atendimento.
-
-### `BarberAreaController`
-
-Base: `/barbeiro`
-
-Rotas:
-
-- `GET /barbeiro/agenda`
-
-Funcionalidades:
-
-- Mostra apenas a agenda do barbeiro autenticado.
-- Permite filtrar por data.
-- Exibe cliente, servico, inicio, fim e status.
-
-Tela usada:
+Barbeiro:
 
 - `barbeiro/agenda.html`
 
-Regra importante: o controller busca o barbeiro pelo usuario da sessao (`findByUserUsername`). Ele nao aceita ID de barbeiro pela URL, impedindo acesso a agenda de outro profissional por troca de parametro.
+Autenticação:
 
-## Telas Thymeleaf
+- `login.html`
 
-### Area Publica
+## Banco de Dados
 
-#### `public/home.html`
+Migrations:
 
-Pagina inicial da barbearia.
+- `V1__schema_inicial.sql`
+- `V2__planos_mensais.sql`
 
-Mostra:
+Tabelas principais:
 
-- Nome da barbearia.
-- Chamada para agendamento.
-- Aviso de pagamento presencial.
-- Link para area restrita.
+- `app_usuario`
+- `configuracao_barbearia`
+- `horario_funcionamento`
+- `servico`
+- `barbeiro`
+- `barbeiro_servico`
+- `jornada_barbeiro`
+- `bloqueio_barbeiro`
+- `cliente`
+- `agendamento`
+- `sessao_caixa`
+- `movimento_caixa`
+- `configuracao_plano_mensal`
+- `plano_mensal_cliente`
 
-#### `public/agendar.html`
+O Hibernate usa `ddl-auto=validate` no perfil principal. Em produção, o schema deve ser criado por Flyway.
 
-Tela principal do fluxo publico.
+## Perfis
 
-Campos:
+### Padrão
 
-- Servico.
-- Barbeiro.
-- Data.
-- Horario.
-- Nome.
-- Telefone.
+Usa PostgreSQL, Flyway habilitado e validação do schema.
 
-Comportamento:
+### `dev`
 
-- Ao escolher servico, barbeiro ou data, a tela recarrega para recalcular barbeiros e horarios disponiveis.
-- Ao confirmar, envia POST para `/agendar`.
+Usa H2 em arquivo local:
 
-#### `public/confirmado.html`
+```text
+./data/barbearia-dev
+```
 
-Tela de confirmacao.
+Esse perfil usa `ddl-auto=update` e dados demonstrativos por padrão.
 
-Mostra:
+### `test`
 
-- Codigo aleatorio do agendamento.
-- Aviso de pagamento presencial.
-- Instrucao para entrar em contato com a barbearia em caso de cancelamento/remarcacao.
+Usa H2 em memória com `ddl-auto=create-drop`.
 
-### Login
+## Testes
 
-#### `login.html`
+Comando:
 
-Tela de autenticacao.
+```powershell
+.\mvnw.cmd test
+```
 
-Campos:
+Coberturas principais:
 
-- Usuario.
-- Senha.
+- Inicialização do contexto.
+- Regras de agendamento e disponibilidade.
+- Segurança das rotas.
 
-Inclui CSRF.
+## Observações de Produção
 
-### Area Administrativa
-
-#### `admin/dashboard.html`
-
-Painel inicial do administrador.
-
-Mostra:
-
-- Atendimentos concluidos do dia.
-- Cancelamentos.
-- Faltas.
-- Agendamentos do dia.
-- Menu administrativo.
-
-#### `admin/servicos.html`
-
-Cadastro e listagem de servicos.
-
-Funcionalidades:
-
-- Criar servico.
-- Listar servicos.
-- Ativar/desativar servico.
-
-#### `admin/barbeiros.html`
-
-Cadastro e listagem de barbeiros.
-
-Funcionalidades:
-
-- Cadastrar barbeiro.
-- Criar usuario de acesso.
-- Definir senha inicial.
-- Associar servicos executados.
-- Criar jornada padrao.
-
-#### `admin/clientes.html`
-
-Cadastro e pesquisa de clientes.
-
-Funcionalidades:
-
-- Pesquisar por nome ou telefone.
-- Cadastrar cliente.
-
-#### `admin/agenda.html`
-
-Gestao de agenda administrativa.
-
-Funcionalidades:
-
-- Filtrar agenda por data e barbeiro.
-- Criar agendamento manual.
-- Marcar como concluido.
-- Cancelar.
-- Marcar falta.
-
-#### `admin/caixa.html`
-
-Gestao do caixa.
-
-Funcionalidades:
-
-- Abrir caixa.
-- Registrar recebimento.
-- Registrar movimento manual.
-- Estornar movimento.
-- Fechar caixa.
-- Ver movimentos da sessao aberta.
-
-#### `admin/configuracoes.html`
-
-Configuracoes da barbearia.
-
-Funcionalidades:
-
-- Editar nome.
-- Editar telefone.
-- Editar endereco.
-- Editar antecedencia minima.
-- Editar horizonte de agendamento.
-
-#### `admin/relatorios.html`
-
-Relatorios administrativos.
-
-Mostra:
-
-- Receita recebida liquida de estornos.
-- Despesas.
-- Atendimentos concluidos.
-- Cancelamentos e faltas.
-- Movimentacoes financeiras do periodo.
-
-### Area do Barbeiro
-
-#### `barbeiro/agenda.html`
-
-Agenda somente leitura do barbeiro autenticado.
-
-Mostra:
-
-- Data escolhida.
-- Inicio.
-- Fim.
-- Cliente.
-- Servico.
-- Status.
-
-Nao possui botoes de alteracao.
-
-## Fluxos de Negocio
-
-### Fluxo de Agendamento Publico
-
-1. Cliente acessa `/agendar`.
-2. Escolhe servico.
-3. Escolhe barbeiro que executa esse servico.
-4. Escolhe data.
-5. Sistema calcula horarios disponiveis.
-6. Cliente escolhe horario e informa nome/telefone.
-7. `PublicBookingController` recebe o formulario.
-8. `AppointmentService.createPublic` valida telefone e chama regra de criacao.
-9. Sistema bloqueia a linha do barbeiro.
-10. `AvailabilityService` revalida disponibilidade.
-11. Agendamento e salvo com snapshot do servico.
-12. Sistema mostra codigo aleatorio de confirmacao.
-
-### Fluxo de Agenda Administrativa
-
-1. Admin acessa `/admin/agenda`.
-2. Visualiza ou filtra agenda.
-3. Pode criar agendamento manual.
-4. Pode mudar status para concluido, cancelado ou falta.
-5. As mesmas regras de disponibilidade sao usadas no agendamento manual.
-
-### Fluxo do Barbeiro
-
-1. Barbeiro faz login.
-2. Sistema redireciona para `/barbeiro/agenda`.
-3. Controller identifica o barbeiro pelo usuario logado.
-4. Agenda exibida contem apenas atendimentos daquele barbeiro.
-5. Tela nao permite escrita.
-
-### Fluxo de Caixa
-
-1. Admin abre caixa com saldo inicial em dinheiro.
-2. Concluir atendimento nao gera receita automaticamente.
-3. Admin registra recebimento de atendimento concluido.
-4. Sistema cria movimento financeiro.
-5. Se o pagamento for dinheiro, aumenta saldo fisico esperado.
-6. Se for Pix ou cartao, registra receita, mas nao altera dinheiro fisico.
-7. Para corrigir erro, admin estorna o lancamento.
-8. Fechamento registra dinheiro contado e diferenca.
-
-## Protecoes Importantes
-
-- CSRF habilitado nos formularios.
-- Senhas com BCrypt.
-- Usuarios inativos nao autenticam.
-- Barbeiro nao acessa `/admin/**`.
-- Barbeiro nao informa ID para consultar agenda de outro profissional.
-- Preco e duracao do servico nao sao confiados ao navegador.
-- Recebimento duplicado e bloqueado no servico e no banco.
-- Disponibilidade e revalidada no servidor.
-- Agendamento usa bloqueio pessimista do barbeiro para evitar corrida.
-
-## Limitacoes Atuais da Implementacao
-
-- A tela de configuracao edita dados gerais, antecedencia e horizonte; horarios gerais e jornadas detalhadas ainda nao possuem editor completo na interface.
-- A tela de barbeiro e somente leitura, como definido no escopo.
-- Testes locais rodam com H2 em modo PostgreSQL quando Docker nao esta disponivel.
-- Testcontainers PostgreSQL esta configurado como dependencia, mas precisa de Docker ativo para ser usado em testes futuros.
+- Usar PostgreSQL com Flyway.
+- Configurar HTTPS.
+- Usar senhas fortes e variáveis de ambiente.
+- Não versionar credenciais reais.
+- Configurar backup e restauração do banco.
+- Monitorar logs sem expor dados sensíveis.
