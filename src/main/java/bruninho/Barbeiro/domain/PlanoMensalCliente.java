@@ -51,5 +51,8 @@ public class PlanoMensalCliente {
 
     private LocalDateTime atualizadoEm = LocalDateTime.now();
 
+    @ManyToOne(optional = false)
+    private PlanoMensalCliente planoMensal;
+
 
 }

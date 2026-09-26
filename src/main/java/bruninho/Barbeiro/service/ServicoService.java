@@ -4,23 +4,26 @@ import bruninho.Barbeiro.Controller.Admin.DTOS.CriacaoServico;
 import bruninho.Barbeiro.Controller.Admin.DTOS.ServicoAtualizar;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.repository.AgendamentoRepository;
+import bruninho.Barbeiro.repository.PlanoMensalRepository;
 import bruninho.Barbeiro.repository.ServicoRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 @Service
 public class ServicoService {
 
     private ServicoRepository servicoRepository;
-
     private AgendamentoRepository agendamentoRepository;
+    private PlanoMensalRepository planoMensalRepository;
 
-    public ServicoService(ServicoRepository servicoRepository,  AgendamentoRepository agendamentoRepository) {
+    public ServicoService(ServicoRepository servicoRepository,  AgendamentoRepository agendamentoRepository, PlanoMensalRepository planoMensalRepository) {
         this.servicoRepository = servicoRepository;
         this.agendamentoRepository = agendamentoRepository;
+        this.planoMensalRepository = planoMensalRepository;
     }
 
 
@@ -65,11 +68,16 @@ public class ServicoService {
 
     public String DeletarServicoPorID(Long id){
         Servico servico = localizarServicoPorID(id);
-        if(agendamentoRepository.existsByServicoID(servico.getId())){
+
+        if(agendamentoRepository.existsByServicoID(servico.getId()) || planoMensalRepository.existsByServicoid(servico.getId()) ){
             throw new RuntimeException("não pode ser feito a exclusão desse servico pois ele esta em outros agendamentos");
         }
-
         servicoRepository.delete(servico);
+        return "Deletado com sucesso!";
+    }
+
+    public List<Servico> listarServicos(){
+        return servicoRepository.findAll();
     }
 
 

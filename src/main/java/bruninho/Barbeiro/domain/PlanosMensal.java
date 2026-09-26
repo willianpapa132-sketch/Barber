@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.lang.model.element.Name;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +40,11 @@ public class PlanosMensal {
     private Boolean prazoIndeterminado;
 
     @ManyToMany
+    @JoinTable(
+            name = "plano_servicos",
+            joinColumns = @JoinColumn(name = "plano_mensal_id"),
+            inverseJoinColumns = @JoinColumn(name = "servico_id")
+    )
     private List<Servico> servicosIncluidos;
 
     private LocalDateTime atualizadoEm = LocalDateTime.now();
