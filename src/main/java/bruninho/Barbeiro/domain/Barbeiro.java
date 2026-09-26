@@ -2,6 +2,7 @@ package bruninho.Barbeiro.domain;
 
 import bruninho.Barbeiro.security.model.Usuario;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,8 @@ public class Barbeiro {
     @Column(nullable = false)
     private String nome;
 
+    @Column(nullable = false)
+    @NotBlank(message = "deve ser informado o numero de telefone do barbeiro")
     private String telefone;
 
     @Column(nullable = false)
@@ -32,7 +35,7 @@ public class Barbeiro {
     @OneToOne(optional = false)
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "barbeiro")
-    private List <PlanoMensalCliente> planoMensalCliente;
+
+
 
 }
