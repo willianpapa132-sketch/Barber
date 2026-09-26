@@ -1,35 +1,45 @@
 package bruninho.Barbeiro.domain;
 
+import bruninho.Barbeiro.security.model.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cliente")
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Cliente {
+
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false)
     private String nome;
+
     @Column(nullable = false)
     private String telefone;
-    @Column(nullable = false)
-    private String telefoneNormalizado;
+
+    @OneToOne
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
+
     private LocalDateTime criadoEm = LocalDateTime.now();
+
     private LocalDateTime atualizadoEm = LocalDateTime.now();
 
-    public Long getId() { return id; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-    public String getTelefoneNormalizado() { return telefoneNormalizado; }
-    public void setTelefoneNormalizado(String telefoneNormalizado) { this.telefoneNormalizado = telefoneNormalizado; }
-    public LocalDateTime getCriadoEm() { return criadoEm; }
-    public LocalDateTime getAtualizadoEm() { return atualizadoEm; }
-    public void touch() { this.atualizadoEm = LocalDateTime.now(); }
+
 }

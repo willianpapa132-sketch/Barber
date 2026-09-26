@@ -225,7 +225,7 @@ Campos principais:
 - `agendamento`
 - `movimentoOriginal`
 - `tipo`
-- `formaPagamento`
+- `formaPagamentoAgendamento`
 - `valor`
 - `descricao`
 - `categoria`

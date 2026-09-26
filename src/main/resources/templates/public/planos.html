@@ -11,6 +11,6 @@
 </section></div>
 <form method="post" th:action="@{/planos}" th:object="${form}" class="panel" th:if="${!#lists.isEmpty(planos)}">
 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-<div class="grid"><div><label>Barbeiro</label><select th:field="*{barbeiroId}" required><option value="">Selecione</option><option th:each="p:${planos}" th:value="${p.barbeiro.id}" th:text="${p.barbeiro.nome + ' - R$ ' + #numbers.formatDecimal(p.valorMensal,1,'POINT',2,'COMMA')}"></option></select></div><div><label>Nome</label><input th:field="*{nomeCliente}" required maxlength="120"></div><div><label>Telefone</label><input th:field="*{telefoneCliente}" required maxlength="30" placeholder="(11) 99999-9999"></div></div>
-<p class="muted">Depois de contratar, use o mesmo telefone ao agendar com o barbeiro escolhido.</p><button>Fazer plano mensal</button>
+<div class="grid"><div><label>Barbeiro</label><select th:field="*{barbeiroId}" required><option value="">Selecione</option><option th:each="p:${planos}" th:value="${p.barbeiro.id}" th:text="${p.barbeiro.nome + ' - R$ ' + #numbers.formatDecimal(p.valorMensal,1,'POINT',2,'COMMA')}"></option></select></div><div th:if="${!clienteLogado}"><label>Nome</label><input th:field="*{nomeCliente}" required maxlength="120"></div><div th:if="${!clienteLogado}"><label>Telefone</label><input th:field="*{telefoneCliente}" required maxlength="30" placeholder="(11) 99999-9999"></div></div>
+<p class="muted" th:if="${!clienteLogado}">Depois de contratar, use o mesmo telefone ao agendar com o barbeiro escolhido.</p><p class="muted" th:if="${clienteLogado}">O plano sera vinculado ao seu cadastro de cliente.</p><button>Fazer plano mensal</button>
 </form></main></body></html>

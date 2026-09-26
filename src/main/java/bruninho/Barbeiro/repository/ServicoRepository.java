@@ -1,0 +1,8 @@
+package bruninho.Barbeiro.repository;
+
+import bruninho.Barbeiro.domain.Servico;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ServicoRepository extends JpaRepository<Servico, Long> {
+
+}

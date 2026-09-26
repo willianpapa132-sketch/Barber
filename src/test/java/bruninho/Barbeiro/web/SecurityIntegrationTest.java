@@ -1,7 +1,6 @@
 package bruninho.Barbeiro.web;
 
 import bruninho.Barbeiro.domain.ConfiguracaoBarbearia;
-import bruninho.Barbeiro.repository.ConfiguracaoBarbeariaRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,50 +1,43 @@
 package bruninho.Barbeiro.config;
 
-import bruninho.Barbeiro.domain.Usuario;
 import bruninho.Barbeiro.domain.Barbeiro;
 import bruninho.Barbeiro.domain.ConfiguracaoBarbearia;
 import bruninho.Barbeiro.domain.JornadaBarbeiro;
-import bruninho.Barbeiro.domain.Perfil;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.domain.HorarioFuncionamento;
-import bruninho.Barbeiro.repository.UsuarioRepositorio;
-import bruninho.Barbeiro.repository.BarbeiroRepositorio;
-import bruninho.Barbeiro.repository.ConfiguracaoBarbeariaRepositorio;
-import bruninho.Barbeiro.repository.JornadaBarbeiroRepositorio;
-import bruninho.Barbeiro.repository.ServicoRepositorio;
-import bruninho.Barbeiro.repository.HorarioFuncionamentoRepositorio;
+import bruninho.Barbeiro.security.model.Usuario;
+import bruninho.Barbeiro.security.service.UsuarioCadastroServico;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 @Configuration
 @EnableConfigurationProperties(AppProperties.class)
 public class DataInitializer {
     @Bean
-    CommandLineRunner bootstrap(AppProperties props, UsuarioRepositorio usuarios, PasswordEncoder encoder,
+    CommandLineRunner bootstrap(AppProperties props, UsuarioCadastroServico usuarios,
                                 ServicoRepositorio servicos, BarbeiroRepositorio barbeiros,
                                 JornadaBarbeiroRepositorio jornadas,
                                 ConfiguracaoBarbeariaRepositorio configuracoes,
                                 HorarioFuncionamentoRepositorio horariosFuncionamento) {
-        return args -> run(props, usuarios, encoder, servicos, barbeiros, jornadas, configuracoes, horariosFuncionamento);
+        return args -> run(props, usuarios, servicos, barbeiros, jornadas, configuracoes, horariosFuncionamento);
     }
 
     @Transactional
-    void run(AppProperties props, UsuarioRepositorio usuarios, PasswordEncoder encoder,
+    void run(AppProperties props, UsuarioCadastroServico usuarios,
              ServicoRepositorio servicos, BarbeiroRepositorio barbeiros,
              JornadaBarbeiroRepositorio jornadas,
              ConfiguracaoBarbeariaRepositorio configuracoes,
              HorarioFuncionamentoRepositorio horariosFuncionamento) {
         ensureConfig(configuracoes);
         ensureHorarioFuncionamento(horariosFuncionamento);
-        ensureInitialAdmin(props, usuarios, encoder);
+        usuarios.criarAdminInicialSeAusente(props.getInitialAdmin());
         if (props.isDemoData() && servicos.count() == 0) {
-            createDemoData(usuarios, encoder, servicos, barbeiros, jornadas);
+            createDemoData(usuarios, servicos, barbeiros, jornadas);
         }
     }
 
@@ -74,19 +67,7 @@ public class DataInitializer {
         }
     }
 
-    private void ensureInitialAdmin(AppProperties props, UsuarioRepositorio usuarios, PasswordEncoder encoder) {
-        var admin = props.getInitialAdmin();
-        if (!admin.getLogin().isBlank() && !usuarios.existsByLogin(admin.getLogin())) {
-            Usuario usuario = new Usuario();
-            usuario.setLogin(admin.getLogin());
-            usuario.setSenhaHash(encoder.encode(admin.getPassword()));
-            usuario.setNome(admin.getName());
-            usuario.setPerfil(Perfil.ADMIN);
-            usuarios.save(usuario);
-        }
-    }
-
-    private void createDemoData(UsuarioRepositorio usuarios, PasswordEncoder encoder,
+    private void createDemoData(UsuarioCadastroServico usuarios,
                                 ServicoRepositorio servicos, BarbeiroRepositorio barbeiros,
                                 JornadaBarbeiroRepositorio jornadas) {
         Servico corte = new Servico();
@@ -96,12 +77,7 @@ public class DataInitializer {
         corte.setDuracaoMinutos(45);
         servicos.save(corte);
 
-        Usuario usuario = new Usuario();
-        usuario.setLogin("barbeiro");
-        usuario.setSenhaHash(encoder.encode("barbeiro123"));
-        usuario.setNome("Barbeiro Demo");
-        usuario.setPerfil(Perfil.BARBEIRO);
-        usuarios.save(usuario);
+        Usuario usuario = usuarios.criarBarbeiroDemo("barbeiro", "barbeiro123", "Barbeiro Demo");
 
         Barbeiro barbeiro = new Barbeiro();
         barbeiro.setNome("Barbeiro Demo");

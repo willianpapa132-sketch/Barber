@@ -3,26 +3,14 @@ package bruninho.Barbeiro.service;
 import bruninho.Barbeiro.domain.Barbeiro;
 import bruninho.Barbeiro.domain.BloqueioBarbeiro;
 import bruninho.Barbeiro.domain.ConfiguracaoBarbearia;
-import bruninho.Barbeiro.domain.FormaPagamento;
+import bruninho.Barbeiro.domain.FormaPagamentoAgendamento;
 import bruninho.Barbeiro.domain.HorarioFuncionamento;
 import bruninho.Barbeiro.domain.JornadaBarbeiro;
-import bruninho.Barbeiro.domain.Perfil;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.domain.StatusAgendamento;
-import bruninho.Barbeiro.domain.TipoMovimentoCaixa;
-import bruninho.Barbeiro.domain.Usuario;
-import bruninho.Barbeiro.repository.AgendamentoRepositorio;
-import bruninho.Barbeiro.repository.BarbeiroRepositorio;
-import bruninho.Barbeiro.repository.BloqueioBarbeiroRepositorio;
-import bruninho.Barbeiro.repository.ConfiguracaoBarbeariaRepositorio;
-import bruninho.Barbeiro.repository.ConfiguracaoPlanoMensalRepositorio;
-import bruninho.Barbeiro.repository.HorarioFuncionamentoRepositorio;
-import bruninho.Barbeiro.repository.JornadaBarbeiroRepositorio;
-import bruninho.Barbeiro.repository.MovimentoCaixaRepositorio;
-import bruninho.Barbeiro.repository.PlanoMensalClienteRepositorio;
-import bruninho.Barbeiro.repository.ServicoRepositorio;
-import bruninho.Barbeiro.repository.SessaoCaixaRepositorio;
-import bruninho.Barbeiro.repository.UsuarioRepositorio;
+import bruninho.Barbeiro.security.model.Perfil;
+import bruninho.Barbeiro.security.model.Usuario;
+import bruninho.Barbeiro.security.repository.UsuarioRepositorio;
 import bruninho.Barbeiro.web.form.AgendamentoPublicoForm;
 import bruninho.Barbeiro.web.form.PublicPlanoMensalForm;
 import java.math.BigDecimal;
@@ -193,13 +181,13 @@ class BusinessRulesIntegrationTest {
         var appt = agendamentoService.createPublic(form(LocalTime.of(9, 0)));
         agendamentoService.changeStatus(appt.getId(), StatusAgendamento.CONCLUIDO, "");
 
-        var pix = cashService.receipt(appt.getId(), FormaPagamento.PIX);
+        var pix = cashService.receipt(appt.getId(), FormaPagamentoAgendamento.PIX);
         assertThat(cashService.dinheiroEsperado(cash.getId(), cash.getDinheiroInicial())).isEqualByComparingTo("100.00");
-        assertThatThrownBy(() -> cashService.receipt(appt.getId(), FormaPagamento.PIX)).isInstanceOf(RegraNegocioException.class);
+        assertThatThrownBy(() -> cashService.receipt(appt.getId(), FormaPagamentoAgendamento.PIX)).isInstanceOf(RegraNegocioException.class);
 
         cashService.reverse(pix.getId(), "erro");
         assertThat(agendamentos.findById(appt.getId()).orElseThrow().isPagamentoRecebido()).isFalse();
-        cashService.receipt(appt.getId(), FormaPagamento.DINHEIRO);
+        cashService.receipt(appt.getId(), FormaPagamentoAgendamento.DINHEIRO);
         assertThat(cashService.dinheiroEsperado(cash.getId(), cash.getDinheiroInicial())).isEqualByComparingTo("150.00");
 
         cashService.close(new BigDecimal("150.00"));
