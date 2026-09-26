@@ -1,7 +1,7 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.DTOS.CriacaoServico;
-import bruninho.Barbeiro.Controller.Admin.DTOS.ServicoAtualizar;
+import bruninho.Barbeiro.Controller.Admin.requests.CriacaoServico;
+import bruninho.Barbeiro.Controller.Admin.requests.ServicoAtualizar;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.repository.AgendamentoRepository;
 import bruninho.Barbeiro.repository.PlanoMensalRepository;

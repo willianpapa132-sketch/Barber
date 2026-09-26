@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.Admin.DTOS;
+package bruninho.Barbeiro.Controller.Admin.requests;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.Admin.DTOS;
+package bruninho.Barbeiro.Controller.Admin.requests;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
