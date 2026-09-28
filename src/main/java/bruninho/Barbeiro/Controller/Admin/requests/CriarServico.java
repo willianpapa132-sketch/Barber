@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @AllArgsConstructor
-public class CriacaoServico {
+public class CriarServico {
 
     @NotBlank
     private String nome;
