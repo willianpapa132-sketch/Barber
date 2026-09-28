@@ -44,15 +44,18 @@ public class PlanoMensalCliente {
     @Column(name = "agendamento_mes", nullable = false)
     private int agendamentosMes;
 
+    @Column(name = "agendamentos_Indeterminados")
+    private Boolean agendamentosIndeterminado;
+
     @Column(name = "ativo", nullable = false)
-    private boolean ativo = true;
+    private Boolean ativo ;
 
     private LocalDateTime criadoEm = LocalDateTime.now();
 
     private LocalDateTime atualizadoEm = LocalDateTime.now();
 
     @ManyToOne(optional = false)
-    private PlanoMensalCliente planoMensal;
+    private PlanosMensal planoMensal;
 
 
 }

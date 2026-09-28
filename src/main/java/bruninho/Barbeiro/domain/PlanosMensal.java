@@ -36,9 +36,10 @@ public class PlanosMensal {
     private int agendamentoSemana ;
 
     @Column(name = "ativo", nullable = false)
-    private boolean ativo = true;
+    private Boolean ativo ;
 
-    private Boolean prazoIndeterminado;
+    @Column(name = "prazo_indeterminado")
+    private Boolean agendamentosIndeterminado;
 
     @ManyToMany
     @JoinTable(

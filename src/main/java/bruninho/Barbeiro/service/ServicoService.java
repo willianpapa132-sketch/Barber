@@ -1,6 +1,6 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.requests.CriacaoServico;
+import bruninho.Barbeiro.Controller.Admin.requests.CriarServico;
 import bruninho.Barbeiro.Controller.Admin.requests.ServicoAtualizar;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.repository.AgendamentoRepository;
@@ -28,7 +28,7 @@ public class ServicoService {
 
 
     @Transactional
-    public String cadastrarServico(CriacaoServico criacaoServico){
+    public String cadastrarServico(CriarServico criacaoServico){
 
         if(criacaoServico.getValor().compareTo(BigDecimal.ZERO) < 0 ){
             throw new RuntimeException("não pode ter valor menor que zero");
@@ -62,7 +62,7 @@ public class ServicoService {
         return "Atualizado com sucesso!";
     }
 
-    private Servico localizarServicoPorID(Long id){
+    public Servico localizarServicoPorID(Long id){
         return servicoRepository.findById(id).orElseThrow(()-> new RuntimeException("não foi localizado o servico")) ;
     }
 
