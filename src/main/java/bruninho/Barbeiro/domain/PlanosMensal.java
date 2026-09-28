@@ -10,6 +10,7 @@ import javax.lang.model.element.Name;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "configuracao_plano_mensal")
@@ -29,10 +30,10 @@ public class PlanosMensal {
     private BigDecimal valorMensal = BigDecimal.ZERO;
 
     @Column(name = "agendamentos_mes")
-    private int agendamento_mes = 4;
+    private int agendamentoMes ;
 
     @Column(name = "agendamentos_semana")
-    private int cortesPorSemana = 1;
+    private int agendamentoSemana ;
 
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
@@ -45,8 +46,9 @@ public class PlanosMensal {
             joinColumns = @JoinColumn(name = "plano_mensal_id"),
             inverseJoinColumns = @JoinColumn(name = "servico_id")
     )
-    private List<Servico> servicosIncluidos;
+    private Set<Servico> servicosIncluidos;
 
-    private LocalDateTime atualizadoEm = LocalDateTime.now();
+    private LocalDateTime criadoEm;
 
+    private LocalDateTime atualizadoEm ;
 }
