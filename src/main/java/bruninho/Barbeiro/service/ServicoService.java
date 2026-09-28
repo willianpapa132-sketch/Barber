@@ -70,7 +70,7 @@ public class ServicoService {
         Servico servico = localizarServicoPorID(id);
 
         if(agendamentoRepository.existsByServicoID(servico.getId()) || planoMensalRepository.existsByServicoid(servico.getId()) ){
-            throw new RuntimeException("não pode ser feito a exclusão desse servico pois ele esta em outros agendamentos");
+            throw new RuntimeException("não pode ser feito a exclusão desse servico pois ele esta em um Plano Mensal");
         }
         servicoRepository.delete(servico);
         return "Deletado com sucesso!";

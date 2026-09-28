@@ -5,15 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.lang.model.element.Name;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "configuracao_plano_mensal")
+@Table(name = "plano_mensal")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -27,7 +24,7 @@ public class PlanosMensal {
     private String nomePlano;
 
     @Column(name = "valor_mensal", nullable = false, precision = 12, scale = 2)
-    private BigDecimal valorMensal = BigDecimal.ZERO;
+    private BigDecimal valorMensal;
 
     @Column(name = "agendamentos_mes")
     private int agendamentoMes ;
