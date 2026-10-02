@@ -1,12 +1,20 @@
 package bruninho.Barbeiro.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "horario_funcionamento")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class HorarioFuncionamento {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

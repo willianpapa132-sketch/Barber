@@ -1,12 +1,20 @@
 package bruninho.Barbeiro.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "jornada_barbeiro")
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class JornadaBarbeiro {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +40,9 @@ public class JornadaBarbeiro {
     private LocalTime intervaloFim;
 
     @Column(name = "ativo")
-    private boolean ativo ;
+    private Boolean ativo ;
+
+    private Boolean folga;
 
 
 }
