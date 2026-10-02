@@ -33,7 +33,7 @@ public class Servico {
     private BigDecimal preco;
 
     @Column(nullable = false)
-    private int duracaoMinutos;
+    private Integer duracaoMinutos;
 
     @Column(nullable = false)
     private boolean ativo = true;

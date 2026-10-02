@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -57,17 +59,20 @@ public class Agendamento {
     @Column(name = "duracao_servico_minutos")
     private int duracaoServicoMinutos;
 
-    @Column(name = "data_inicio")
-    private LocalDateTime dataInicio;
+    @Column(name = "data")
+    private LocalDate data;
 
-    @Column(name = "data_finalizacao")
-    private LocalDateTime dataFinalizacao;
+    @Column(name = "hora_inicio")
+    private LocalTime horaInicio;
+
+    @Column(name = "hora_finalizacao")
+    private LocalTime horaFinalizacao;
 
     @Enumerated(EnumType.STRING)
     private StatusAgendamento status;
 
     @Column(name = "pagamento_recebido")
-    private boolean pagamentoRecebido;
+    private Boolean pagamentoRecebido;
 
     @ManyToOne
     @JoinColumn(name = "criado_por_usuario_id")

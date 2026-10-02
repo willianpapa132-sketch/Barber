@@ -38,7 +38,7 @@ public class HorariosService {
             horarioFuncionamentoEntity.setFechado(horario.fechado());
             horarioFuncionamentoEntity.setHoraAbertura(horario.horarioInicio());
             horarioFuncionamentoEntity.setHoraFechamento(horario.horarioFim());
-            if(horarioFuncionamentoEntity.isFechado()){
+            if(horarioFuncionamentoEntity.getFechado()){
                 horarioFuncionamentoEntity.setHoraAbertura(null);
                 horarioFuncionamentoEntity.setHoraFechamento(null);
             }else {
@@ -68,7 +68,7 @@ public class HorariosService {
             jornadaBarbeiro.setIntervaloFim(jornada.getFimIntervalo());
             jornadaBarbeiro.setAtivo(true);
             HorarioFuncionamento horarioFuncionamentoEntity = horarioFuncionamentoRepository.findByDiaSemana(jornadaBarbeiro.getDiaSemana());
-            if (horarioFuncionamentoEntity.isFechado()) {
+            if (horarioFuncionamentoEntity.getFechado()) {
 
                 jornadaBarbeiro.setFolga(true);
                 jornadaBarbeiro.setIntervaloInicio(null);

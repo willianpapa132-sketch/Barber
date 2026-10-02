@@ -8,4 +8,5 @@ import java.time.DayOfWeek;
 public interface HorarioFuncionamentoRepository extends JpaRepository<HorarioFuncionamento, Long> {
 
     HorarioFuncionamento findByDiaSemana(DayOfWeek diaSemana);
+
 }

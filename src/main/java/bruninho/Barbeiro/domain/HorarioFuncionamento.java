@@ -1,6 +1,9 @@
 package bruninho.Barbeiro.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,10 +20,12 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class HorarioFuncionamento {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id ;
 
     @Enumerated(EnumType.STRING)
+    @Column(unique = true, nullable = false)
     private DayOfWeek diaSemana;
 
     @Column(name = "hora_abertura")
@@ -30,7 +35,14 @@ public class HorarioFuncionamento {
     private LocalTime horaFechamento;
 
     @Column(name = "fechado")
-    private boolean fechado;
+    private Boolean fechado;
+
+    @PositiveOrZero
+    private Integer diasMaximosAntecedencia;
+
+    @Positive
+    private Integer intervaloMinimoEntreAgendamentos;
+
 
 
 }

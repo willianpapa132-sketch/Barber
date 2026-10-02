@@ -25,6 +25,7 @@ public class JornadaBarbeiro {
     private Barbeiro barbeiro;
 
     @Enumerated(EnumType.STRING)
+    @Column(unique = true, nullable = false)
     private DayOfWeek diaSemana;
 
     @Column(name = "hora_inicio")
