@@ -15,9 +15,9 @@ import java.util.List;
 public class DisponibilidadeAgendamentosService {
     private HorarioFuncionamentoRepository horarioFuncionamentoRepository;
     private JornadaBarbeiroRepository  jornadaBarbeiroRepository;
-    private PlanoMensalClienteRepository  planoMensalClienteRepository;
     private AgendamentoRepository agendamentoRepository;
     private BloqueioBarbeiroRepository  bloqueioBarbeiroRepository;
+    private ConfiguracaoBarbeariaRepository configuracaoBarbeariaRepository;
 
 
     private ServicoRepository servicoRepository;
@@ -26,17 +26,17 @@ public class DisponibilidadeAgendamentosService {
     public DisponibilidadeAgendamentosService(
             HorarioFuncionamentoRepository horarioFuncionamentoRepository,
             JornadaBarbeiroRepository jornadaBarbeiroRepository,
-            PlanoMensalClienteRepository planoMensalClienteRepository,
             AgendamentoRepository agendamentoRepository,
             BloqueioBarbeiroRepository bloqueioBarbeiroRepository,
-            ServicoRepository servicoRepository
+            ServicoRepository servicoRepository,
+            ConfiguracaoBarbeariaRepository configuracaoBarbeariaRepository
     ) {
         this.horarioFuncionamentoRepository = horarioFuncionamentoRepository;
         this.jornadaBarbeiroRepository = jornadaBarbeiroRepository;
-        this.planoMensalClienteRepository = planoMensalClienteRepository;
         this.agendamentoRepository = agendamentoRepository;
         this.bloqueioBarbeiroRepository = bloqueioBarbeiroRepository;
         this.servicoRepository = servicoRepository;
+        this.configuracaoBarbeariaRepository = configuracaoBarbeariaRepository;
     }
 
 
@@ -116,6 +116,36 @@ public class DisponibilidadeAgendamentosService {
 
         }
         return horariosDisponivel;
+    }
+
+    public List<LocalDate> diasDisponiveis(Long barbeiro_id){
+        List<LocalDate> dias = new ArrayList<>();
+        LocalDate inicio = LocalDate.now();
+        ConfiguracaoBarbearia configuracaoBarbearia = configuracaoBarbeariaRepository.findById(1L).orElse(null);
+        if(configuracaoBarbearia.getDiasMaximoAntecedentia() != 0){
+            LocalDate fim = inicio.plusDays(configuracaoBarbearia.getDiasMaximoAntecedentia());
+            while (!inicio.isAfter(fim)) {
+                DayOfWeek diaSemana = inicio.getDayOfWeek();
+
+                HorarioFuncionamento funcionamento =
+                        horarioFuncionamentoRepository.findByDiaSemana(diaSemana);
+
+                var jornadaOpt =
+                        jornadaBarbeiroRepository.findByDiaSemanaAndBarbeiro_id(diaSemana, barbeiro_id);
+                Boolean bloqueioBarbeiroTrue = bloqueioBarbeiroRepository.findByDataBloqueioAndBarbeiro_id(inicio,barbeiro_id);
+
+                if(jornadaOpt.isPresent() && !bloqueioBarbeiroTrue) {
+                    JornadaBarbeiro jornadaBarbeiro = jornadaOpt.get();
+                    if (!funcionamento.getFechado() && !jornadaBarbeiro.getFolga()) {
+                        dias.add(inicio);
+                    }
+                }
+
+                inicio = inicio.plusDays(1);
+
+            }
+        }
+        return dias;
     }
 
 }

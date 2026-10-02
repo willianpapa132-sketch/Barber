@@ -37,8 +37,7 @@ public class HorarioFuncionamento {
     @Column(name = "fechado")
     private Boolean fechado;
 
-    @PositiveOrZero
-    private Integer diasMaximosAntecedencia;
+
 
     @Positive
     private Integer intervaloMinimoEntreAgendamentos;

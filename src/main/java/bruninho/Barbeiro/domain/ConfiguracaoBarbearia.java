@@ -5,10 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.time.DayOfWeek;
+import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Getter;
+import lombok.Setter;
+
 
 @Entity
 @Table(name = "configuracao_barbearia")
+@Getter
+@Setter
 public class ConfiguracaoBarbearia {
 
     @Id
@@ -17,6 +22,8 @@ public class ConfiguracaoBarbearia {
     private String nome = "Barbearia Bruninho";
     private String telefone;
     private String endereco;
+    @PositiveOrZero
+    private Integer diasMaximoAntecedentia;
 
 
 }
