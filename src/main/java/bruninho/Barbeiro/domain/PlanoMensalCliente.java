@@ -1,5 +1,6 @@
 package bruninho.Barbeiro.domain;
 
+import bruninho.Barbeiro.security.model.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,6 +32,10 @@ public class PlanoMensalCliente {
     @ManyToOne(optional = false)
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "barbeiro_id")
@@ -56,6 +62,9 @@ public class PlanoMensalCliente {
 
     @ManyToOne(optional = false)
     private PlanosMensal planoMensal;
+
+    @Positive
+    private Integer diasMaximoAntecedencia;
 
 
 }

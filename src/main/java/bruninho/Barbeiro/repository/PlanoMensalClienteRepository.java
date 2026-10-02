@@ -1,6 +1,7 @@
 package bruninho.Barbeiro.repository;
 
 import bruninho.Barbeiro.domain.PlanoMensalCliente;
+import bruninho.Barbeiro.security.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -14,4 +15,8 @@ public interface PlanoMensalClienteRepository extends JpaRepository<PlanoMensalC
 
     Optional<PlanoMensalCliente> findByCliente_id(Long cliente_id);
     Boolean existsByCliente_id(Long cliente_id);
+
+    Boolean existsByUsuario (Usuario user);
+    PlanoMensalCliente findByUsuario(Usuario usuario);
+
 }

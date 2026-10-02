@@ -1,6 +1,6 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.DTOS.CriarBloqueioBarbeiro;
+import bruninho.Barbeiro.Controller.Admin.requests.CriarBloqueioBarbeiro;
 import bruninho.Barbeiro.domain.BloqueioBarbeiro;
 import bruninho.Barbeiro.repository.BarbeiroRepository;
 import bruninho.Barbeiro.repository.BloqueioBarbeiroRepository;
@@ -32,5 +32,9 @@ public class BloqueioBarbeiroService {
         bloqueioBarbeiro.setHoraFim(criarBloqueioBarbeiro.getHoraFim());
         bloqueioBarbeiroRepository.save(bloqueioBarbeiro);
 
+    }
+
+    public void cancelarBloqueio(Long idBloqueio) {
+        bloqueioBarbeiroRepository.deleteById(idBloqueio);
     }
 }

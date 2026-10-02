@@ -2,7 +2,7 @@ package bruninho.Barbeiro.service;
 
 import bruninho.Barbeiro.domain.Cliente;
 import bruninho.Barbeiro.repository.ClienteRepository;
-import bruninho.Barbeiro.security.model.Perfil;
+import bruninho.Barbeiro.security.model.ROLE;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class ClienteService {
 
     @Transactional
     public void criarCliente(Cliente cliente){
-        if(cliente.getUsuario().getPerfil() != Perfil.CLIENTE){
+        if(cliente.getUsuario().getRole() != ROLE.CLIENTE){
             throw new RuntimeException("Usuario deve ter perfil de cliente");
         }
         cliente.setCriadoEm(LocalDateTime.now());

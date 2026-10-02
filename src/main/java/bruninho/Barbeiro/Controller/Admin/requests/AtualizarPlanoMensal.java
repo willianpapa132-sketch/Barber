@@ -22,6 +22,8 @@ public class AtualizarPlanoMensal {
 
     private BigDecimal valorMensal;
 
+    private Integer diasMaximoAntecedencia;
+
     private Set<Long> servicosId;
 
 

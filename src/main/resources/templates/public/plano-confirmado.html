@@ -1,6 +1,0 @@
-<!doctype html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plano confirmado</title><link rel="stylesheet" th:href="@{/css/app.css}"></head><body>
-<header><a href="/">Barbearia</a></header><main class="wrap"><section class="panel"><h1>Plano mensal ativo</h1>
-<p th:if="${plano}" th:text="${plano.cliente.nome + ', seu plano com ' + plano.barbeiro.nome + ' foi ativado.'}">Plano ativado.</p>
-<p th:if="${plano}" th:text="${'Valor mensal: R$ ' + #numbers.formatDecimal(plano.valorMensalSnapshot,1,'POINT',2,'COMMA') + '. Limite: ' + plano.cortesPorMesSnapshot + ' por mes e ' + plano.cortesPorSemanaSnapshot + ' por semana.'}"></p>
-<p th:unless="${plano}">Plano mensal confirmado.</p>
-<a class="btn" href="/agendar">Agendar corte</a></section></main></body></html>

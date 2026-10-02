@@ -55,6 +55,7 @@ public class PlanoMensalService {
 
         planosMensal.getServicosIncluidos().addAll(servicosIncluidos);
         planosMensal.setCriadoEm(LocalDateTime.now());
+        planosMensal.setDiasMaximoAntecedencia(criarPlanoMensal.getDiasMaximoAntecedencia());
         planoMensalRepository.save(planosMensal);
 
 
@@ -66,6 +67,7 @@ public class PlanoMensalService {
         PlanosMensal planosMensalLocalizado = planoMensalRepository.findById(atualizarPlanoMensal.getId()).orElseThrow(()-> new RuntimeException("plano mensal não localizado"));
         planosMensalLocalizado.setNomePlano(atualizarPlanoMensal.getNomePlano());
         planosMensalLocalizado.setValorMensal(atualizarPlanoMensal.getValorMensal());
+        planosMensalLocalizado.setDiasMaximoAntecedencia(atualizarPlanoMensal.getDiasMaximoAntecedencia());
 
         Set<Servico> servicosIncluidos = new HashSet<>(
                 servicoRepository.findAllById(atualizarPlanoMensal.getServicosId())
@@ -104,7 +106,7 @@ public class PlanoMensalService {
                     planosMensaisClientes.setAgendamentosSemana(atualizarPlanoMensal.getAgendamentosSemana());
                 }
                 planosMensaisClientes.setAtualizadoEm(LocalDateTime.now());
-
+                planosMensalLocalizado.setDiasMaximoAntecedencia(atualizarPlanoMensal.getDiasMaximoAntecedencia());
             }
         }
 

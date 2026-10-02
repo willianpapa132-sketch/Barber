@@ -41,10 +41,10 @@ public class PlanoMensalClienteService {
         planoMensalCliente.setCliente(clienteRepository.findById(cadastrarPlano.getClienteid()).orElseThrow(()-> new RuntimeException("não localizado o cliente")));
         planoMensalCliente.setBarbeiro(barbeiroRepository.findById(cadastrarPlano.getBarbeiroid()).orElseThrow(()-> new RuntimeException("barbeiro selecionado nãa localizado")));
 
-        if(!planoMensalCliente.getCliente().getUsuario().isAtivo()){
+        if(!planoMensalCliente.getCliente().getUsuario().getAtivo()){
             throw new RuntimeException("cliente esta desativado");
         }
-        if(!planoMensalCliente.getBarbeiro().getUsuario().isAtivo()){
+        if(!planoMensalCliente.getBarbeiro().getUsuario().getAtivo()){
             throw new RuntimeException("barbeiro esta desativado");
         }
         if(!planoMensalCliente.getPlanoMensal().getAtivo()){

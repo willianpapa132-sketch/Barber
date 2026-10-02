@@ -2,7 +2,7 @@ package bruninho.Barbeiro.service;
 
 import bruninho.Barbeiro.domain.Barbeiro;
 import bruninho.Barbeiro.repository.BarbeiroRepository;
-import bruninho.Barbeiro.security.model.Perfil;
+import bruninho.Barbeiro.security.model.ROLE;
 import bruninho.Barbeiro.security.model.Usuario;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ public class BarbeiroService {
     }
 
     public void criarBarbeiro(Barbeiro barbeiro, Usuario usuario){
-        if(usuario.getPerfil() == Perfil.BARBEIRO){
+        if(usuario.getRole() == ROLE.BARBEIRO){
             barbeiroRepository.save(barbeiro);
 
         }else{
@@ -27,4 +27,6 @@ public class BarbeiroService {
     public void atualizarBarbeiro(Barbeiro barbeiro){
         barbeiroRepository.save(barbeiro);
     }
+
+
 }

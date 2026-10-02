@@ -36,4 +36,9 @@ public class CriarPlanoMensal {
 
 
 
+    private Integer diasMaximoAntecedencia;
+
+
+
+
 }

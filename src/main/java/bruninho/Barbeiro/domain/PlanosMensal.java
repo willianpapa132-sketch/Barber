@@ -1,6 +1,7 @@
 package bruninho.Barbeiro.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -45,6 +46,10 @@ public class PlanosMensal {
             inverseJoinColumns = @JoinColumn(name = "servico_id")
     )
     private Set<Servico> servicosIncluidos;
+
+    @Positive
+    private Integer diasMaximoAntecedencia;
+
 
     private LocalDateTime criadoEm;
 
