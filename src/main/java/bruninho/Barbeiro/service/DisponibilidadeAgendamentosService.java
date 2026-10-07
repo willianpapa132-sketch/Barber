@@ -100,15 +100,15 @@ public class DisponibilidadeAgendamentosService {
             LocalTime termino = LocalTime.ofSecondOfDay(segundo + duracao);
             if (!dia.atTime(hora).isAfter(agora)) continue;
             if (jornada.getIntervaloInicio() != null && jornada.getIntervaloFim() != null
-                    && sobrepoe(hora, termino, jornada.getIntervaloInicio(), jornada.getIntervaloFim())) continue;
+                    && conflito(hora, termino, jornada.getIntervaloInicio(), jornada.getIntervaloFim())) continue;
             boolean conflito = ocupados.stream().filter(a -> a.getStatus() != StatusAgendamento.CANCELADO)
-                    .anyMatch(a -> sobrepoe(hora, termino, a.getHoraInicio(), a.getHoraFinalizacao()));
+                    .anyMatch(a -> conflito(hora, termino, a.getHoraInicio(), a.getHoraFinalizacao()));
             if (!conflito) resultado.add(hora);
         }
         return resultado;
     }
 
-    private boolean sobrepoe(LocalTime inicio, LocalTime fim, LocalTime outroInicio, LocalTime outroFim) {
+    private boolean conflito(LocalTime inicio, LocalTime fim, LocalTime outroInicio, LocalTime outroFim) {
         return inicio.isBefore(outroFim) && fim.isAfter(outroInicio);
     }
 }
