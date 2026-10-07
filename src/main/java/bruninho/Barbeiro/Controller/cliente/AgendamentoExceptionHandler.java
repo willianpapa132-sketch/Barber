@@ -9,7 +9,7 @@ import org.springframework.web.bind.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-@RestControllerAdvice(assignableTypes = AgendamentoController.class)
+@RestControllerAdvice(assignableTypes = AgendamentoClienteController.class)
 public class AgendamentoExceptionHandler {
     public record ErroAgendamento(String mensagem) {}
 

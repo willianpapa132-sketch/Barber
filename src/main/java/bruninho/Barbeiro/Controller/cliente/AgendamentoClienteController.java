@@ -11,11 +11,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/agendamentos")
-public class AgendamentoController {
+public class AgendamentoClienteController {
     private final AgendamentoService agendamentos;
     private final DisponibilidadeAgendamentosService disponibilidade;
 
-    public AgendamentoController(AgendamentoService agendamentos, DisponibilidadeAgendamentosService disponibilidade) {
+    public AgendamentoClienteController(AgendamentoService agendamentos, DisponibilidadeAgendamentosService disponibilidade) {
         this.agendamentos = agendamentos;
         this.disponibilidade = disponibilidade;
     }
