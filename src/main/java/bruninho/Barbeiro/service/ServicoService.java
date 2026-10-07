@@ -69,7 +69,7 @@ public class ServicoService {
     public String DeletarServicoPorID(Long id){
         Servico servico = localizarServicoPorID(id);
 
-        if(agendamentoRepository.existsByServicoID(servico.getId()) || planoMensalRepository.existsByServicoid(servico.getId()) ){
+        if(agendamentoRepository.existsByServico_Id(servico.getId()) || planoMensalRepository.existsByServicosIncluidos_Id(servico.getId()) ){
             throw new RuntimeException("não pode ser feito a exclusão desse servico pois ele esta em um Plano Mensal");
         }
         servicoRepository.delete(servico);

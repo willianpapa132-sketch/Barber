@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
 
-    Boolean existsByServicoID(Long id);
+    Boolean existsByServico_Id(Long id);
 
 
     List<Agendamento> findAllByBarbeiro_idAndData(Long barbeiro_id , LocalDate data);

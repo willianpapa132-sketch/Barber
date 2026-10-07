@@ -7,5 +7,5 @@ import java.time.LocalDate;
 
 public interface BloqueioBarbeiroRepository extends JpaRepository<BloqueioBarbeiro,Long> {
 
-    Boolean findByDataBloqueioAndBarbeiro_id(LocalDate diaBloqueio, Long barbeiro_id);
+    boolean existsByDataBloqueioAndBarbeiro_Id(LocalDate diaBloqueio, Long barbeiroId);
 }

@@ -1,204 +1,114 @@
 package bruninho.Barbeiro.service;
 
+import bruninho.Barbeiro.exception.NotFoundException;
+import bruninho.Barbeiro.exception.BusinessException;
 
 import bruninho.Barbeiro.domain.*;
 import bruninho.Barbeiro.repository.*;
 import bruninho.Barbeiro.security.model.Usuario;
 import org.springframework.stereotype.Service;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.*;
+import java.util.*;
 
 @Service
+@Transactional(readOnly = true)
 public class DisponibilidadeAgendamentosService {
-    private HorarioFuncionamentoRepository horarioFuncionamentoRepository;
-    private JornadaBarbeiroRepository  jornadaBarbeiroRepository;
-    private AgendamentoRepository agendamentoRepository;
-    private BloqueioBarbeiroRepository  bloqueioBarbeiroRepository;
-    private ConfiguracaoBarbeariaRepository configuracaoBarbeariaRepository;
-    private PlanoMensalClienteRepository planoMensalClienteRepository;
-    private ServicoRepository servicoRepository;
+    private final HorarioFuncionamentoRepository funcionamento;
+    private final JornadaBarbeiroRepository jornadas;
+    private final AgendamentoRepository agendamentos;
+    private final BloqueioBarbeiroRepository bloqueios;
+    private final ConfiguracaoBarbeariaRepository configuracoes;
+    private final PlanoMensalClienteRepository planos;
+    private final ValidacaoAgendamentoService validacao;
 
-
-    public DisponibilidadeAgendamentosService(
-            HorarioFuncionamentoRepository horarioFuncionamentoRepository,
-            JornadaBarbeiroRepository jornadaBarbeiroRepository,
-            AgendamentoRepository agendamentoRepository,
-            BloqueioBarbeiroRepository bloqueioBarbeiroRepository,
-            ServicoRepository servicoRepository,
-            ConfiguracaoBarbeariaRepository configuracaoBarbeariaRepository,
-            PlanoMensalClienteRepository planoMensalClienteRepository
-    ) {
-        this.horarioFuncionamentoRepository = horarioFuncionamentoRepository;
-        this.jornadaBarbeiroRepository = jornadaBarbeiroRepository;
-        this.agendamentoRepository = agendamentoRepository;
-        this.bloqueioBarbeiroRepository = bloqueioBarbeiroRepository;
-        this.servicoRepository = servicoRepository;
-        this.configuracaoBarbeariaRepository = configuracaoBarbeariaRepository;
-        this.planoMensalClienteRepository = planoMensalClienteRepository;
+    public DisponibilidadeAgendamentosService(HorarioFuncionamentoRepository funcionamento,
+            JornadaBarbeiroRepository jornadas, AgendamentoRepository agendamentos,
+            BloqueioBarbeiroRepository bloqueios, ConfiguracaoBarbeariaRepository configuracoes,
+            PlanoMensalClienteRepository planos, ValidacaoAgendamentoService validacao) {
+        this.funcionamento = funcionamento;
+        this.jornadas = jornadas;
+        this.agendamentos = agendamentos;
+        this.bloqueios = bloqueios;
+        this.configuracoes = configuracoes;
+        this.planos = planos;
+        this.validacao = validacao;
     }
 
-
-
-
-
-    public List<LocalTime> horariosDiaDisponivel(Long clienteid, Long barbeiroid, LocalDate dia, List<Long>servicosid ) {
-        List<LocalTime> horariosDisponivel = new ArrayList<>();
-        Integer totalMinAgendamento = 0;
-        DayOfWeek diaSemana = dia.getDayOfWeek();
-        HorarioFuncionamento horarioFuncionamento = horarioFuncionamentoRepository.findByDiaSemana(diaSemana);
-        JornadaBarbeiro jornadaBarbeiro = jornadaBarbeiroRepository.findByDiaSemanaAndBarbeiro_id(diaSemana, barbeiroid)
-                .orElseThrow(() -> new RuntimeException("não localizado esse dia da semana para o barbeiro"));
-
-
-        for (Long servicoid : servicosid) {
-            Servico servico = servicoRepository.findById(servicoid).orElseThrow(
-                    () -> new RuntimeException("Não Localizado o Servico"));
-            totalMinAgendamento += servico.getDuracaoMinutos();
-        }
-        if (horarioFuncionamento.getFechado()) {
-            throw new RuntimeException("barbearia fechada");
-        }
-        if (jornadaBarbeiro.getFolga()) {
-            throw new RuntimeException("barbeiro esta de folga no dia selecionado");
-        }
-        if (bloqueioBarbeiroRepository.findByDataBloqueioAndBarbeiro_id(dia, barbeiroid)) {
-            throw new RuntimeException("barbeiro esta bloqueado nessa data escolha outro barbeiro");
-        }
-
-        LocalTime inicio = jornadaBarbeiro.getHoraInicio();
-        LocalTime fim = jornadaBarbeiro.getHoraFim();
-
-
-        List<Agendamento> agendamentosdoDia = agendamentoRepository.findAllByBarbeiro_idAndData(barbeiroid, dia);
-        while (inicio.isBefore(fim)) {
-
-            LocalTime horarioFimAgendamento =
-                    inicio.plusMinutes(totalMinAgendamento);
-
-            if (horarioFimAgendamento.isAfter(fim)) {
-                break;
-            }
-
-            LocalTime inicioIntervalo = jornadaBarbeiro.getIntervaloInicio();
-            LocalTime fimIntervalo = jornadaBarbeiro.getIntervaloFim();
-
-            boolean disponivel = true;
-
-            if (jornadaBarbeiro.getIntervaloInicio() != null && jornadaBarbeiro.getIntervaloFim() != null) {
-                boolean pegaHoraDoAlmoco =
-                        inicio.isBefore(fimIntervalo)
-                                && horarioFimAgendamento.isAfter(inicioIntervalo);
-                if (pegaHoraDoAlmoco) {
-                    disponivel = false;
-                }
-
-            }
-            if (disponivel) {
-                for (Agendamento agendamento : agendamentosdoDia) {
-                    LocalTime horarioInicio = agendamento.getHoraInicio();
-                    LocalTime horarioFim = agendamento.getHoraFinalizacao();
-                    boolean conflito =
-                            inicio.isBefore(horarioFim)
-                                    && horarioFimAgendamento.isAfter(horarioInicio);
-
-                    if (conflito) {
-                        disponivel = false;
-                        break;
-                    }
-                }
-            }
-            if (disponivel) {
-                horariosDisponivel.add(inicio);
-            }
-            inicio = inicio.plusMinutes(horarioFuncionamento.getIntervaloMinimoEntreAgendamentos());
-
-        }
-        return horariosDisponivel;
+    public List<LocalTime> horariosDiaDisponivel(Long usuarioId, Long clienteId, Long barbeiroId,
+                                                LocalDate dia, List<Long> servicosIds) {
+        var cliente = validacao.validarCliente(usuarioId, clienteId);
+        validacao.validarBarbeiro(barbeiroId);
+        var servicos = validacao.validarServicos(servicosIds);
+        if (dia == null) throw new BusinessException("Informe a data");
+        return horariosDisponiveis(cliente.getUsuario(), barbeiroId, dia, servicos);
     }
 
-
-
-
-    public List<LocalDate> diasDisponiveis(Long barbeiroId, Usuario usuario) {
-
+    public List<LocalDate> diasDisponiveis(Long usuarioId, Long clienteId, Long barbeiroId, List<Long> servicosIds) {
+        var cliente = validacao.validarCliente(usuarioId, clienteId);
+        validacao.validarBarbeiro(barbeiroId);
+        var servicos = validacao.validarServicos(servicosIds);
         List<LocalDate> dias = new ArrayList<>();
-
-        LocalDate inicio = LocalDate.now();
-
-        ConfiguracaoBarbearia configuracaoBarbearia =
-                configuracaoBarbeariaRepository.findById(1L)
-                        .orElseThrow(() ->
-                                new RuntimeException("Configuração não localizada"));
-
-        boolean clientePossuiPlano =
-                planoMensalClienteRepository.existsByUsuario(usuario);
-
-        int diasAntecedencia;
-
-        if (clientePossuiPlano) {
-
-            PlanoMensalCliente planoMensalCliente =
-                    planoMensalClienteRepository.findByUsuario(usuario);
-
-            diasAntecedencia =
-                    planoMensalCliente.getDiasMaximoAntecedencia();
-
-        } else {
-
-            diasAntecedencia =
-                    configuracaoBarbearia.getDiasMaximoAntecedentia();
+        LocalDate hoje = LocalDate.now();
+        int antecedencia = antecedencia(cliente.getUsuario());
+        // Preserva a regra existente: zero dias desabilita a agenda.
+        if (antecedencia == 0) return dias;
+        LocalDate limite = hoje.plusDays(antecedencia);
+        for (LocalDate dia = hoje; !dia.isAfter(limite); dia = dia.plusDays(1)) {
+            if (!calcularHorarios(barbeiroId, dia, servicos).isEmpty()) dias.add(dia);
         }
-
-        if (diasAntecedencia == 0) {
-            return dias;
-        }
-
-        LocalDate fim =
-                inicio.plusDays(diasAntecedencia);
-
-        while (!inicio.isAfter(fim)) {
-
-            DayOfWeek diaSemana =
-                    inicio.getDayOfWeek();
-
-            HorarioFuncionamento funcionamento =
-                    horarioFuncionamentoRepository
-                            .findByDiaSemana(diaSemana);
-
-            var jornadaOpt =
-                    jornadaBarbeiroRepository
-                            .findByDiaSemanaAndBarbeiro_id(
-                                    diaSemana,
-                                    barbeiroId
-                            );
-
-            boolean bloqueado =
-                    bloqueioBarbeiroRepository
-                            .findByDataBloqueioAndBarbeiro_id(
-                                    inicio,
-                                    barbeiroId
-                            );
-
-            if (jornadaOpt.isPresent() && !bloqueado) {
-
-                JornadaBarbeiro jornada =
-                        jornadaOpt.get();
-
-                if (!funcionamento.getFechado()
-                        && !jornada.getFolga()) {
-
-                    dias.add(inicio);
-                }
-            }
-
-            inicio = inicio.plusDays(1);
-        }
-
         return dias;
     }
 
+    public List<LocalTime> horariosDisponiveis(Usuario usuario, Long barbeiroId, LocalDate dia, Set<Servico> servicos) {
+        LocalDate hoje = LocalDate.now();
+        int antecedencia = antecedencia(usuario);
+        if (antecedencia == 0 || dia.isBefore(hoje) || dia.isAfter(hoje.plusDays(antecedencia))) return List.of();
+        return calcularHorarios(barbeiroId, dia, servicos);
+    }
 
+    private int antecedencia(Usuario usuario) {
+        var config = configuracoes.findById(1L)
+                .orElseThrow(() -> new NotFoundException("Configuração da barbearia não encontrada"));
+        Integer dias = config.getDiasMaximoAntecedentia();
+        if (Boolean.TRUE.equals(planos.existsByUsuario(usuario)))
+            dias = planos.findByUsuario(usuario).getDiasMaximoAntecedencia();
+        if (dias == null || dias < 0) throw new BusinessException("Antecedência não configurada corretamente");
+        return dias;
+    }
+
+    private List<LocalTime> calcularHorarios(Long barbeiroId, LocalDate dia, Set<Servico> servicos) {
+        var horario = funcionamento.findByDiaSemana(dia.getDayOfWeek());
+        var jornada = jornadas.findByDiaSemanaAndBarbeiro_id(dia.getDayOfWeek(), barbeiroId).orElse(null);
+        if (horario == null || jornada == null || !Boolean.FALSE.equals(horario.getFechado())
+                || Boolean.TRUE.equals(jornada.getFolga()) || Boolean.FALSE.equals(jornada.getAtivo())
+                || bloqueios.existsByDataBloqueioAndBarbeiro_Id(dia, barbeiroId)) return List.of();
+        if (horario.getIntervaloMinimoEntreAgendamentos() == null || horario.getIntervaloMinimoEntreAgendamentos() <= 0
+                || horario.getHoraAbertura() == null || horario.getHoraFechamento() == null
+                || jornada.getHoraInicio() == null || jornada.getHoraFim() == null)
+            throw new BusinessException("Horários de funcionamento ou jornada inválidos");
+        int inicio = Math.max(horario.getHoraAbertura().toSecondOfDay(), jornada.getHoraInicio().toSecondOfDay());
+        int fim = Math.min(horario.getHoraFechamento().toSecondOfDay(), jornada.getHoraFim().toSecondOfDay());
+        int duracao = servicos.stream().mapToInt(Servico::getDuracaoMinutos).sum() * 60;
+        if (duracao <= 0 || duracao >= 86400) throw new BusinessException("Duração inválida");
+        long passo = horario.getIntervaloMinimoEntreAgendamentos().longValue() * 60;
+        var ocupados = agendamentos.findAllByBarbeiro_idAndData(barbeiroId, dia);
+        List<LocalTime> resultado = new ArrayList<>();
+        LocalDateTime agora = LocalDateTime.now();
+        for (long segundo = inicio; segundo + duracao <= fim; segundo += passo) {
+            LocalTime hora = LocalTime.ofSecondOfDay(segundo);
+            LocalTime termino = LocalTime.ofSecondOfDay(segundo + duracao);
+            if (!dia.atTime(hora).isAfter(agora)) continue;
+            if (jornada.getIntervaloInicio() != null && jornada.getIntervaloFim() != null
+                    && sobrepoe(hora, termino, jornada.getIntervaloInicio(), jornada.getIntervaloFim())) continue;
+            boolean conflito = ocupados.stream().filter(a -> a.getStatus() != StatusAgendamento.CANCELADO)
+                    .anyMatch(a -> sobrepoe(hora, termino, a.getHoraInicio(), a.getHoraFinalizacao()));
+            if (!conflito) resultado.add(hora);
+        }
+        return resultado;
+    }
+
+    private boolean sobrepoe(LocalTime inicio, LocalTime fim, LocalTime outroInicio, LocalTime outroFim) {
+        return inicio.isBefore(outroFim) && fim.isAfter(outroInicio);
+    }
 }
