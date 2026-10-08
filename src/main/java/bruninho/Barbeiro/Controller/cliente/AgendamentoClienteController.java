@@ -25,6 +25,11 @@ public class AgendamentoClienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoResponse.de(agendamentos.agendar(request)));
     }
 
+    @PostMapping("/plano")
+    public ResponseEntity<AgendamentoResponse> criarComPlano(@Valid @RequestBody CriarAgendamentoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoResponse.de(agendamentos.agendarComPlano(request)));
+    }
+
     @GetMapping("/disponibilidade/dias")
     public List<LocalDate> dias(@RequestParam Long usuarioId, @RequestParam Long clienteId,
                                @RequestParam Long barbeiroId, @RequestParam List<Long> servicosIds) {

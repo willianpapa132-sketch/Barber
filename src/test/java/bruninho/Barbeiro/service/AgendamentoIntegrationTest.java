@@ -40,6 +40,8 @@ class AgendamentoIntegrationTest {
     @Autowired HorarioFuncionamentoRepository horarios;
     @Autowired BloqueioBarbeiroRepository bloqueios;
     @Autowired ConfiguracaoBarbeariaRepository configuracoes;
+    @Autowired PlanoMensalRepository planosMensais;
+    @Autowired PlanoMensalClienteRepository planosClientes;
     @Autowired MockMvc mvc;
 
     Usuario usuario;
@@ -53,6 +55,8 @@ class AgendamentoIntegrationTest {
     @BeforeEach
     void preparar() {
         agendamentos.deleteAll();
+        planosClientes.deleteAll();
+        planosMensais.deleteAll();
         bloqueios.deleteAll();
         jornadas.deleteAll();
         clientes.deleteAll();
@@ -81,6 +85,7 @@ class AgendamentoIntegrationTest {
         horario.setHoraAbertura(LocalTime.of(9, 0));
         horario.setHoraFechamento(LocalTime.of(18, 0));
         horario.setIntervaloMinimoEntreAgendamentos(15);
+        horario.setPermiteAgendamentoPlano(true);
         horarios.save(horario);
         jornada = new JornadaBarbeiro();
         jornada.setBarbeiro(barbeiro);
@@ -106,12 +111,72 @@ class AgendamentoIntegrationTest {
         assertThat(salvo.getTelefoneCliente()).isEqualTo(cliente.getTelefone());
         assertThat(salvo.getStatus()).isEqualTo(StatusAgendamento.AGENDADO);
         assertThat(salvo.getPagamentoRecebido()).isFalse();
-        assertThat(salvo.getPlanoMensal()).isNull();
+        assertThat(salvo.getPlanoMensalCliente()).isNull();
         assertThat(salvo.getCriadoPorUsuario()).isNull();
         assertThat(salvo.getCriadoEm()).isNotNull();
         corte.setPreco(new BigDecimal("99.00"));
         servicos.save(corte);
         assertThat(agendamentos.findById(salvo.getId()).orElseThrow().getPrecoTotal()).isEqualByComparingTo("60.00");
+    }
+
+    @Test
+    void clienteComPlanoUsaFluxoDePlanoAutomaticamente() {
+        var planoCliente = contratarPlano();
+
+        var salvo = service.agendar(request(LocalTime.of(10, 0)));
+
+        assertThat(salvo.getPlanoMensalCliente().getId()).isEqualTo(planoCliente.getId());
+        assertThat(salvo.getPrecoTotal()).isEqualByComparingTo("0.00");
+        assertThat(salvo.getHoraFinalizacao()).isEqualTo(LocalTime.of(10, 45));
+    }
+
+    @Test
+    void clienteComPlanoPodeEscolherQualquerBarbeiroNoAgendamento() {
+        var planoCliente = contratarPlano();
+        var outroBarbeiro = new Barbeiro();
+        outroBarbeiro.setNome("Outro Barbeiro");
+        outroBarbeiro.setTelefone("11999992222");
+        outroBarbeiro.setUsuario(novoUsuario("outro-barbeiro", ROLE.BARBEIRO));
+        outroBarbeiro = barbeiros.save(outroBarbeiro);
+
+        jornada.setBarbeiro(outroBarbeiro);
+        jornadas.save(jornada);
+
+        var request = new CriarAgendamentoRequest(usuario.getId(), cliente.getId(),
+                outroBarbeiro.getId(), ids(), dia, LocalTime.of(10, 0));
+
+        var salvo = service.agendarComPlano(request);
+
+        assertThat(salvo.getPlanoMensalCliente().getId()).isEqualTo(planoCliente.getId());
+        assertThat(salvo.getBarbeiro().getId()).isEqualTo(outroBarbeiro.getId());
+    }
+
+    @Test
+    void planoPermiteApenasUmAgendamentoNaoCanceladoPorSemana() {
+        contratarPlano();
+        var primeiro = service.agendar(request(LocalTime.of(10, 0)));
+
+        assertThatThrownBy(() -> service.agendar(request(LocalTime.of(11, 0))))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("apenas um agendamento por semana");
+
+        primeiro.setStatus(StatusAgendamento.CANCELADO);
+        agendamentos.save(primeiro);
+
+        var novo = service.agendar(request(LocalTime.of(10, 0)));
+        assertThat(novo.getId()).isNotNull();
+    }
+
+    @Test
+    void planoNaoAgendaEmDiaNaoPermitidoParaPlano() {
+        contratarPlano();
+        var horario = horarios.findByDiaSemana(dia.getDayOfWeek());
+        horario.setPermiteAgendamentoPlano(false);
+        horarios.save(horario);
+
+        assertThatThrownBy(() -> service.agendar(request(LocalTime.of(10, 0))))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("nao permite agendamento neste dia");
     }
 
     @Test
@@ -378,5 +443,24 @@ class AgendamentoIntegrationTest {
         s.setDuracaoMinutos(minutos);
         s.setPreco(new BigDecimal(preco));
         return servicos.save(s);
+    }
+
+    private PlanoMensalCliente contratarPlano() {
+        var plano = new PlanosMensal();
+        plano.setNomePlano("Plano Corte e Barba");
+        plano.setValorMensal(new BigDecimal("150.00"));
+        plano.setAtivo(true);
+        plano.setServicosIncluidos(new HashSet<>(List.of(corte, barba)));
+        plano.setDiasMaximoAntecedencia(10);
+        plano = planosMensais.save(plano);
+
+        var planoCliente = new PlanoMensalCliente();
+        planoCliente.setCliente(cliente);
+        planoCliente.setUsuario(usuario);
+        planoCliente.setPlanoMensal(plano);
+        planoCliente.setValorMensal(plano.getValorMensal());
+        planoCliente.setDiasMaximoAntecedencia(plano.getDiasMaximoAntecedencia());
+        planoCliente.setAtivo(true);
+        return planosClientes.save(planoCliente);
     }
 }

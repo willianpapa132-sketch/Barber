@@ -23,10 +23,6 @@ public class CriarPlanoMensal {
     @Digits(integer = 8, fraction = 2, message = "Preço deve ter no máximo 2 casas decimais")
     private BigDecimal valorMensal ;
 
-    private int agendamentoMes ;
-
-    private int agendamentosSemana ;
-
     private boolean ativo = true;
 
     private Boolean prazoIndeterminado;

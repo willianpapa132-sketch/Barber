@@ -71,8 +71,8 @@ public class DisponibilidadeAgendamentosService {
         var config = configuracoes.findById(1L)
                 .orElseThrow(() -> new NotFoundException("Configuração da barbearia não encontrada"));
         Integer dias = config.getDiasMaximoAntecedentia();
-        if (Boolean.TRUE.equals(planos.existsByUsuario(usuario)))
-            dias = planos.findByUsuario(usuario).getDiasMaximoAntecedencia();
+        if (Boolean.TRUE.equals(planos.existsByUsuarioAndAtivoTrue(usuario)))
+            dias = planos.findByUsuarioAndAtivoTrue(usuario).getDiasMaximoAntecedencia();
         if (dias == null || dias < 0) throw new BusinessException("Antecedência não configurada corretamente");
         return Math.min(dias, 30);
     }

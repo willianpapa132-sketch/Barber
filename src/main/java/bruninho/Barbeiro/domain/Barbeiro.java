@@ -35,6 +35,8 @@ public class Barbeiro {
     @OneToOne(optional = false)
     private Usuario usuario;
 
+    private String imgurl;
+
 
 
 

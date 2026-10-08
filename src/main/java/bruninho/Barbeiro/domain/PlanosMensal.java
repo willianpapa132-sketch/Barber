@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -27,17 +28,8 @@ public class PlanosMensal {
     @Column(name = "valor_mensal", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorMensal;
 
-    @Column(name = "agendamentos_mes")
-    private int agendamentoMes ;
-
-    @Column(name = "agendamentos_semana")
-    private int agendamentoSemana ;
-
     @Column(name = "ativo", nullable = false)
     private Boolean ativo ;
-
-    @Column(name = "prazo_indeterminado")
-    private Boolean agendamentosIndeterminado;
 
     @ManyToMany
     @JoinTable(
@@ -45,7 +37,7 @@ public class PlanosMensal {
             joinColumns = @JoinColumn(name = "plano_mensal_id"),
             inverseJoinColumns = @JoinColumn(name = "servico_id")
     )
-    private Set<Servico> servicosIncluidos;
+    private Set<Servico> servicosIncluidos = new HashSet<>();
 
     @Positive
     private Integer diasMaximoAntecedencia;

@@ -1,0 +1,98 @@
+<main class="client-shell">
+  <section class="client-home">
+    <header class="client-header">
+      <div>
+        <p class="client-brand">BARBERSHOP</p>
+        <h1>Ola, {{ clientName }} <span aria-hidden="true">👋</span></h1>
+        <p class="client-subtitle">Bem-vindo de volta.</p>
+      </div>
+      <img
+        class="client-avatar"
+        alt="Foto do cliente"
+        src="https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=180&q=80"
+      />
+    </header>
+
+    <section class="barber-banner" aria-label="Banner da barbearia">
+      <div>
+        <strong>Mais que um<br />corte, e cuidado<br />com voce.</strong>
+        <span></span>
+      </div>
+      <div class="banner-mark">
+        <span>✂</span>
+        <p>BARBERSHOP</p>
+        <small>EST 2020</small>
+      </div>
+    </section>
+
+    <a class="plan-shortcut" routerLink="/plano">
+      <span class="plan-icon" aria-hidden="true">♛</span>
+      <span class="plan-text">
+        <strong>Meu Plano Mensal</strong>
+        <b>Plano Essencial</b>
+        <small>Inclui 4 cortes por mes</small>
+      </span>
+      <span class="chevron" aria-hidden="true">›</span>
+    </a>
+
+    <section class="next-appointment">
+      <div class="section-head">
+        <div>
+          <span class="line-icon calendar-icon" aria-hidden="true"></span>
+          <h2>Proximo Agendamento</h2>
+        </div>
+        <a routerLink="/agendamentos">Ver todos <span aria-hidden="true">›</span></a>
+      </div>
+
+      <a class="next-card" routerLink="/agendamentos" [attr.aria-label]="'Agendamento ' + nextAppointment.id">
+        <div class="date-tile">
+          <span>{{ nextAppointment.dayName }}</span>
+          <strong>{{ nextAppointment.dayNumber }}</strong>
+          <small>{{ nextAppointment.month }}</small>
+        </div>
+        <div class="appointment-divider"></div>
+        <div class="appointment-info">
+          <p class="time-row"><span aria-hidden="true">◷</span><strong>{{ nextAppointment.startsAt }}</strong></p>
+          <p class="service-row"><span aria-hidden="true">✂</span><strong>{{ nextAppointment.services[0] }}</strong></p>
+          <p class="service-detail">{{ nextAppointment.details }}</p>
+          <div class="barber-row">
+            <img [alt]="'Foto de ' + nextAppointment.barberName" [src]="nextAppointment.barberAvatarUrl" />
+            <span><strong>Com {{ nextAppointment.barberName }}</strong><small>Barbeiro</small></span>
+          </div>
+        </div>
+        <span class="next-arrow" aria-hidden="true">›</span>
+      </a>
+    </section>
+
+    <section class="history-card">
+      <div class="section-head">
+        <div>
+          <span class="line-icon history-icon" aria-hidden="true">↶</span>
+          <h2>Ultimos Agendamentos</h2>
+        </div>
+        <a routerLink="/agendamentos">Ver todos <span aria-hidden="true">›</span></a>
+      </div>
+
+      @for (appointment of latestAppointments; track appointment.id) {
+        <a class="history-item" routerLink="/agendamentos">
+          <img [alt]="appointment.services[0]" [src]="appointment.imageUrl" />
+          <span class="history-main">
+            <strong>{{ appointment.services[0] }}</strong>
+            <small>Com {{ appointment.barberName }}</small>
+            <em>{{ appointment.date }}</em>
+          </span>
+          <span class="status-pill"><b>✓</b> {{ appointment.status }}</span>
+          <span class="chevron" aria-hidden="true">›</span>
+        </a>
+      }
+    </section>
+
+    <a class="new-appointment" routerLink="/agendamentos/novo">
+      <span aria-hidden="true">⊞</span>
+      <strong>Novo Agendamento</strong>
+      <i aria-hidden="true">›</i>
+    </a>
+  </section>
+</main>
+
+<app-bottom-nav current="inicio" />

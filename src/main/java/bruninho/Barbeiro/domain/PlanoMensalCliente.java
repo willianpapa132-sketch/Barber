@@ -37,21 +37,8 @@ public class PlanoMensalCliente {
     @JoinColumn(name = "usuario_id", unique = true)
     private Usuario usuario;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "barbeiro_id")
-    private Barbeiro barbeiro;
-
     @Column(name = "valor_mensal", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorMensal;
-
-    @Column(name = "agendamentos_semana", nullable = false)
-    private int agendamentosSemana;
-
-    @Column(name = "agendamento_mes", nullable = false)
-    private int agendamentosMes;
-
-    @Column(name = "agendamentos_Indeterminados")
-    private Boolean agendamentosIndeterminado;
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo ;
@@ -61,6 +48,7 @@ public class PlanoMensalCliente {
     private LocalDateTime atualizadoEm = LocalDateTime.now();
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "plano_mensal_id")
     private PlanosMensal planoMensal;
 
     @Positive

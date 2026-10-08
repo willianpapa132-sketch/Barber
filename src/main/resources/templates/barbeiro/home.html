@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home do barbeiro</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <div class="topnav">
+        <strong>Barbearia</strong>
+        <form th:action="@{/logout}" method="post" class="inline">
+            <button type="submit" class="secondary">Sair</button>
+        </form>
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="panel">
+        <p class="muted">Logado como <span th:text="${login}">barbeiro</span></p>
+        <h1>Home do barbeiro</h1>
+        <div class="actions">
+            <a class="btn" th:href="@{/barbeiro/agenda}">Ver minha agenda</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

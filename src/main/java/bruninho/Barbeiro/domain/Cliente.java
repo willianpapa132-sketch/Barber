@@ -30,6 +30,8 @@ public class Cliente {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String imgUrl;
+
     @Column(nullable = false)
     @NotBlank
     private String nome;

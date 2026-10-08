@@ -84,6 +84,6 @@ public class ValidacaoAgendamentoService {
     }
 
     public void validarId(Long id) {
-        if (id == null || id <= 0) throw new BusinessException("Os IDs devem ser positivos");
+        if (id == null || id <= 0) throw new BusinessException("Os IDs devem ser informada");
     }
 }

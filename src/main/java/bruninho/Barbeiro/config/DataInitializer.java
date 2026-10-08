@@ -72,6 +72,7 @@ public class DataInitializer {
                 hours.setHoraAbertura(LocalTime.of(9, 0));
                 hours.setHoraFechamento(currentDay == 6 ? LocalTime.of(14, 0) : LocalTime.of(18, 0));
                 hours.setFechado(currentDay == 7);
+                hours.setPermiteAgendamentoPlano(currentDay <= 4);
                 hours.setIntervaloMinimoEntreAgendamentos(15);
                 horariosFuncionamento.save(hours);
             }

@@ -16,10 +16,6 @@ public class AtualizarPlanoMensal {
 
     private String nomePlano;
 
-    private Integer agendamentosMensal;
-
-    private Integer agendamentosSemana;
-
     private BigDecimal valorMensal;
 
     private Integer diasMaximoAntecedencia;

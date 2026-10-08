@@ -10,8 +10,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     @GetMapping("/")
-    public String raiz() {
-        return "redirect:/home";
+    public String home(Authentication authentication) {
+        boolean barbeiro = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_BARBEIRO"));
+
+        if (barbeiro) {
+            return "redirect:/barbeiro/home";
+        }
+        return "forward:/client/index.html";
+    }
+
+    @GetMapping("/home")
+    public String homeCompatibilidade() {
+        return "redirect:/";
     }
 
     @GetMapping("/favicon.ico")
@@ -22,20 +33,9 @@ public class HomeController {
     @GetMapping("/login")
     public String login(Authentication authentication) {
         if (usuarioAutenticado(authentication)) {
-            return "redirect:/home";
+            return "redirect:/";
         }
         return "login";
-    }
-
-    @GetMapping("/home")
-    public String home(Authentication authentication) {
-        boolean barbeiro = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_BARBEIRO"));
-
-        if (barbeiro) {
-            return "redirect:/barbeiro/home";
-        }
-        return "home";
     }
 
     private boolean usuarioAutenticado(Authentication authentication) {

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agenda de hoje</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <div class="topnav">
+        <strong>Barbearia</strong>
+        <nav>
+            <a th:href="@{/barbeiro/home}">Home</a>
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit" class="secondary">Sair</button>
+            </form>
+        </nav>
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="agenda-head">
+        <h1 th:text="${data.equals(hoje) ? 'Agenda de hoje' : 'Agenda do dia'}">Agenda de hoje</h1>
+        <p class="muted" th:text="${#temporals.format(data, 'dd/MM/yyyy')}">07/10/2026</p>
+    </section>
+
+    <section class="panel agenda-filter">
+        <form th:action="@{/barbeiro/agenda}" method="get" class="date-form">
+            <label for="data">Selecionar por data</label>
+            <div class="date-form-row">
+                <input id="data" name="data" type="date"
+                       th:value="${data}"
+                       th:min="${hoje}"
+                       th:max="${dataMaxima}">
+                <button type="submit">Ver agenda</button>
+            </div>
+        </form>
+
+        <p th:if="${dataAjustada}" class="msg err">
+            A data selecionada precisa estar entre hoje e a data maxima permitida.
+        </p>
+
+        <div class="date-list" aria-label="Datas permitidas">
+            <a th:each="dia : ${datasPermitidas}"
+               th:href="@{/barbeiro/agenda(data=${dia})}"
+               th:classappend="${dia.equals(data)} ? 'active' : ''"
+               th:text="${#temporals.format(dia, 'dd/MM')}">07/10</a>
+        </div>
+    </section>
+
+    <section th:if="${#lists.isEmpty(agendamentos)}" class="panel">
+        <p class="muted">Nenhum agendamento para esta data.</p>
+    </section>
+
+    <section th:if="${!#lists.isEmpty(agendamentos)}" class="agenda-list">
+        <article class="card appointment-card" th:each="agendamento : ${agendamentos}">
+            <div>
+                <h2 th:text="${agendamento.nomeCliente()}">Nome do cliente</h2>
+                <p class="muted" th:text="${agendamento.telefoneCliente()}">Telefone</p>
+            </div>
+
+            <dl class="appointment-details">
+                <div>
+                    <dt>Inicio</dt>
+                    <dd th:text="${#temporals.format(agendamento.horaInicio(), 'HH:mm')}">09:00</dd>
+                </div>
+                <div>
+                    <dt>Fim</dt>
+                    <dd th:text="${#temporals.format(agendamento.horaFinalizacao(), 'HH:mm')}">09:45</dd>
+                </div>
+                <div>
+                    <dt>Total</dt>
+                    <dd class="price" th:text="${'R$ ' + #numbers.formatDecimal(agendamento.precoTotal(), 1, 'POINT', 2, 'COMMA')}">R$ 45,00</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+</main>
+</body>
+</html>

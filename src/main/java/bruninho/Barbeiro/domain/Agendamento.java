@@ -41,8 +41,8 @@ public class Agendamento {
     private Set<Servico> servico = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn(name = "plano_mensal_id")
-    private PlanoMensalCliente planoMensal;
+    @JoinColumn(name = "plano_mensal_cliente_id")
+    private PlanoMensalCliente planoMensalCliente;
 
     @Column(name = "nome_cliente")
     private String nomeCliente;

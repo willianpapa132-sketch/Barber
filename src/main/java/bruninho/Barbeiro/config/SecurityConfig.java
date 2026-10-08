@@ -58,7 +58,7 @@ public class SecurityConfig {
         return (request, response, authentication) -> {
             boolean barbeiro = authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + ROLE.BARBEIRO.name()));
-            String redirectUrl = barbeiro ? "/barbeiro/home" : "/home";
+            String redirectUrl = barbeiro ? "/barbeiro/home" : "/";
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/json");
             response.getWriter().write("{\"redirectUrl\":\"" + redirectUrl + "\"}");

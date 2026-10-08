@@ -37,7 +37,8 @@ public class HorarioFuncionamento {
     @Column(name = "fechado")
     private Boolean fechado;
 
-
+    @Column(name = "permite_agendamento_plano")
+    private Boolean permiteAgendamentoPlano = true;
 
     @Positive
     private Integer intervaloMinimoEntreAgendamentos;
