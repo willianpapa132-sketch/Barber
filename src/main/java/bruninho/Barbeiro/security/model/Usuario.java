@@ -2,6 +2,8 @@ package bruninho.Barbeiro.security.model;
 
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -9,11 +11,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.management.relation.Role;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,21 +30,26 @@ public class Usuario implements UserDetails {
     private Long id;
     private String login;
     private String senha;
+    @Enumerated(EnumType.STRING)
     private ROLE role;
     private Boolean ativo ;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        if (role == null) {
+            return List.of();
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
-    public @Nullable String getPassword() {
-        return "";
+    public String getPassword() {
+        return senha;
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return login;
     }
 
     @Override
@@ -63,6 +69,6 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return Boolean.TRUE.equals(ativo);
     }
 }

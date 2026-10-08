@@ -43,20 +43,24 @@ public class DataInitializer {
             criarUsuarioSeAusente(usuarios, props.getInitialAdmin().getLogin(),
                     props.getInitialAdmin().getPassword(), ROLE.ADMIN);
         }
-        if (props.isDemoData() && servicos.count() == 0) {
+        if (props.isDemoData()) {
             createDemoData(usuarios, servicos, barbeiros, jornadas);
         }
     }
 
     private void ensureConfig(ConfiguracaoBarbeariaRepository configuracoes) {
-        configuracoes.findById(1L).orElseGet(() -> {
-            ConfiguracaoBarbearia config = new ConfiguracaoBarbearia();
-            config.setNome("Barbearia");
-            config.setTelefone("");
-            config.setEndereco("");
-            config.setDiasMaximoAntecedentia(60);
-            return configuracoes.save(config);
+        ConfiguracaoBarbearia config = configuracoes.findById(1L).orElseGet(() -> {
+            ConfiguracaoBarbearia novaConfig = new ConfiguracaoBarbearia();
+            novaConfig.setNome("Barbearia");
+            novaConfig.setTelefone("");
+            novaConfig.setEndereco("");
+            novaConfig.setDiasMaximoAntecedentia(30);
+            return configuracoes.save(novaConfig);
         });
+        if (config.getDiasMaximoAntecedentia() == null || config.getDiasMaximoAntecedentia() > 30) {
+            config.setDiasMaximoAntecedentia(30);
+            configuracoes.save(config);
+        }
     }
 
     private void ensureHorarioFuncionamento(HorarioFuncionamentoRepository horariosFuncionamento) {
@@ -77,31 +81,39 @@ public class DataInitializer {
     private void createDemoData(UsuarioRepository usuarios,
                                 ServicoRepository servicos, BarbeiroRepository barbeiros,
                                 JornadaBarbeiroRepository jornadas) {
-        Servico corte = new Servico();
-        corte.setNome("Corte masculino");
-        corte.setPreco(new BigDecimal("45.00"));
-        corte.setDuracaoMinutos(45);
-        servicos.save(corte);
+        if (servicos.count() == 0) {
+            Servico corte = new Servico();
+            corte.setNome("Corte masculino");
+            corte.setPreco(new BigDecimal("45.00"));
+            corte.setDuracaoMinutos(45);
+            servicos.save(corte);
+        }
 
         Usuario usuario = criarUsuarioSeAusente(usuarios, "barbeiro", "barbeiro123", ROLE.BARBEIRO);
 
-        Barbeiro barbeiro = new Barbeiro();
-        barbeiro.setNome("Barbeiro Demo");
-        barbeiro.setTelefone("(11) 99999-0000");
-        barbeiro.setUsuario(usuario);
-        barbeiros.save(barbeiro);
+        Barbeiro barbeiro = barbeiros.findByUsuario_Login(usuario.getLogin()).orElseGet(() -> {
+            Barbeiro novoBarbeiro = new Barbeiro();
+            novoBarbeiro.setNome("Barbeiro Demo");
+            novoBarbeiro.setTelefone("(11) 99999-0000");
+            novoBarbeiro.setUsuario(usuario);
+            return barbeiros.save(novoBarbeiro);
+        });
 
         for (int day = 1; day <= 6; day++) {
-            JornadaBarbeiro jornada = new JornadaBarbeiro();
-            jornada.setBarbeiro(barbeiro);
-            jornada.setDiaSemana(DayOfWeek.of(day));
-            jornada.setAtivo(true);
-            jornada.setFolga(false);
-            jornada.setHoraInicio(LocalTime.of(9, 0));
-            jornada.setHoraFim(day == 6 ? LocalTime.of(14, 0) : LocalTime.of(18, 0));
-            jornada.setIntervaloInicio(LocalTime.of(12, 0));
-            jornada.setIntervaloFim(LocalTime.of(13, 0));
-            jornadas.save(jornada);
+            DayOfWeek diaSemana = DayOfWeek.of(day);
+            int currentDay = day;
+            jornadas.findByDiaSemanaAndBarbeiro_id(diaSemana, barbeiro.getId()).orElseGet(() -> {
+                JornadaBarbeiro jornada = new JornadaBarbeiro();
+                jornada.setBarbeiro(barbeiro);
+                jornada.setDiaSemana(diaSemana);
+                jornada.setAtivo(true);
+                jornada.setFolga(false);
+                jornada.setHoraInicio(LocalTime.of(9, 0));
+                jornada.setHoraFim(currentDay == 6 ? LocalTime.of(14, 0) : LocalTime.of(18, 0));
+                jornada.setIntervaloInicio(LocalTime.of(12, 0));
+                jornada.setIntervaloFim(LocalTime.of(13, 0));
+                return jornadas.save(jornada);
+            });
         }
     }
 

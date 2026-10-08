@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ public class ConfiguracaoBarbearia {
     private String telefone;
     private String endereco;
     @PositiveOrZero
+    @Max(30)
     private Integer diasMaximoAntecedentia;
 
 

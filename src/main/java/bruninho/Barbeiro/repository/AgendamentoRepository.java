@@ -13,4 +13,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
 
 
     List<Agendamento> findAllByBarbeiro_idAndData(Long barbeiro_id , LocalDate data);
+
+    List<Agendamento> findAllByBarbeiro_Usuario_LoginAndDataOrderByHoraInicioAsc(String login, LocalDate data);
 }

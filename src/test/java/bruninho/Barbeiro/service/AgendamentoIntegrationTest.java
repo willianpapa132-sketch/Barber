@@ -19,6 +19,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -281,6 +282,75 @@ class AgendamentoIntegrationTest {
                         .param("barbeiroId", barbeiro.getId().toString()).param("servicosIds", corte.getId().toString())
                         .param("data", dia.toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0]").value("09:00:00"));
+    }
+
+    @Test
+    void barbeiroVisualizaAgendaDeHoje() throws Exception {
+        var agendamento = new Agendamento();
+        agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
+        agendamento.setData(LocalDate.now());
+        agendamento.setHoraInicio(LocalTime.of(10, 0));
+        agendamento.setHoraFinalizacao(LocalTime.of(10, 45));
+        agendamento.setNomeCliente(cliente.getNome());
+        agendamento.setTelefoneCliente(cliente.getTelefone());
+        agendamento.setPrecoTotal(new BigDecimal("60.00"));
+        agendamento.setStatus(StatusAgendamento.AGENDADO);
+        agendamentos.save(agendamento);
+
+        mvc.perform(get("/barbeiro/agenda").with(user("barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Agenda de hoje")))
+                .andExpect(content().string(containsString("Cliente Teste")))
+                .andExpect(content().string(containsString("11999990000")))
+                .andExpect(content().string(containsString("10:00")))
+                .andExpect(content().string(containsString("10:45")))
+                .andExpect(content().string(containsString("R$ 60,00")));
+    }
+
+    @Test
+    void barbeiroSelecionaAgendaPorDataDentroDoLimiteConfigurado() throws Exception {
+        LocalDate dataSelecionada = LocalDate.now().plusDays(2);
+        var agendamento = new Agendamento();
+        agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
+        agendamento.setData(dataSelecionada);
+        agendamento.setHoraInicio(LocalTime.of(14, 0));
+        agendamento.setHoraFinalizacao(LocalTime.of(14, 45));
+        agendamento.setNomeCliente("Cliente Futuro");
+        agendamento.setTelefoneCliente("11888887777");
+        agendamento.setPrecoTotal(new BigDecimal("75.00"));
+        agendamento.setStatus(StatusAgendamento.AGENDADO);
+        agendamentos.save(agendamento);
+
+        mvc.perform(get("/barbeiro/agenda")
+                        .param("data", dataSelecionada.toString())
+                        .with(user("barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Agenda do dia")))
+                .andExpect(content().string(containsString("Cliente Futuro")))
+                .andExpect(content().string(containsString("11888887777")))
+                .andExpect(content().string(containsString("14:00")))
+                .andExpect(content().string(containsString("14:45")))
+                .andExpect(content().string(containsString("R$ 75,00")));
+    }
+
+    @Test
+    void agendaDoBarbeiroLimitaSelecaoAoMaximoDeTrintaDias() throws Exception {
+        var config = configuracoes.findById(1L).orElseThrow();
+        config.setDiasMaximoAntecedentia(30);
+        configuracoes.save(config);
+
+        LocalDate foraDoLimite = LocalDate.now().plusDays(35);
+        LocalDate dataMaxima = LocalDate.now().plusDays(29);
+
+        mvc.perform(get("/barbeiro/agenda")
+                        .param("data", foraDoLimite.toString())
+                        .with(user("barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data maxima permitida")))
+                .andExpect(content().string(containsString("value=\"" + dataMaxima + "\"")))
+                .andExpect(content().string(containsString("max=\"" + dataMaxima + "\"")));
     }
 
     private List<Long> ids() { return List.of(corte.getId(), barba.getId()); }

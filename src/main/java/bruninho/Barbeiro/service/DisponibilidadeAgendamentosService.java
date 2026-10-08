@@ -53,7 +53,7 @@ public class DisponibilidadeAgendamentosService {
         int antecedencia = antecedencia(cliente.getUsuario());
         // Preserva a regra existente: zero dias desabilita a agenda.
         if (antecedencia == 0) return dias;
-        LocalDate limite = hoje.plusDays(antecedencia);
+        LocalDate limite = hoje.plusDays(antecedencia - 1L);
         for (LocalDate dia = hoje; !dia.isAfter(limite); dia = dia.plusDays(1)) {
             if (!calcularHorarios(barbeiroId, dia, servicos).isEmpty()) dias.add(dia);
         }
@@ -63,7 +63,7 @@ public class DisponibilidadeAgendamentosService {
     public List<LocalTime> horariosDisponiveis(Usuario usuario, Long barbeiroId, LocalDate dia, Set<Servico> servicos) {
         LocalDate hoje = LocalDate.now();
         int antecedencia = antecedencia(usuario);
-        if (antecedencia == 0 || dia.isBefore(hoje) || dia.isAfter(hoje.plusDays(antecedencia))) return List.of();
+        if (antecedencia == 0 || dia.isBefore(hoje) || dia.isAfter(hoje.plusDays(antecedencia - 1L))) return List.of();
         return calcularHorarios(barbeiroId, dia, servicos);
     }
 
@@ -74,7 +74,7 @@ public class DisponibilidadeAgendamentosService {
         if (Boolean.TRUE.equals(planos.existsByUsuario(usuario)))
             dias = planos.findByUsuario(usuario).getDiasMaximoAntecedencia();
         if (dias == null || dias < 0) throw new BusinessException("Antecedência não configurada corretamente");
-        return dias;
+        return Math.min(dias, 30);
     }
 
     private List<LocalTime> calcularHorarios(Long barbeiroId, LocalDate dia, Set<Servico> servicos) {
