@@ -1,6 +1,5 @@
-package bruninho.Barbeiro.Controller.cliente;
+package bruninho.Barbeiro.Controller.cliente.home.agendamentos;
 
-import bruninho.Barbeiro.Controller.cliente.request.CriarAgendamentoRequest;
 import bruninho.Barbeiro.service.*;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;

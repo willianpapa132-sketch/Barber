@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.cliente.request;
+package bruninho.Barbeiro.Controller.cliente.home.agendamentos;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;

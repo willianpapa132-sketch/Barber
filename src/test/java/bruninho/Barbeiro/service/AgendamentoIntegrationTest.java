@@ -1,6 +1,6 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.cliente.request.CriarAgendamentoRequest;
+import bruninho.Barbeiro.Controller.cliente.home.agendamentos.CriarAgendamentoRequest;
 import bruninho.Barbeiro.domain.*;
 import bruninho.Barbeiro.exception.BusinessException;
 import bruninho.Barbeiro.exception.NotFoundException;
@@ -337,6 +337,59 @@ class AgendamentoIntegrationTest {
     }
 
     @Test
+    void homeDoClienteMostraSomenteProximoAgendamentoFuturoEAgendado() throws Exception {
+        novoAgendamento(LocalDate.now().minusDays(1), LocalTime.of(9, 0), StatusAgendamento.AGENDADO);
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(9, 0), StatusAgendamento.CANCELADO);
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(10, 0), StatusAgendamento.CONCLUIDO);
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(11, 0), StatusAgendamento.NAO_COMPARECEU);
+        var agendado = novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(12, 0), StatusAgendamento.AGENDADO);
+
+        mvc.perform(get("/api/cliente/home").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cliente.nome").value("Cliente Teste"))
+                .andExpect(jsonPath("$.proximoAtendimento.id").value(agendado.getId()))
+                .andExpect(jsonPath("$.proximoAtendimento.dayName").isString())
+                .andExpect(jsonPath("$.proximoAtendimento.dayNumber").value(String.valueOf(agendado.getData().getDayOfMonth())))
+                .andExpect(jsonPath("$.proximoAtendimento.startsAt").value("12:00"))
+                .andExpect(jsonPath("$.proximoAtendimento.endsAt").value("12:30"))
+                .andExpect(jsonPath("$.proximoAtendimento.barberName").value("Barbeiro"))
+                .andExpect(jsonPath("$.proximoAtendimento.services[0]").value("Corte"))
+                .andExpect(jsonPath("$.proximoAtendimento.precoTotal").value(40.0))
+                .andExpect(jsonPath("$.proximoAtendimento.status").doesNotExist())
+                .andExpect(jsonPath("$.proximoAtendimento.details").doesNotExist())
+                .andExpect(jsonPath("$.proximoAtendimento.data").doesNotExist())
+                .andExpect(jsonPath("$.latestAppointments").doesNotExist());
+    }
+
+    @Test
+    void detalheDoAgendamentoDoClienteRetornaPayloadCompleto() throws Exception {
+        var agendado = novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(12, 0), StatusAgendamento.AGENDADO);
+
+        mvc.perform(get("/api/cliente/home/agendamentos/{id}", agendado.getId()).with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(agendado.getId()))
+                .andExpect(jsonPath("$.data").value(agendado.getData().toString()))
+                .andExpect(jsonPath("$.startsAt").value("12:00"))
+                .andExpect(jsonPath("$.endsAt").value("12:30"))
+                .andExpect(jsonPath("$.services[0]").value("Corte"))
+                .andExpect(jsonPath("$.details").value("30 minutos"))
+                .andExpect(jsonPath("$.status").value("AGENDADO"))
+                .andExpect(jsonPath("$.precoTotal").value(40.0));
+    }
+
+    @Test
+    void homeDoClienteRetornaProximoAtendimentoNuloQuandoNaoExisteAgendadoFuturo() throws Exception {
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(9, 0), StatusAgendamento.CANCELADO);
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(10, 0), StatusAgendamento.CONCLUIDO);
+        novoAgendamento(LocalDate.now().plusDays(1), LocalTime.of(11, 0), StatusAgendamento.NAO_COMPARECEU);
+
+        mvc.perform(get("/api/cliente/home").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cliente.nome").value("Cliente Teste"))
+                .andExpect(jsonPath("$.proximoAtendimento").doesNotExist());
+    }
+
+    @Test
     void endpointsDisponibilidadeRetornamDatasEHoras() throws Exception {
         mvc.perform(get("/agendamentos/disponibilidade/dias").with(user("teste"))
                         .param("usuarioId", usuario.getId().toString()).param("clienteId", cliente.getId().toString())
@@ -443,6 +496,24 @@ class AgendamentoIntegrationTest {
         s.setDuracaoMinutos(minutos);
         s.setPreco(new BigDecimal(preco));
         return servicos.save(s);
+    }
+
+    private Agendamento novoAgendamento(LocalDate data, LocalTime horaInicio, StatusAgendamento status) {
+        var agendamento = new Agendamento();
+        agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
+        agendamento.setServico(new HashSet<>(List.of(corte)));
+        agendamento.setData(data);
+        agendamento.setHoraInicio(horaInicio);
+        agendamento.setHoraFinalizacao(horaInicio.plusMinutes(corte.getDuracaoMinutos()));
+        agendamento.setDuracaoServicoMinutos(corte.getDuracaoMinutos());
+        agendamento.setPrecoTotal(corte.getPreco());
+        agendamento.setNomeCliente(cliente.getNome());
+        agendamento.setTelefoneCliente(cliente.getTelefone());
+        agendamento.setStatus(status);
+        agendamento.setPagamentoRecebido(false);
+        agendamento.setCriadoEm(LocalDateTime.now());
+        return agendamentos.save(agendamento);
     }
 
     private PlanoMensalCliente contratarPlano() {

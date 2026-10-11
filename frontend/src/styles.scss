@@ -374,6 +374,20 @@ a {
   line-height: 1.05;
 }
 
+.price-row {
+  margin: 5px 0 12px 41px !important;
+  color: var(--client-gold);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.next-card.empty {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 16px;
+  color: var(--client-muted);
+}
+
 .barber-row {
   display: flex;
   align-items: center;
@@ -579,6 +593,72 @@ a {
   color: var(--client-gold);
   font-size: 17px;
   font-weight: 700;
+}
+
+.appointment-detail-page {
+  gap: 14px;
+}
+
+.detail-hero {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--client-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.detail-hero img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.detail-hero span {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detail-hero small {
+  color: var(--client-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.detail-hero h1 {
+  font-size: 30px;
+}
+
+.detail-hero strong {
+  color: var(--client-gold);
+  font-size: 18px;
+}
+
+.detail-section {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--client-line);
+}
+
+.detail-section h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.detail-section p {
+  margin: 0;
+  color: var(--client-muted);
+  font-size: 18px;
+}
+
+.detail-total p {
+  color: var(--client-gold);
+  font-weight: 800;
 }
 
 @media (max-width: 380px) {

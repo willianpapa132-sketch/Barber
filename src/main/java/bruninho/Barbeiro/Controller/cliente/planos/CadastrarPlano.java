@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.cliente.request;
+package bruninho.Barbeiro.Controller.cliente.planos;
 
 
 import lombok.Getter;

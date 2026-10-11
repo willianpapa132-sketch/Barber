@@ -1,6 +1,6 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.cliente.request.CadastrarPlano;
+import bruninho.Barbeiro.Controller.cliente.planos.CadastrarPlano;
 import bruninho.Barbeiro.domain.PlanoMensalCliente;
 import bruninho.Barbeiro.repository.ClienteRepository;
 import bruninho.Barbeiro.repository.PlanoMensalClienteRepository;

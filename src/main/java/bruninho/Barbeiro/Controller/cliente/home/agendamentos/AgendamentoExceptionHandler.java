@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.cliente;
+package bruninho.Barbeiro.Controller.cliente.home.agendamentos;
 
 import bruninho.Barbeiro.exception.BusinessException;
 import bruninho.Barbeiro.exception.NotFoundException;

@@ -1,38 +1,60 @@
-export interface Appointment {
+export interface AppointmentSummary {
   id: number;
-  date: string;
   dayName: string;
   dayNumber: string;
-  month: string;
   startsAt: string;
   endsAt: string;
   barberName: string;
   barberAvatarUrl: string;
   services: string[];
+  precoTotal: number;
+}
+
+export interface AppointmentDetail extends AppointmentSummary {
+  data?: string;
+  date: string;
+  month?: string;
   details: string;
   status: string;
+  statusLabel?: string;
   imageUrl: string;
 }
 
-export const nextAppointment: Appointment = {
+export const nextAppointment: AppointmentSummary | null = {
   id: 1284,
-  date: '26 de abr. de 2025',
   dayName: 'SAB',
   dayNumber: '26',
-  month: 'ABR',
   startsAt: '10:00',
   endsAt: '10:45',
   barberName: 'Lucas',
   barberAvatarUrl:
     'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80',
   services: ['Corte de Cabelo'],
-  details: 'Degrade + acabamento',
-  status: 'Agendado',
-  imageUrl:
-    'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=160&q=80',
+  precoTotal: 45,
 };
 
-export const latestAppointments: Appointment[] = [
+export const appointmentDetails: AppointmentDetail[] = [
+  {
+    id: 1284,
+    date: '26 de abr. de 2025',
+    dayName: 'SAB',
+    dayNumber: '26',
+    month: 'ABR',
+    startsAt: '10:00',
+    endsAt: '10:45',
+    barberName: 'Lucas',
+    barberAvatarUrl:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80',
+    services: ['Corte de Cabelo'],
+    details: 'Degrade + acabamento',
+    status: 'Agendado',
+    precoTotal: 45,
+    imageUrl:
+      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=160&q=80',
+  },
+];
+
+export const latestAppointments: AppointmentDetail[] = [
   {
     id: 1175,
     date: '12 de abr. de 2025',
@@ -47,6 +69,7 @@ export const latestAppointments: Appointment[] = [
     services: ['Corte de Cabelo'],
     details: 'Degrade + acabamento',
     status: 'Concluido',
+    precoTotal: 45,
     imageUrl:
       'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=160&q=80',
   },
@@ -64,6 +87,7 @@ export const latestAppointments: Appointment[] = [
     services: ['Barba'],
     details: 'Modelagem',
     status: 'Concluido',
+    precoTotal: 35,
     imageUrl:
       'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=160&q=80',
   },

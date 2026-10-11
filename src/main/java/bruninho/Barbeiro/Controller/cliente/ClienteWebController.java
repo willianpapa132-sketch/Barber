@@ -6,6 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ClienteWebController {
 
+    @GetMapping({"/cliente", "/cliente/home"})
+    public String home() {
+        return "forward:/client/index.html";
+    }
+
     @GetMapping("/plano")
     public String plano() {
         return "forward:/client/index.html";
