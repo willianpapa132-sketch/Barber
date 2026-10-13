@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface ServicoRepository extends JpaRepository<Servico, Long> {
 
     Optional<Servico> findByNomeIgnoreCase(String nome);
+
+    java.util.List<Servico> findAllByAtivoTrueOrderByNomeAsc();
 }

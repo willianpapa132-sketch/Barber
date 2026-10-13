@@ -9,4 +9,6 @@ public interface BarbeiroRepository extends JpaRepository<Barbeiro, Long> {
     java.util.Optional<Barbeiro> findByIdParaAgendar(@org.springframework.data.repository.query.Param("id") Long id);
 
     java.util.Optional<Barbeiro> findByUsuario_Login(String login);
+
+    java.util.List<Barbeiro> findAllByAtivoTrueOrderByNomeAsc();
 }

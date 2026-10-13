@@ -152,6 +152,27 @@ class AgendamentoIntegrationTest {
     }
 
     @Test
+    void telaDeAgendamentoComPlanoListaApenasServicosIncluidosNoPlano() throws Exception {
+        novoServico("Pigmentacao", 40, "70.00");
+        contratarPlano();
+
+        var resposta = mvc.perform(get("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clienteId").value(cliente.getId()))
+                .andExpect(jsonPath("$.usuarioId").value(usuario.getId()))
+                .andExpect(jsonPath("$.possuiPlano").value(true))
+                .andExpect(jsonPath("$.barbeiros[0].id").value(barbeiro.getId()))
+                .andExpect(jsonPath("$.servicos.length()").value(2))
+                .andExpect(jsonPath("$.servicos[0].inclusoNoPlano").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(resposta).contains("Corte", "Barba");
+        assertThat(resposta).doesNotContain("Pigmentacao");
+    }
+
+    @Test
     void planoPermiteApenasUmAgendamentoNaoCanceladoPorSemana() {
         contratarPlano();
         var primeiro = service.agendar(request(LocalTime.of(10, 0)));
