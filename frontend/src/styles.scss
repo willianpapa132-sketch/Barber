@@ -661,6 +661,425 @@ a {
   font-weight: 800;
 }
 
+.plan-page-shell {
+  --plan-yellow: #ffdf38;
+  --plan-yellow-soft: #ffe66a;
+  --plan-card: rgba(19, 21, 22, 0.88);
+  --plan-line: rgba(255, 255, 255, 0.1);
+  --plan-muted: rgba(255, 255, 255, 0.72);
+  color: white;
+  background:
+    radial-gradient(circle at 78% 0, rgba(255, 223, 56, 0.18), transparent 18rem),
+    linear-gradient(180deg, #090a0a 0%, #0f1111 48%, #070808 100%);
+}
+
+.plan-topbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  min-height: 42px;
+  margin-bottom: 18px;
+}
+
+.plan-topbar h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.plan-back {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.plans-list-view,
+.current-plan-view {
+  display: grid;
+  gap: 18px;
+}
+
+.plans-list-view > h2,
+.current-plan-view > h2 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.plans-intro-card,
+.available-plan-card,
+.current-plan-card,
+.upgrade-card,
+.plan-benefits-card,
+.plan-state-card {
+  border: 1px solid var(--plan-line);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 223, 56, 0.08), rgba(255, 223, 56, 0) 42%),
+    var(--plan-card);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+.plans-intro-card {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 104px;
+  padding: 17px 18px;
+}
+
+.plans-intro-card strong {
+  font-size: 21px;
+  line-height: 1.1;
+}
+
+.plans-intro-card p {
+  margin: 6px 0 0;
+  color: var(--plan-muted);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.plan-crown {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--plan-yellow);
+  border-radius: 14px;
+  color: var(--plan-yellow);
+  font-size: 38px;
+  line-height: 1;
+}
+
+.plans-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.available-plan-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 12px 10px;
+}
+
+.available-plan-head,
+.current-plan-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.available-plan-head strong,
+.current-plan-head strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.available-plan-head p,
+.current-plan-head p {
+  display: grid;
+  justify-items: end;
+  margin: 0;
+  line-height: 1;
+}
+
+.available-plan-head b,
+.current-plan-head b {
+  font-size: 23px;
+}
+
+.available-plan-head small,
+.current-plan-head small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
+}
+
+.plan-description {
+  margin: -3px 0 0;
+  color: var(--plan-muted);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.available-plan-body,
+.current-plan-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(118px, 0.72fr);
+  gap: 13px;
+  align-items: center;
+}
+
+.available-plan-body .advance-info,
+.current-plan-details .advance-info {
+  grid-column: 3;
+}
+
+.available-plan-body::before,
+.current-plan-details::before {
+  content: "";
+  grid-column: 2;
+  width: 1px;
+  height: 88%;
+  background: rgba(255, 223, 56, 0.18);
+}
+
+.plan-service-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-service-list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+  line-height: 1.12;
+}
+
+.plan-service-list span {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--plan-yellow-soft);
+  color: #111;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.advance-info {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  color: var(--plan-muted);
+}
+
+.advance-info > span {
+  color: var(--plan-yellow);
+  font-size: 29px;
+  line-height: 1;
+}
+
+.advance-info p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.22;
+}
+
+.choose-plan-button {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffe979, #ffd739);
+  color: #060606;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.choose-plan-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.choose-plan-button span {
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.current-plan-card {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 2px solid var(--plan-yellow);
+}
+
+.current-plan-head {
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.current-plan-head .plan-crown {
+  width: 64px;
+  height: 64px;
+}
+
+.current-badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 223, 56, 0.19);
+  color: var(--plan-yellow) !important;
+  font-size: 12px !important;
+  font-weight: 800;
+}
+
+.current-badge span {
+  font-size: 14px;
+}
+
+.plan-card-divider {
+  height: 1px;
+  background: rgba(255, 223, 56, 0.18);
+}
+
+.upgrade-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 22px;
+  gap: 14px;
+  align-items: center;
+  min-height: 120px;
+  padding: 18px;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.upgrade-card > span:first-child {
+  color: var(--plan-yellow);
+  font-size: 39px;
+  line-height: 1;
+  text-align: center;
+}
+
+.upgrade-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.upgrade-card small {
+  display: block;
+  color: var(--plan-muted);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.upgrade-card i {
+  color: white;
+  font-size: 38px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.plan-benefits-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.plan-benefits-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.plan-benefits-card h3 span {
+  width: 38px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  font-size: 22px;
+}
+
+.plan-benefits-card ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-benefits-card li {
+  display: flex;
+  gap: 14px;
+  color: var(--plan-muted);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.plan-benefits-card li span {
+  color: white;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.plan-inline-back {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: var(--plan-yellow);
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.plan-state-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  color: var(--plan-muted);
+}
+
+.plan-state-card.error {
+  color: #ffe1e1;
+}
+
+.plan-state-card button {
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--plan-yellow);
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
 @media (max-width: 380px) {
   .client-shell {
     padding-right: 14px;
@@ -704,5 +1123,35 @@ a {
 
   .status-pill {
     display: none;
+  }
+
+  .available-plan-body,
+  .current-plan-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .available-plan-body::before,
+  .current-plan-details::before {
+    display: none;
+  }
+
+  .available-plan-body .advance-info,
+  .current-plan-details .advance-info {
+    grid-column: auto;
+  }
+
+  .current-plan-head {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .current-plan-head p {
+    grid-column: 1 / -1;
+    justify-items: start;
+  }
+
+  .current-plan-head .plan-crown {
+    width: 58px;
+    height: 58px;
   }
 }

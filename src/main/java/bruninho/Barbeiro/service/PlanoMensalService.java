@@ -41,6 +41,7 @@ public class PlanoMensalService {
         planosMensal.setServicosIncluidos(buscarServicos(criarPlanoMensal.getServicosId()));
         planosMensal.setCriadoEm(LocalDateTime.now());
         planosMensal.setDiasMaximoAntecedencia(criarPlanoMensal.getDiasMaximoAntecedencia());
+        planosMensal.setDescricao(criarPlanoMensal.getDescricao());
         planoMensalRepository.save(planosMensal);
     }
 
@@ -50,6 +51,7 @@ public class PlanoMensalService {
                 .orElseThrow(() -> new RuntimeException("plano mensal nao localizado"));
 
         planosMensalLocalizado.setNomePlano(atualizarPlanoMensal.getNomePlano());
+        planosMensalLocalizado.setDescricao(atualizarPlanoMensal.getDescricao());
         planosMensalLocalizado.setValorMensal(atualizarPlanoMensal.getValorMensal());
         planosMensalLocalizado.setDiasMaximoAntecedencia(atualizarPlanoMensal.getDiasMaximoAntecedencia());
         planosMensalLocalizado.getServicosIncluidos().clear();

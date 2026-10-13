@@ -25,12 +25,10 @@ public class CriarPlanoMensal {
 
     private boolean ativo = true;
 
-    private Boolean prazoIndeterminado;
-
-
     private Set<Long> servicosId;
 
-
+    @NotBlank
+    private String descricao;
 
     private Integer diasMaximoAntecedencia;
 

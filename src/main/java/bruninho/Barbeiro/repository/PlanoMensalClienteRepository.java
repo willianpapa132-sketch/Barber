@@ -11,14 +11,8 @@ public interface PlanoMensalClienteRepository extends JpaRepository<PlanoMensalC
 
     Boolean existsByPlanoMensal_id(Long planoMensalId);
     List <PlanoMensalCliente> findAllByPlanoMensal_Id(Long id);
-
-
-    Optional<PlanoMensalCliente> findByCliente_id(Long cliente_id);
     Boolean existsByCliente_id(Long cliente_id);
     Optional<PlanoMensalCliente> findByCliente_IdAndAtivoTrue(Long clienteId);
-
-    Boolean existsByUsuario (Usuario user);
-    PlanoMensalCliente findByUsuario(Usuario usuario);
     Boolean existsByUsuarioAndAtivoTrue(Usuario usuario);
     PlanoMensalCliente findByUsuarioAndAtivoTrue(Usuario usuario);
 

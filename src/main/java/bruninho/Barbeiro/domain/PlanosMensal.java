@@ -25,6 +25,10 @@ public class PlanosMensal {
     @Column(nullable = false)
     private String nomePlano;
 
+
+    @Column(nullable = false)
+    private String descricao;
+
     @Column(name = "valor_mensal", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorMensal;
 

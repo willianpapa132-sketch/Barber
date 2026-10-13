@@ -1,6 +1,7 @@
 package bruninho.Barbeiro.Controller.Admin.requests;
 
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +23,7 @@ public class AtualizarPlanoMensal {
 
     private Set<Long> servicosId;
 
-
+    @NotBlank
+    private String descricao;
 
 }

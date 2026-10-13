@@ -519,6 +519,7 @@ class AgendamentoIntegrationTest {
     private PlanoMensalCliente contratarPlano() {
         var plano = new PlanosMensal();
         plano.setNomePlano("Plano Corte e Barba");
+        plano.setDescricao("Corte e barba inclusos no plano mensal");
         plano.setValorMensal(new BigDecimal("150.00"));
         plano.setAtivo(true);
         plano.setServicosIncluidos(new HashSet<>(List.of(corte, barba)));
