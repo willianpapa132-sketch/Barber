@@ -39,14 +39,7 @@ public class ClienteService {
         return ClientePerfilResponse.de(clienteRepository.save(cliente));
     }
 
-    @Transactional
-    public void criarCliente(Cliente cliente) {
-        if (cliente.getUsuario().getRole() != ROLE.CLIENTE) {
-            throw new RuntimeException("Usuario deve ter perfil de cliente");
-        }
-        cliente.setCriadoEm(LocalDateTime.now());
-        clienteRepository.save(cliente);
-    }
+
 
 
     private String normalizarImagem(String imgUrl) {

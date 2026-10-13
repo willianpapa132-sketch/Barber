@@ -24,7 +24,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/login", "/favicon.ico").permitAll()
+                        .requestMatchers("/login", "/favicon.ico", "/api/auth/**").permitAll()
                         .requestMatchers("/barbeiro/**").hasRole(ROLE.BARBEIRO.name())
                         .anyRequest().authenticated()
                 )

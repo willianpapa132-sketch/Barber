@@ -3,59 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
+    <title>Entrar</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body>
-<header>
-    <div class="topnav">
-        <strong>Barbearia</strong>
-    </div>
-</header>
-
-<main class="wrap">
-    <section class="panel auth-panel">
-        <h1>Entrar</h1>
+<body class="auth-screen">
+<main class="auth-shell">
+    <section class="auth-card" id="login-view">
+        <div class="auth-brand" aria-hidden="true">&#9986;</div>
+        <h1>Bem-vindo de volta</h1>
+        <p>Faca seu login para continuar</p>
 
         <p th:if="${param.error}" class="msg err">Login ou senha invalidos.</p>
         <p th:if="${param.logout}" class="msg ok">Voce saiu do sistema.</p>
         <p id="login-error" class="msg err" hidden>Login ou senha invalidos.</p>
+        <p id="register-success" class="msg ok" hidden>Cadastro criado. Entre com seu e-mail e senha.</p>
 
-        <form id="login-form" th:action="@{/login}" method="post">
-            <label for="username">Usuario</label>
-            <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+        <form id="login-form" th:action="@{/login}" method="post" class="auth-form">
+            <label class="auth-field" for="username">
+                <span aria-hidden="true">&#9993;</span>
+                <input id="username" name="username" type="email" placeholder="E-mail" autocomplete="username" required autofocus>
+            </label>
 
-            <label for="password">Senha</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <label class="auth-field" for="password">
+                <span aria-hidden="true">&#128274;</span>
+                <input id="password" name="password" type="password" placeholder="Senha" autocomplete="current-password" required>
+                <button class="toggle-password" type="button" data-target="password" aria-label="Mostrar senha">&#128065;</button>
+            </label>
 
-            <div class="actions form-actions">
-                <button type="submit">Entrar</button>
-            </div>
+            <button class="auth-primary" type="submit">Entrar</button>
         </form>
+
+        <p class="auth-switch">Ainda nao tem uma conta? <button type="button" data-auth-view="register">Cadastre-se</button></p>
+    </section>
+
+    <section class="auth-card register-card" id="register-view" hidden>
+        <button class="auth-back" type="button" data-auth-view="login" aria-label="Voltar">&lsaquo;</button>
+        <h1>Criar conta</h1>
+        <p>Preencha seus dados para se cadastrar</p>
+
+        <p id="register-error" class="msg err" hidden>Erro ao criar cadastro.</p>
+
+        <form id="register-form" class="auth-form">
+            <label for="name">Nome completo</label>
+            <div class="auth-field">
+                <span aria-hidden="true">&#9817;</span>
+                <input id="name" name="nome" type="text" placeholder="Ex: Willian Silva" autocomplete="name" maxlength="120" required>
+            </div>
+
+            <label for="phone">Telefone</label>
+            <div class="auth-field">
+                <span aria-hidden="true">&#9742;</span>
+                <input id="phone" name="telefone" type="tel" placeholder="(41) 99187-8175" autocomplete="tel" maxlength="20" required>
+            </div>
+
+            <label for="email">E-mail</label>
+            <div class="auth-field">
+                <span aria-hidden="true">&#9993;</span>
+                <input id="email" name="email" type="email" placeholder="seu@email.com" autocomplete="email" maxlength="120" required>
+            </div>
+
+            <label for="register-password">Senha</label>
+            <div class="auth-field">
+                <span aria-hidden="true">&#128274;</span>
+                <input id="register-password" name="senha" type="password" placeholder="Crie uma senha" autocomplete="new-password" minlength="6" maxlength="72" required>
+                <button class="toggle-password" type="button" data-target="register-password" aria-label="Mostrar senha">&#128065;</button>
+            </div>
+
+            <label for="confirm-password">Confirmar senha</label>
+            <div class="auth-field">
+                <span aria-hidden="true">&#128274;</span>
+                <input id="confirm-password" name="confirmarSenha" type="password" placeholder="Confirme sua senha" autocomplete="new-password" minlength="6" maxlength="72" required>
+                <button class="toggle-password" type="button" data-target="confirm-password" aria-label="Mostrar senha">&#128065;</button>
+            </div>
+
+            <button class="auth-primary" type="submit">Cadastrar</button>
+        </form>
+
+        <p class="auth-switch">Ja tem uma conta? <button type="button" data-auth-view="login">Faca login</button></p>
     </section>
 </main>
+
 <script>
-    const form = document.getElementById('login-form');
-    const error = document.getElementById('login-error');
+    const loginView = document.getElementById('login-view');
+    const registerView = document.getElementById('register-view');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginError = document.getElementById('login-error');
+    const registerError = document.getElementById('register-error');
+    const registerSuccess = document.getElementById('register-success');
 
-    form.addEventListener('submit', async (event) => {
+    document.querySelectorAll('[data-auth-view]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const view = button.dataset.authView;
+            loginView.hidden = view !== 'login';
+            registerView.hidden = view !== 'register';
+            loginError.hidden = true;
+            registerError.hidden = true;
+        });
+    });
+
+    document.querySelectorAll('.toggle-password').forEach((button) => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.dataset.target);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        });
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        error.hidden = true;
+        loginError.hidden = true;
 
-        const response = await fetch(form.action, {
+        const response = await fetch(loginForm.action, {
             method: 'POST',
-            body: new FormData(form),
+            body: new FormData(loginForm),
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
         });
 
         if (!response.ok) {
-            error.hidden = false;
+            loginError.hidden = false;
             return;
         }
 
         const data = await response.json();
         window.location.assign(data.redirectUrl);
+    });
+
+    registerForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        registerError.hidden = true;
+        registerSuccess.hidden = true;
+
+        const data = Object.fromEntries(new FormData(registerForm).entries());
+
+        const response = await fetch('/api/auth/clientes', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            registerError.textContent = error?.mensagem || 'Erro ao criar cadastro.';
+            registerError.hidden = false;
+            return;
+        }
+
+        document.getElementById('username').value = data.email;
+        document.getElementById('password').value = '';
+        registerForm.reset();
+        registerView.hidden = true;
+        loginView.hidden = false;
+        registerSuccess.hidden = false;
     });
 </script>
 </body>
