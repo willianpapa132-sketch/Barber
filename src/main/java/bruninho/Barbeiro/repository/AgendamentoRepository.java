@@ -50,4 +50,22 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
             Pageable pageable
     );
 
+    @Query("""
+            select a
+            from Agendamento a
+            where a.cliente.id = :clienteId
+              and (
+                    a.status <> :statusAgendado
+                    or a.data < :dataAtual
+                    or (a.data = :dataAtual and a.horaInicio < :horaAtual)
+                  )
+            order by a.data desc, a.horaInicio desc
+            """)
+    List<Agendamento> findAntigosDoCliente(
+            @Param("clienteId") Long clienteId,
+            @Param("statusAgendado") StatusAgendamento statusAgendado,
+            @Param("dataAtual") LocalDate dataAtual,
+            @Param("horaAtual") LocalTime horaAtual
+    );
+
 }
