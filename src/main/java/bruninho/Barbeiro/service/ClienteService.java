@@ -1,43 +1,58 @@
 package bruninho.Barbeiro.service;
 
+import bruninho.Barbeiro.Controller.cliente.perfil.AtualizarPerfilClienteRequest;
+import bruninho.Barbeiro.Controller.cliente.perfil.ClientePerfilResponse;
 import bruninho.Barbeiro.domain.Cliente;
+import bruninho.Barbeiro.exception.NotFoundException;
 import bruninho.Barbeiro.repository.ClienteRepository;
 import bruninho.Barbeiro.security.model.ROLE;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
 public class ClienteService {
 
-    private ClienteRepository clienteRepository;
+    private final ClienteRepository clienteRepository;
 
     public ClienteService(ClienteRepository clienteRepository) {
         this.clienteRepository = clienteRepository;
     }
 
+    @Transactional(readOnly = true)
+    public ClientePerfilResponse buscarPerfil(String login) {
+        return ClientePerfilResponse.de(clienteRepository.findByUsuario_Login(login)
+                .orElseThrow(() -> new NotFoundException("Cliente nao encontrado")));
+    }
 
     @Transactional
-    public void criarCliente(Cliente cliente){
-        if(cliente.getUsuario().getRole() != ROLE.CLIENTE){
+    public ClientePerfilResponse atualizarPerfil(String login, AtualizarPerfilClienteRequest request) {
+        Cliente cliente = clienteRepository.findByUsuario_Login(login)
+                .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
+
+        cliente.setNome(request.nome().trim());
+        cliente.setTelefone(request.telefone().trim());
+        cliente.setImgUrl(normalizarImagem(request.imgUrl()));
+        cliente.setAtualizadoEm(LocalDateTime.now());
+
+        return ClientePerfilResponse.de(clienteRepository.save(cliente));
+    }
+
+    @Transactional
+    public void criarCliente(Cliente cliente) {
+        if (cliente.getUsuario().getRole() != ROLE.CLIENTE) {
             throw new RuntimeException("Usuario deve ter perfil de cliente");
         }
         cliente.setCriadoEm(LocalDateTime.now());
         clienteRepository.save(cliente);
     }
 
-    @Transactional
-    public void atualizarCliente(Cliente cliente){
-        Cliente clienteLocalizado = procurarCliente(cliente.getId());
-        clienteLocalizado.setNome(cliente.getNome());
-        clienteLocalizado.setAtualizadoEm(LocalDateTime.now());
-        if(cliente.getUsuario() != clienteLocalizado.getUsuario()){
-            throw new RuntimeException("Usuario inconsistente com cliente");
-        }
-    }
-    public Cliente procurarCliente(Long id){
-        return clienteRepository.findById(id).orElseThrow(()-> new RuntimeException("Cliente não localizado"));
-    }
 
+    private String normalizarImagem(String imgUrl) {
+        if (imgUrl == null || imgUrl.isBlank()) {
+            return null;
+        }
+        return imgUrl.trim();
+    }
 }

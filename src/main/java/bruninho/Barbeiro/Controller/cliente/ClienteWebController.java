@@ -26,6 +26,11 @@ public class ClienteWebController {
         return "forward:/client/index.html";
     }
 
+    @GetMapping("/perfil/editar")
+    public String editarPerfil() {
+        return "forward:/client/index.html";
+    }
+
     @GetMapping("/agendamentos/novo")
     public String novoAgendamento() {
         return "forward:/client/index.html";

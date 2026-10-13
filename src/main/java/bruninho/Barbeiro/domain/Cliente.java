@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +29,7 @@ public class Cliente {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 500)
     private String imgUrl;
 
     @Column(nullable = false)
@@ -37,7 +37,7 @@ public class Cliente {
     private String nome;
 
     @Column(nullable = false)
-    @Size(min = 1, max = 13)
+    @Size(min = 1, max = 20)
     private String telefone;
 
     @OneToOne
