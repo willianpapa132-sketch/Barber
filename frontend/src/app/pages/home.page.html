@@ -1,104 +1,61 @@
-<main class="client-shell">
-  <section class="client-home">
-    <header class="client-header">
-      <div>
-        <p class="client-brand">BARBERSHOP</p>
-        <h1>Ola, {{ clientName }}</h1>
-        <p class="client-subtitle">Bem-vindo de volta.</p>
+<main class="client-shell home-page-shell">
+  <section class="home-main">
+    <header class="home-topbar">
+      <div class="home-client">
+        <img class="home-avatar" [alt]="'Foto de ' + clientName" [src]="avatarUrl(clientAvatarUrl)" />
+        <div>
+          <span>Ola,</span>
+          <strong>{{ clientName }}</strong>
+        </div>
       </div>
-      <img
-        class="client-avatar"
-        alt="Foto do cliente"
-        src="https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=180&q=80"
-      />
+      <span class="home-bell" aria-hidden="true">&#128276;</span>
     </header>
 
-    <section class="barber-banner" aria-label="Banner da barbearia">
-      <div>
-        <strong>Mais que um<br />corte, e cuidado<br />com voce.</strong>
-        <span></span>
-      </div>
-      <div class="banner-mark">
-        <span aria-hidden="true">&#9986;</span>
-        <p>BARBERSHOP</p>
-        <small>EST 2020</small>
-      </div>
-    </section>
-
-    <a class="plan-shortcut" routerLink="/plano">
-      <span class="plan-icon" aria-hidden="true">&#9819;</span>
-      <span class="plan-text">
-        <strong>Planos Mensais</strong>
-        <b>Conheca as opcoes</b>
-        <small>Economize nos cuidados de todo mes</small>
-      </span>
-      <span class="chevron" aria-hidden="true">&rsaquo;</span>
-    </a>
-
-    <section class="next-appointment">
-      <div class="section-head">
-        <div>
-          <span class="line-icon calendar-icon" aria-hidden="true"></span>
-          <h2>Proximo Agendamento</h2>
-        </div>
-        <a routerLink="/agendamentos">Ver todos <span aria-hidden="true">&rsaquo;</span></a>
-      </div>
+    @if (loading) {
+      <section class="home-state-card">
+        <strong>Carregando...</strong>
+      </section>
+    } @else if (errorMessage) {
+      <section class="home-state-card error">
+        <strong>{{ errorMessage }}</strong>
+      </section>
+    } @else {
+      <a class="home-plan-card" routerLink="/plano">
+        <span class="home-plan-icon" aria-hidden="true">&#9819;</span>
+        <span>
+          <strong>Plano Mensal</strong>
+          <small>Mais vantagens para o seu estilo.</small>
+        </span>
+        <i aria-hidden="true">&rsaquo;</i>
+      </a>
 
       @if (nextAppointment; as appointment) {
-        <a class="next-card" [routerLink]="['/agendamentos', appointment.id]" [attr.aria-label]="'Agendamento ' + appointment.id">
-          <div class="date-tile">
-            <span>{{ appointment.dayName }}</span>
-            <strong>{{ appointment.dayNumber }}</strong>
-          </div>
-          <div class="appointment-divider"></div>
-          <div class="appointment-info">
-            <p class="time-row"><span aria-hidden="true">&bull;</span><strong>{{ appointment.startsAt }} - {{ appointment.endsAt }}</strong></p>
-            <p class="service-row"><span aria-hidden="true">&#9986;</span><strong>{{ servicesLabel(appointment.services) }}</strong></p>
-            <p class="price-row">{{ formatPrice(appointment.precoTotal) }}</p>
-            <div class="barber-row">
-              <img [alt]="'Foto de ' + appointment.barberName" [src]="appointment.barberAvatarUrl" />
-              <span><strong>Com {{ appointment.barberName }}</strong><small>Barbeiro</small></span>
+        <a class="home-next-card has-appointment" [routerLink]="['/agendamentos', appointment.id]">
+          <h2><span aria-hidden="true">&#128197;</span> Proximo agendamento</h2>
+          <div class="home-next-body">
+            <img [alt]="'Foto de ' + appointment.barberName" [src]="avatarUrl(appointment.barberAvatarUrl)" />
+            <div>
+              <strong>{{ appointment.dayName }}, dia {{ appointment.dayNumber }}</strong>
+              <small>{{ appointment.startsAt }} - {{ appointment.endsAt }}</small>
+              <small>{{ servicesLabel(appointment.services) }}</small>
+              <b>{{ appointment.barberName }}</b>
             </div>
+            <i aria-hidden="true">&rsaquo;</i>
           </div>
-          <span class="next-arrow" aria-hidden="true">&rsaquo;</span>
         </a>
       } @else {
-        <div class="next-card empty">
-          <div class="appointment-info">
-            <p class="service-row"><strong>Nenhum agendamento encontrado</strong></p>
-          </div>
-        </div>
+        <section class="home-next-card empty">
+          <span aria-hidden="true">&#128197;</span>
+          <strong>Nenhum agendamento marcado</strong>
+          <small>Que tal agendar seu proximo corte?</small>
+        </section>
       }
-    </section>
 
-    <section class="history-card">
-      <div class="section-head">
-        <div>
-          <span class="line-icon history-icon" aria-hidden="true">&larr;</span>
-          <h2>Ultimos Agendamentos</h2>
-        </div>
-        <a routerLink="/agendamentos">Ver todos <span aria-hidden="true">&rsaquo;</span></a>
-      </div>
-
-      @for (appointment of latestAppointments; track appointment.id) {
-        <a class="history-item" routerLink="/agendamentos">
-          <img [alt]="appointment.services[0]" [src]="appointment.imageUrl" />
-          <span class="history-main">
-            <strong>{{ appointment.services[0] }}</strong>
-            <small>Com {{ appointment.barberName }}</small>
-            <em>{{ appointment.date }}</em>
-          </span>
-          <span class="status-pill"><b>&#10003;</b> {{ appointment.status }}</span>
-          <span class="chevron" aria-hidden="true">&rsaquo;</span>
-        </a>
-      }
-    </section>
-
-    <a class="new-appointment" routerLink="/agendamentos/novo">
-      <span aria-hidden="true">+</span>
-      <strong>Novo Agendamento</strong>
-      <i aria-hidden="true">&rsaquo;</i>
-    </a>
+      <a class="home-new-appointment" routerLink="/agendamentos/novo">
+        <span aria-hidden="true">&#128197;</span>
+        <strong>Novo Agendamento</strong>
+      </a>
+    }
   </section>
 </main>
 

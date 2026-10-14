@@ -1105,7 +1105,8 @@ a {
 .profile-page-shell ~ app-bottom-nav .client-bottom-nav,
 .plan-page-shell ~ app-bottom-nav .client-bottom-nav,
 .appointments-page-shell ~ app-bottom-nav .client-bottom-nav,
-.agendar-page-shell ~ app-bottom-nav .client-bottom-nav {
+.agendar-page-shell ~ app-bottom-nav .client-bottom-nav,
+.home-page-shell ~ app-bottom-nav .client-bottom-nav {
   border-top-color: rgba(255, 255, 255, 0.08);
   background: rgba(18, 20, 20, 0.92);
   box-shadow: 0 -18px 32px rgba(0, 0, 0, 0.26);
@@ -1114,15 +1115,271 @@ a {
 .profile-page-shell ~ app-bottom-nav .client-bottom-nav a,
 .plan-page-shell ~ app-bottom-nav .client-bottom-nav a,
 .appointments-page-shell ~ app-bottom-nav .client-bottom-nav a,
-.agendar-page-shell ~ app-bottom-nav .client-bottom-nav a {
+.agendar-page-shell ~ app-bottom-nav .client-bottom-nav a,
+.home-page-shell ~ app-bottom-nav .client-bottom-nav a {
   color: rgba(255, 255, 255, 0.62);
 }
 
 .profile-page-shell ~ app-bottom-nav .client-bottom-nav a.active,
 .plan-page-shell ~ app-bottom-nav .client-bottom-nav a.active,
 .appointments-page-shell ~ app-bottom-nav .client-bottom-nav a.active,
-.agendar-page-shell ~ app-bottom-nav .client-bottom-nav a.active {
+.agendar-page-shell ~ app-bottom-nav .client-bottom-nav a.active,
+.home-page-shell ~ app-bottom-nav .client-bottom-nav a.active {
   color: var(--profile-yellow, #ffdb35);
+}
+
+.home-page-shell {
+  --home-yellow: #ffdb35;
+  --home-card: rgba(18, 20, 21, 0.88);
+  --home-line: rgba(255, 255, 255, 0.1);
+  --home-muted: rgba(255, 255, 255, 0.68);
+  display: grid;
+  align-content: start;
+  color: white;
+  background:
+    radial-gradient(circle at 74% -8%, rgba(255, 219, 53, 0.13), transparent 15rem),
+    linear-gradient(180deg, #080909 0%, #0b0d0d 54%, #070808 100%);
+}
+
+.home-main {
+  display: grid;
+  gap: 18px;
+}
+
+.home-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+}
+
+.home-client {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.home-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1b1e1f;
+}
+
+.home-client div {
+  display: grid;
+  min-width: 0;
+}
+
+.home-client span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 19px;
+  line-height: 1.05;
+}
+
+.home-client strong {
+  overflow: hidden;
+  font-size: 24px;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-bell {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.home-plan-card,
+.home-next-card,
+.home-state-card {
+  border: 1px solid var(--home-line);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 219, 53, 0.05), rgba(255, 219, 53, 0) 48%),
+    var(--home-card);
+}
+
+.home-plan-card {
+  min-height: 104px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 28px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 16px 18px 20px;
+}
+
+.home-plan-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--home-yellow);
+  border-radius: 14px;
+  color: var(--home-yellow);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.home-plan-card span:nth-child(2) {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.home-plan-card strong {
+  overflow: hidden;
+  font-size: 23px;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-plan-card small,
+.home-next-card small {
+  color: var(--home-muted);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.home-plan-card i {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 44px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.home-next-card {
+  min-height: 186px;
+}
+
+.home-next-card.has-appointment {
+  display: grid;
+  gap: 16px;
+  padding: 20px 18px;
+  border: 2px solid var(--home-yellow);
+}
+
+.home-next-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--home-yellow);
+  font-size: 19px;
+  line-height: 1.12;
+}
+
+.home-next-card h2 span {
+  font-size: 22px;
+}
+
+.home-next-body {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) 22px;
+  gap: 16px;
+  align-items: center;
+}
+
+.home-next-body img {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.home-next-body div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.home-next-body strong {
+  overflow: hidden;
+  font-size: 20px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-next-body b {
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-next-body i {
+  color: white;
+  font-size: 44px;
+  font-style: normal;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.home-next-card.empty {
+  min-height: 210px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+.home-next-card.empty > span {
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 56px;
+  line-height: 1;
+}
+
+.home-next-card.empty strong {
+  font-size: 22px;
+  line-height: 1.14;
+}
+
+.home-new-appointment {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffe878, #ffd43b);
+  color: #080808;
+  box-shadow: 0 18px 32px rgba(255, 219, 53, 0.16);
+}
+
+.home-new-appointment span {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.home-new-appointment strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.home-state-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  color: var(--home-muted);
+}
+
+.home-state-card.error {
+  color: #ffdada;
 }
 
 .agendar-page-shell {
@@ -2367,8 +2624,87 @@ a {
 
 @media (max-width: 380px) {
   .client-shell {
-    padding-right: 14px;
-    padding-left: 14px;
+    padding: 22px 14px 104px;
+  }
+
+  .home-main,
+  .agendar-page-shell {
+    gap: 13px;
+  }
+
+  .home-topbar {
+    min-height: 58px;
+  }
+
+  .home-client {
+    grid-template-columns: 50px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .home-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .home-client span {
+    font-size: 16px;
+  }
+
+  .home-client strong {
+    font-size: 21px;
+  }
+
+  .home-plan-card {
+    min-height: 90px;
+    grid-template-columns: 54px minmax(0, 1fr) 20px;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .home-plan-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
+
+  .home-plan-card strong {
+    font-size: 20px;
+  }
+
+  .home-plan-card small,
+  .home-next-card small {
+    font-size: 14px;
+  }
+
+  .home-next-card.has-appointment {
+    padding: 16px 14px;
+  }
+
+  .home-next-body {
+    grid-template-columns: 64px minmax(0, 1fr) 18px;
+    gap: 12px;
+  }
+
+  .home-next-body img {
+    width: 64px;
+    height: 64px;
+  }
+
+  .home-next-body strong {
+    font-size: 17px;
+  }
+
+  .home-next-card.empty {
+    min-height: 180px;
+  }
+
+  .home-new-appointment {
+    min-height: 66px;
+  }
+
+  .home-new-appointment strong {
+    font-size: 18px;
   }
 
   .client-header h1 {
@@ -2482,5 +2818,62 @@ a {
   .appointment-detail-card img {
     width: 76px;
     height: 76px;
+  }
+
+  .booking-steps {
+    padding: 0 22px;
+  }
+
+  .booking-barber-card {
+    grid-template-columns: 56px minmax(0, 1fr) 18px;
+    min-height: 76px;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .booking-barber-card img,
+  .booking-selected-card img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .booking-service-card {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 8px;
+    min-height: 72px;
+    padding: 10px;
+  }
+
+  .service-price {
+    grid-template-columns: minmax(0, auto) 24px;
+    gap: 7px;
+  }
+
+  .service-price b {
+    max-width: 78px;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .booking-summary-card,
+  .booking-selected-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .booking-summary-card > b,
+  .booking-selected-card b {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 5px;
+  }
+
+  .booking-times-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

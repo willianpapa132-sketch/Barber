@@ -1,14 +1,26 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentSummary, latestAppointments, nextAppointment as fallbackNextAppointment } from '../client-data';
 import { BottomNav } from '../shared/bottom-nav';
 
 interface HomeResponse {
   cliente: {
     nome: string;
+    imgUrl: string | null;
   };
   proximoAtendimento: AppointmentSummary | null;
+}
+
+interface AppointmentSummary {
+  id: number;
+  dayName: string;
+  dayNumber: string;
+  startsAt: string;
+  endsAt: string;
+  barberName: string;
+  barberAvatarUrl: string | null;
+  services: string[];
+  precoTotal: number;
 }
 
 @Component({
@@ -18,25 +30,38 @@ interface HomeResponse {
 })
 export class HomePage implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly fallbackAvatar =
+    'https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=300&q=80';
 
-  protected clientName = 'Willian';
-  protected nextAppointment = fallbackNextAppointment;
-  protected readonly latestAppointments = latestAppointments;
+  protected loading = true;
+  protected errorMessage = '';
+  protected clientName = 'Cliente';
+  protected clientAvatarUrl: string | null = null;
+  protected nextAppointment: AppointmentSummary | null = null;
 
   ngOnInit(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
     this.http.get<HomeResponse>('/api/cliente/home').subscribe({
       next: (response) => {
         this.clientName = response.cliente.nome;
+        this.clientAvatarUrl = response.cliente.imgUrl;
         this.nextAppointment = response.proximoAtendimento;
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Nao foi possivel carregar sua home.';
+        this.loading = false;
       },
     });
   }
 
-  protected servicesLabel(services: string[]): string {
-    return services.join(' + ');
+  protected avatarUrl(url: string | null): string {
+    return url || this.fallbackAvatar;
   }
 
-  protected formatPrice(value: number): string {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  protected servicesLabel(services: string[]): string {
+    return services.join(' + ');
   }
 }

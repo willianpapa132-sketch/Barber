@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -47,23 +47,24 @@ public class DataInitializer {
             ConfiguracaoBarbeariaRepository configuracoes,
             HorarioFuncionamentoRepository horariosFuncionamento,
             PlanoMensalRepository planosMensais,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            TransactionTemplate transactionTemplate
     ) {
-        return args -> run(
-                props,
-                usuarios,
-                clientes,
-                servicos,
-                barbeiros,
-                jornadas,
-                configuracoes,
-                horariosFuncionamento,
-                planosMensais,
-                passwordEncoder
+        return args -> transactionTemplate.executeWithoutResult(status -> run(
+                        props,
+                        usuarios,
+                        clientes,
+                        servicos,
+                        barbeiros,
+                        jornadas,
+                        configuracoes,
+                        horariosFuncionamento,
+                        planosMensais,
+                        passwordEncoder
+                )
         );
     }
 
-    @Transactional
     void run(
             AppProperties props,
             UsuarioRepository usuarios,
