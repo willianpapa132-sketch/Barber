@@ -15,11 +15,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Service
-public class AgendamentosClienteService {
+public class TelaAgendamentosClienteService {
     private final ClienteRepository clientes;
     private final AgendamentoRepository agendamentos;
 
-    public AgendamentosClienteService(ClienteRepository clientes, AgendamentoRepository agendamentos) {
+    public TelaAgendamentosClienteService(ClienteRepository clientes, AgendamentoRepository agendamentos) {
         this.clientes = clientes;
         this.agendamentos = agendamentos;
     }

@@ -50,4 +50,7 @@ public class PlanosMensal {
     private LocalDateTime criadoEm;
 
     private LocalDateTime atualizadoEm ;
+
+    @Column(nullable = false)
+    private Integer porcentagemComissao;
 }
