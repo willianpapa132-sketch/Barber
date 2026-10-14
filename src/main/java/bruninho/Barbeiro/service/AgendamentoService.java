@@ -113,6 +113,7 @@ public class AgendamentoService {
         validarDiaPermitidoParaPlano(request.data());
         validarLimiteSemanalDoPlano(planoCliente, request.data());
         validacao.validaAgendamento(agendamento, disponibilidade);
+        validacao.validarPagamentoPlano(planoCliente);
         preencherDadosDoAgendamento(agendamento, cliente, BigDecimal.ZERO);
 
         return agendamentos.save(agendamento);

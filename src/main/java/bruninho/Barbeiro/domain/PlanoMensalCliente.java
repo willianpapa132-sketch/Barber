@@ -54,5 +54,5 @@ public class PlanoMensalCliente {
     @Positive
     private Integer diasMaximoAntecedencia;
 
-
+    private Boolean pagamentoAtrasado = false;
 }
