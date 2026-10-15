@@ -1,5 +1,5 @@
 package bruninho.Barbeiro.domain;
 
-public enum FormaPagamentoAgendamento {
+public enum FormaPagamento {
     DINHEIRO, PIX, DEBITO, CREDITO, MENSAL
 }

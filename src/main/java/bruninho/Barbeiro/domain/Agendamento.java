@@ -74,6 +74,13 @@ public class Agendamento {
     @Column(name = "pagamento_recebido")
     private Boolean pagamentoRecebido;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "forma_pagamento")
+    private FormaPagamento formaPagamento;
+
+    @Column(name = "finalizado_em")
+    private LocalDateTime finalizadoEm;
+
     @ManyToOne
     @JoinColumn(name = "criado_por_usuario_id")
     private Usuario criadoPorUsuario;

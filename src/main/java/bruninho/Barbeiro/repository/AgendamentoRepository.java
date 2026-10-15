@@ -16,6 +16,12 @@ import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
 
+    Optional<Agendamento> findByIdAndBarbeiro_Usuario_Login(Long id, String login);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Agendamento a where a.id = :id and a.barbeiro.usuario.login = :login")
+    Optional<Agendamento> findParaFinalizar(@Param("id") Long id, @Param("login") String login);
+
     @Query("""
             select a from Agendamento a
             where a.barbeiro.id = :barbeiroId
