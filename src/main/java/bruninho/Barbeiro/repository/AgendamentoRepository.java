@@ -15,6 +15,26 @@ import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
 
+    long countByBarbeiro_IdAndData(Long barbeiroId, LocalDate data);
+
+    long countByBarbeiro_IdAndDataAndStatus(Long barbeiroId, LocalDate data, StatusAgendamento status);
+
+    @Query("""
+            select a from Agendamento a
+            where a.barbeiro.id = :barbeiroId
+              and a.data = :data
+              and a.horaInicio >= :horaAtual
+              and a.status = :status
+            order by a.horaInicio asc, a.id asc
+            """)
+    List<Agendamento> findProximosDoBarbeiroNoDia(
+            @Param("barbeiroId") Long barbeiroId,
+            @Param("data") LocalDate data,
+            @Param("horaAtual") LocalTime horaAtual,
+            @Param("status") StatusAgendamento status,
+            Pageable pageable
+    );
+
     Boolean existsByServico_Id(Long id);
 
     Optional<Agendamento> findByIdAndCliente_Id(Long id, Long clienteId);
