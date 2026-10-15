@@ -3,6 +3,7 @@ package bruninho.Barbeiro.repository;
 import bruninho.Barbeiro.domain.Agendamento;
 import bruninho.Barbeiro.domain.StatusAgendamento;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +15,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
+
+    @Query("""
+            select a from Agendamento a
+            where a.barbeiro.id = :barbeiroId
+              and a.data = :data
+              and (:status is null or a.status = :status)
+            order by a.horaInicio asc, a.id asc
+            """)
+    Page<Agendamento> findAgendaDoBarbeiro(
+            @Param("barbeiroId") Long barbeiroId,
+            @Param("data") LocalDate data,
+            @Param("status") StatusAgendamento status,
+            Pageable pageable
+    );
 
     long countByBarbeiro_IdAndData(Long barbeiroId, LocalDate data);
 
