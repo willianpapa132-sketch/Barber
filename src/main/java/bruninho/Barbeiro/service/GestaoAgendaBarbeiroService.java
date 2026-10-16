@@ -1,6 +1,7 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.barbeiro.agenda.*;
+import bruninho.Barbeiro.Controller.barbeiro.agenda.bloqueioeagendamento.CriarAtendimentoBarbeiroRequest;
+import bruninho.Barbeiro.Controller.barbeiro.agenda.bloqueioeagendamento.CriarBloqueioAgendaRequest;
 import bruninho.Barbeiro.Controller.cliente.home.agendamentos.CriarAgendamentoRequest;
 import bruninho.Barbeiro.domain.*;
 import bruninho.Barbeiro.repository.*;

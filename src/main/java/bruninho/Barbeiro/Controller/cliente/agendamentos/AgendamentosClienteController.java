@@ -1,6 +1,6 @@
 package bruninho.Barbeiro.Controller.cliente.agendamentos;
 
-import bruninho.Barbeiro.service.TelaAgendamentosClienteService;
+import bruninho.Barbeiro.service.ConsultaAgendamentosClienteService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/cliente/agendamentos")
 public class AgendamentosClienteController {
-    private final TelaAgendamentosClienteService agendamentos;
+    private final ConsultaAgendamentosClienteService agendamentos;
 
-    public AgendamentosClienteController(TelaAgendamentosClienteService agendamentos) {
+    public AgendamentosClienteController(ConsultaAgendamentosClienteService agendamentos) {
         this.agendamentos = agendamentos;
     }
 

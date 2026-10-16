@@ -69,7 +69,7 @@ class DataInitializerIntegrationTest {
         var sessao = (org.springframework.mock.web.MockHttpSession) login.getRequest().getSession(false);
         mvc.perform(get("/barbeiro/home").session(sessao))
                 .andExpect(status().isOk())
-                .andExpect(view().name("barbeiro/home"));
+                .andExpect(forwardedUrl("/client/index.html"));
     }
 
     @Test

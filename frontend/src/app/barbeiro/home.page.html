@@ -1,0 +1,36 @@
+<main class="barber-shell">
+  @if (loading()) { <p class="finish-notice" role="status">Carregando seus atendimentos...</p> }
+  @if (error()) { <p class="finish-notice notice-error" role="alert">{{ error() }}</p><button class="outline-button" (click)="load()">Tentar novamente</button> }
+  @if (home(); as home) {
+    <header class="page-header"><div>
+      <p class="eyebrow">SEU ESPAÇO · BARBEARIA</p>
+      <h1>Olá, <span>{{ home.barbeiro.nome }}</span> <span class="pole" aria-hidden="true">💈</span></h1>
+      <p class="subtitle">Hoje, <span>{{ formattedDate }}</span></p>
+    </div>
+    @if (home.barbeiro.imgUrl) { <img class="barber-avatar" [src]="home.barbeiro.imgUrl" alt="Sua foto" referrerpolicy="no-referrer"> }
+    </header>
+    <section class="stats" aria-label="Resumo dos atendimentos de hoje">
+      <article class="stat gold"><span class="stat-icon" aria-hidden="true">▦</span><strong>{{ home.agendamentosHoje }}</strong><p>Agendamentos<small>hoje</small></p></article>
+      <article class="stat blue"><span class="stat-icon" aria-hidden="true">✓</span><strong>{{ home.concluidosHoje }}</strong><p>Concluídos<small>hoje</small></p></article>
+      <article class="stat red"><span class="stat-icon" aria-hidden="true">×</span><strong>{{ home.canceladosHoje }}</strong><p>Cancelados<small>hoje</small></p></article>
+    </section>
+    <section class="appointments-section" aria-labelledby="appointments-title">
+      <div class="section-heading"><h2 id="appointments-title"><span aria-hidden="true">▦</span> Próximos agendamentos</h2><a routerLink="/barbeiro/agenda">Ver todos <span aria-hidden="true">›</span></a></div>
+      @if (home.proximosAgendamentos.length) {
+        <div class="appointment-list">
+          @for (item of home.proximosAgendamentos; track item.id; let first = $first) {
+            <article class="appointment" [class.next]="first">
+              <div class="appointment-time"><strong>{{ hhmm(item.horaInicio) }}</strong><small>{{ item.duracaoMinutos }} min</small></div>
+              <div class="appointment-client"><h3>{{ item.nomeCliente }}</h3><p>{{ item.servicos.join(' + ') }}</p></div>
+              <span class="status AGENDADO">Agendado</span>
+              <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente"><span aria-hidden="true">›</span></a>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state"><div class="empty-icon" aria-hidden="true">✂</div><h3>Nenhum próximo agendamento para hoje</h3><p>Quando surgirem novos horários,<br>eles aparecerão aqui.</p><a class="outline-button" routerLink="/barbeiro/agenda">Consultar agenda</a></div>
+      }
+    </section>
+  }
+  <app-barber-nav />
+</main>

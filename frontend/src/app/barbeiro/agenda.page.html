@@ -1,0 +1,102 @@
+<main class="barber-shell agenda-shell">
+  <header class="page-header"><div><p class="eyebrow">SUA ROTINA · BARBEARIA</p><h1>Seus atendimentos do dia</h1><p class="subtitle">Gerencie sua agenda de forma prática</p></div><span class="pole" aria-hidden="true">💈</span></header>
+  <form class="filters" (ngSubmit)="load()">
+    <label>Data do atendimento<input type="date" name="data" [(ngModel)]="date" required></label>
+    <label>Status<select name="status" [(ngModel)]="status"><option value="">Todos</option><option value="AGENDADO">Agendados</option><option value="CONCLUIDO">Concluídos</option><option value="CANCELADO">Cancelados</option><option value="NAO_COMPARECEU">Não compareceu</option></select></label>
+    <button class="primary-button" type="submit" [disabled]="loading() || saving()">Filtrar</button>
+  </form>
+  @if (loading()) { <p class="finish-notice" role="status">Carregando a grade de horários...</p> }
+  @if (error()) { <p class="finish-notice notice-error" role="alert">{{ error() }}</p><button id="agenda-retry" class="outline-button" (click)="load()">Tentar novamente</button> }
+  @if (notice()) { <p class="finish-notice" role="status">{{ notice() }}</p> }
+  @if (grade(); as grade) {
+    <div class="section-heading"><h2>{{ dateLabel(grade.data) }}</h2><span class="subtitle">{{ grade.agendamentos.length }} atendimento(s)</span></div>
+    <p class="subtitle grid-label">@if (grade.intervaloGrade) { ◷ Grade configurada: {{ grade.intervaloGrade }} min · Jornada {{ hhmm(grade.inicio) }} – {{ hhmm(grade.fim) }} } @else { {{ grade.aviso }} }</p>
+    <section aria-label="Horários da jornada" [attr.aria-busy]="loading()">
+      @if (rows.length) {
+        <div class="day-timeline" [style.height.px]="timelineHeight">
+          @for (row of rows; track row.time) {
+            <button type="button" class="timeline-time" [style.top.px]="row.top" [style.height.px]="row.height" [disabled]="loading() || !canFit(row.time, 1)" (click)="open(row.time)" [attr.aria-label]="'Novo às ' + hhmm(row.time)">{{ hhmm(row.time) }}</button>
+            <div class="timeline-line" [style.top.px]="row.top"></div>
+          }
+          <div class="timeline-events">
+            @for (event of events; track $index) {
+              <ng-container [ngTemplateOutlet]="eventTemplate" [ngTemplateOutletContext]="{ event: event }" />
+            }
+          </div>
+        </div><div class="timeline-end">{{ hhmm(grade.fim) }} · Fim da jornada</div>
+      } @else { <p class="finish-notice">{{ grade.aviso || 'Sem jornada para este dia.' }}</p> }
+    </section>
+    @if (outside.length) {
+      <section id="agenda-outside" aria-label="Atendimentos fora da jornada"><h2>Atendimentos cadastrados fora da jornada</h2>
+        @for (item of outside; track item.id) {
+          <article [class]="'timeline-event outside-event ' + item.status">
+            <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
+            <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
+            @if (item.status === 'AGENDADO') { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+          </article>
+        }
+      </section>
+    }
+    <button class="agenda-add" type="button" aria-label="Novo bloqueio ou agendamento" [disabled]="loading() || saving() || !grade.podeCriar" (click)="open()">+</button>
+  }
+  <dialog #dialog class="agenda-dialog" aria-labelledby="agenda-dialog-title" (cancel)="saving() ? $event.preventDefault() : null">
+    <header class="dialog-heading"><div><h2 id="agenda-dialog-title">{{ mode === 'menu' ? 'Novo' : mode === 'block' ? 'Criar bloqueio' : 'Criar agendamento' }}</h2><p>{{ mode === 'menu' ? 'Escolha uma ação' : 'Reserve um horário na sua agenda' }}</p></div><button type="button" class="dialog-close" aria-label="Fechar" (click)="close()" [disabled]="saving()">×</button></header>
+    @if (dialogError()) { <p class="finish-notice notice-error" role="alert">{{ dialogError() }}</p> }
+    @if (mode === 'menu') {
+      <div class="action-menu">
+        <button type="button" class="action-choice" (click)="editor('block')"><span class="action-icon" aria-hidden="true"><svg width="30" height="36" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="12" width="18" height="14" rx="3"/><path d="M6 12V7a6 6 0 0 1 12 0v5M12 17v5"/></svg></span><span><strong>Criar bloqueio</strong><small>Bloqueie um horário na sua agenda para indisponibilidade.</small></span><span aria-hidden="true">›</span></button>
+        <button type="button" class="action-choice" (click)="editor('appointment')"><span class="action-icon" aria-hidden="true"><svg width="32" height="34" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="23" height="21" rx="3"/><path d="M2 11h23M8 1v8M19 1v8M9 15v7M5.5 18.5h7M21 19v9M16.5 23.5h9"/></svg></span><span><strong>Criar agendamento</strong><small>Cadastre um novo atendimento para um cliente.</small></span><span aria-hidden="true">›</span></button>
+      </div>
+    }
+    @if (mode === 'appointment') {
+      <form class="agenda-editor" #appointmentForm="ngForm" (ngSubmit)="appointmentForm.valid && save('appointment')">
+        <p class="subtitle">Data: {{ dateLabel(grade()?.data || '') }}</p>
+        <fieldset class="editor-fields" [disabled]="saving()">
+          <label>Tipo de cliente<select name="customerMode" [(ngModel)]="customerMode" (ngModelChange)="loadServices()"><option value="registered">Cliente cadastrado</option><option value="walkin">Cliente avulso</option></select></label>
+          @if (customerMode === 'registered') {
+            <div id="agenda-registered-fields"><label>Buscar cliente<input name="search" type="search" [(ngModel)]="search" (ngModelChange)="searchChanged()" placeholder="Nome ou telefone" maxlength="80" autocomplete="off"></label>
+              <label>Cliente<select name="clientId" [(ngModel)]="clientId" (ngModelChange)="loadServices()" required><option value="">Selecione um cliente</option>@for (client of customers(); track client.id) { <option [value]="client.id">{{ client.nome }} · {{ client.telefone }}</option> }</select></label>
+              <small class="subtitle">Mostramos até 20 resultados. Refine a busca para encontrar o cliente.</small>
+            </div>
+          } @else {
+            <div id="agenda-walkin-fields"><label>Nome do cliente<input name="clientName" [(ngModel)]="clientName" maxlength="120" autocomplete="name" required></label><label>Telefone<input name="clientPhone" [(ngModel)]="clientPhone" maxlength="20" type="tel" autocomplete="tel" required></label></div>
+          }
+          <fieldset class="service-picker"><legend>Serviços</legend><div id="agenda-services">
+            @if (servicesLoading()) { <p class="subtitle">Carregando serviços...</p> }
+            @for (service of services(); track service.id) {
+              <label><input type="checkbox" [checked]="selectedIds.includes(service.id)" (change)="toggleService(service.id, $any($event.target).checked)"><span>{{ service.nome }} · {{ service.duracaoMinutos }} min · {{ activePlan() ? 'Incluso no plano' : money(service.preco) }}</span></label>
+            } @empty { @if (!servicesLoading()) { <p class="subtitle">{{ customerMode === 'registered' && !clientId ? 'Selecione um cliente para consultar os serviços.' : 'Nenhum serviço ativo disponível.' }}</p> } }
+          </div></fieldset>
+          <label>Horário de início<select name="appointmentTime" [(ngModel)]="appointmentTime" required><option value="">Selecione um horário</option>@for (time of times; track time) { <option [value]="time" [disabled]="!canFit(time, duration || 1)">{{ time }}</option> }</select></label>
+          <p class="finish-hint" aria-live="polite">@if (selectedIds.length) { {{ duration }} min · {{ activePlan() ? 'Incluso no plano mensal' : 'Serviços avulsos: ' + money(serviceTotal) }} @if (!appointmentTime) { · Sem horário livre para esta duração. } } @else { Selecione pelo menos um serviço. }</p>
+          <p class="finish-hint">{{ activePlan() ? activePlan() + ': apenas os serviços incluídos no plano estão disponíveis.' : 'Selecione o cliente e os serviços desejados.' }}</p>
+          <button type="submit" class="primary-button" [disabled]="!canSaveAppointment || !appointmentForm.valid">{{ saving() ? 'Aguarde...' : 'Criar agendamento' }}</button>
+          <button type="button" class="dialog-back" (click)="mode = 'menu'">Voltar às opções</button>
+        </fieldset>
+      </form>
+    }
+    @if (mode === 'block') {
+      <form class="agenda-editor" (ngSubmit)="save('block')"><p class="subtitle">Data: {{ dateLabel(grade()?.data || '') }}</p>
+        <fieldset class="editor-fields" [disabled]="saving()">
+          <label>Início do bloqueio<select name="blockStart" [(ngModel)]="blockStart" (ngModelChange)="updateBlockEnd()" required><option value="">Selecione um horário</option>@for (time of times; track time) { <option [value]="time" [disabled]="!canFit(time, 1)">{{ time }}</option> }</select></label>
+          <label>Fim do bloqueio<select name="blockEnd" [(ngModel)]="blockEnd" required><option value="">Selecione um horário</option>@for (time of blockEnds; track time) { <option [value]="time" [disabled]="!canFit(blockStart, minutes(time) - minutes(blockStart))">{{ time }}</option> }</select></label>
+          <p class="finish-hint">Apenas este período ficará indisponível. Horários com atendimento ou bloqueio não podem ser reservados novamente.</p>
+          <button type="submit" class="primary-button" [disabled]="saving() || !blockStart || !blockEnd">{{ saving() ? 'Aguarde...' : 'Criar bloqueio' }}</button><button type="button" class="dialog-back" (click)="mode = 'menu'">Voltar às opções</button>
+        </fieldset>
+      </form>
+    }
+  </dialog>
+  <app-barber-nav />
+</main>
+<ng-template #eventTemplate let-event="event">
+  <article [class]="'timeline-event ' + (event.item?.status || 'is-period ' + event.period.tipo)" [class.compact]="event.end - event.start <= 15" [style.top.px]="event.top" [style.height.px]="event.height" [style.left]="event.left" [style.width]="event.width">
+    @if (event.item; as item) {
+      <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente || 'Cliente' }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
+      <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
+      @if (item.status === 'AGENDADO') { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+    } @else {
+      <div class="event-description"><time>{{ hhmm(event.period.inicio || grade()?.inicio || '') }} – {{ hhmm(event.period.fim || grade()?.fim || '') }}</time><strong>{{ event.period.descricao }}</strong></div>
+      @if (event.period.tipo === 'BLOQUEIO' && event.period.id) { <button class="remove-block" [disabled]="saving()" (click)="removeBlock(event.period.id)" [attr.aria-label]="'Remover bloqueio das ' + hhmm(event.period.inicio)">Remover</button> }
+    }
+  </article>
+</ng-template>
