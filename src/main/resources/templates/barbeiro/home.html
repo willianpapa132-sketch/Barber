@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home do barbeiro</title>
+    <link rel="stylesheet" th:href="@{/css/barbeiro.css}">
+</head>
+<body>
+<main class="barber-shell">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">SEU ESPAÇO · BARBEARIA</p>
+            <h1>Olá, <span th:text="${home.barbeiro().nome()}">Barbeiro</span> <span class="pole" aria-hidden="true">💈</span></h1>
+            <p class="subtitle">Hoje, <span th:text="${dataFormatada}">15 de outubro de 2026</span></p>
+        </div>
+        <img class="barber-avatar" th:if="${!#strings.isEmpty(home.barbeiro().imgUrl())}"
+             th:src="${home.barbeiro().imgUrl()}" alt="Sua foto" referrerpolicy="no-referrer">
+    </header>
+
+    <section class="stats" aria-label="Resumo dos atendimentos de hoje">
+        <article class="stat gold">
+            <span class="stat-icon" aria-hidden="true">▦</span>
+            <strong th:text="${home.agendamentosHoje()}">0</strong>
+            <p>Agendamentos<small>hoje</small></p>
+        </article>
+        <article class="stat blue">
+            <span class="stat-icon" aria-hidden="true">✓</span>
+            <strong th:text="${home.concluidosHoje()}">0</strong>
+            <p>Concluídos<small>hoje</small></p>
+        </article>
+        <article class="stat red">
+            <span class="stat-icon" aria-hidden="true">×</span>
+            <strong th:text="${home.canceladosHoje()}">0</strong>
+            <p>Cancelados<small>hoje</small></p>
+        </article>
+    </section>
+
+    <section class="appointments-section" aria-labelledby="appointments-title">
+        <div class="section-heading">
+            <h2 id="appointments-title"><span aria-hidden="true">▦</span> Próximos agendamentos</h2>
+            <a th:href="@{/barbeiro/agenda}">Ver todos <span aria-hidden="true">›</span></a>
+        </div>
+        <div class="appointment-list" th:if="${!#lists.isEmpty(home.proximosAgendamentos())}">
+            <article class="appointment" th:each="item, pos : ${home.proximosAgendamentos()}"
+                     th:classappend="${pos.first} ? 'next' : ''">
+                <div class="appointment-time">
+                    <strong th:text="${#temporals.format(item.horaInicio(), 'HH:mm')}">14:30</strong>
+                    <small th:text="${item.duracaoMinutos() + ' min'}">15 min</small>
+                </div>
+                <div class="appointment-client">
+                    <h3 th:text="${item.nomeCliente()}">Cliente</h3>
+                    <p th:text="${#strings.listJoin(item.servicos(), ' + ')}">Corte</p>
+                </div>
+                <span class="status AGENDADO">Agendado</span>
+                <a class="appointment-open" th:href="@{/barbeiro/agendamentos/{id}/finalizacao(id=${item.id()})}"
+                   th:attr="aria-label=${'Abrir atendimento de ' + item.nomeCliente()}"><span aria-hidden="true">›</span></a>
+            </article>
+        </div>
+        <div class="empty-state" th:if="${#lists.isEmpty(home.proximosAgendamentos())}">
+            <div class="empty-icon" aria-hidden="true">✂</div>
+            <h3>Nenhum próximo agendamento para hoje</h3>
+            <p>Quando surgirem novos horários,<br>eles aparecerão aqui.</p>
+            <a class="outline-button" th:href="@{/barbeiro/agenda}">Consultar agenda</a>
+        </div>
+    </section>
+    <nav class="bottom-nav" aria-label="Navegação do barbeiro">
+        <a class="active" th:href="@{/barbeiro/home}" aria-current="page"><span aria-hidden="true">⌂</span>Home</a>
+        <a th:href="@{/barbeiro/agenda}"><span aria-hidden="true">▦</span>Agenda</a>
+        <form th:action="@{/logout}" method="post"><button type="submit"><span aria-hidden="true">↪</span>Sair</button></form>
+    </nav>
+</main>
+</body>
+</html>

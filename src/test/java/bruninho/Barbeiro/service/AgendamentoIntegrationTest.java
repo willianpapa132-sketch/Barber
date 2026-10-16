@@ -423,6 +423,47 @@ class AgendamentoIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0]").value("09:00:00"));
     }
 
+    @Test
+    void clienteComAgendamentoAvulsoContrataPlanoEAgendaPeloEndpointComum() throws Exception {
+        var avulso = service.agendar(request(LocalTime.of(10, 0)));
+        var planoCliente = contratarPlano();
+        // Reproduz registros antigos: o inicializador Java nao substitui NULL lido do banco.
+        planoCliente.setPagamentoAtrasado(null);
+        planosClientes.saveAndFlush(planoCliente);
+
+        mvc.perform(post("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE"))
+                        .contentType("application/json")
+                        .content("""
+                                {"usuarioId":%d,"clienteId":%d,"barbeiroId":%d,
+                                 "servicosIds":[%d],"data":"%s","horaInicio":"11:00"}
+                                """.formatted(usuario.getId(), cliente.getId(), barbeiro.getId(), corte.getId(), dia)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.precoTotal").value(0));
+
+        var registros = agendamentos.findAll();
+        assertThat(registros).hasSize(2);
+        var mensal = registros.stream().filter(a -> !a.getId().equals(avulso.getId())).findFirst().orElseThrow();
+        assertThat(mensal.getPlanoMensalCliente().getId()).isEqualTo(planoCliente.getId());
+        assertThat(agendamentos.findById(avulso.getId()).orElseThrow().getPlanoMensalCliente()).isNull();
+    }
+
+    @Test
+    void pagamentoAtrasadoContinuaBloqueandoAgendamentoMensalCom400() throws Exception {
+        var planoCliente = contratarPlano();
+        planoCliente.setPagamentoAtrasado(true);
+        planosClientes.saveAndFlush(planoCliente);
+
+        mvc.perform(post("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE"))
+                        .contentType("application/json")
+                        .content("""
+                                {"usuarioId":%d,"clienteId":%d,"barbeiroId":%d,
+                                 "servicosIds":[%d],"data":"%s","horaInicio":"11:00"}
+                                """.formatted(usuario.getId(), cliente.getId(), barbeiro.getId(), corte.getId(), dia)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("plano esta com pagamento atrasado"));
+        assertThat(agendamentos.count()).isZero();
+    }
+
     private List<Long> ids() { return List.of(corte.getId(), barba.getId()); }
 
     private CriarAgendamentoRequest request(LocalTime hora) {
@@ -471,6 +512,7 @@ class AgendamentoIntegrationTest {
     private PlanoMensalCliente contratarPlano() {
         var plano = new PlanosMensal();
         plano.setNomePlano("Plano Corte e Barba");
+        plano.setPorcentagemComissao(25);
         plano.setDescricao("Corte e barba inclusos no plano mensal");
         plano.setValorMensal(new BigDecimal("150.00"));
         plano.setAtivo(true);

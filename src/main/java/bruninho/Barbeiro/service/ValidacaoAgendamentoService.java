@@ -87,8 +87,8 @@ public class ValidacaoAgendamentoService {
         if (id == null || id <= 0) throw new BusinessException("Os IDs devem ser informada");
     }
 
-    public void validarPagamentoPlano(PlanoMensalCliente planoMensalCliente){
-        if(planoMensalCliente.getPagamentoAtrasado()){
+    public void validarPagamentoPlano(PlanoMensalCliente planoMensalCliente) {
+        if (Boolean.TRUE.equals(planoMensalCliente.getPagamentoAtrasado())) {
             throw new BusinessException("plano esta com pagamento atrasado");
         }
     }

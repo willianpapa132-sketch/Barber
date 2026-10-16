@@ -51,6 +51,7 @@ public class PlanosMensal {
 
     private LocalDateTime atualizadoEm ;
 
+    @org.hibernate.annotations.ColumnDefault("0")
     @Column(nullable = false)
     private Integer porcentagemComissao;
 }

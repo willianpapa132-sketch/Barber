@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agenda do barbeiro</title>
+    <link rel="stylesheet" th:href="@{/css/barbeiro.css}">
+</head>
+<body>
+<main class="barber-shell">
+    <header class="page-header"><div>
+        <p class="eyebrow">SUA ROTINA · BARBEARIA</p>
+        <h1>Agendamentos</h1><p class="subtitle">Seus atendimentos do dia</p>
+    </div><span class="pole" aria-hidden="true">💈</span></header>
+    <form class="filters" th:action="@{/barbeiro/agenda}" method="get">
+        <label>Data do atendimento<input type="date" name="data" th:value="${agenda.data()}" required></label>
+        <label>Status<select name="status">
+            <option value="" th:selected="${agenda.status() == null}">Todos</option>
+            <option value="AGENDADO" th:selected="${agenda.status()?.name() == 'AGENDADO'}">Agendados</option>
+            <option value="CONCLUIDO" th:selected="${agenda.status()?.name() == 'CONCLUIDO'}">Concluídos</option>
+            <option value="CANCELADO" th:selected="${agenda.status()?.name() == 'CANCELADO'}">Cancelados</option>
+            <option value="NAO_COMPARECEU" th:selected="${agenda.status()?.name() == 'NAO_COMPARECEU'}">Não compareceu</option>
+        </select></label>
+        <button class="primary-button" type="submit">Filtrar</button>
+    </form>
+    <div class="section-heading"><h2 th:text="${#temporals.format(agenda.data(), 'dd/MM/yyyy')}">Hoje</h2>
+        <span class="subtitle" th:text="${agenda.totalAgendamentos() + ' atendimento(s)'}">0 atendimentos</span></div>
+    <div class="appointment-list">
+        <article class="appointment" th:each="item : ${agenda.agendamentos()}"
+                 th:classappend="${item.id() == agenda.proximoAgendamentoId()} ? 'next' : ''">
+            <div class="appointment-time"><strong th:text="${#temporals.format(item.horaInicio(), 'HH:mm')}">09:00</strong>
+                <small th:text="${item.duracaoMinutos() + ' min'}">15 min</small></div>
+            <div class="appointment-client"><h3 th:text="${item.nomeCliente()}">Cliente</h3>
+                <p th:text="${#strings.listJoin(item.servicos(), ' + ')}">Corte</p></div>
+            <span class="status" th:classappend="${item.status().name()}" th:switch="${item.status().name()}">
+                <span th:case="'AGENDADO'">Agendado</span><span th:case="'CONCLUIDO'">Concluído</span>
+                <span th:case="'CANCELADO'">Cancelado</span><span th:case="*">Não compareceu</span>
+            </span>
+            <a class="appointment-open" th:if="${item.status().name() == 'AGENDADO'}"
+               th:href="@{/barbeiro/agendamentos/{id}/finalizacao(id=${item.id()})}"
+               th:attr="aria-label=${'Abrir atendimento de ' + item.nomeCliente()}"><span aria-hidden="true">›</span></a>
+        </article>
+    </div>
+    <div class="empty-state" th:if="${#lists.isEmpty(agenda.agendamentos())}">
+        <div class="empty-icon" aria-hidden="true">✂</div><h3>Nenhum agendamento encontrado</h3>
+        <p>Selecione outra data ou outro status para consultar.</p>
+    </div>
+    <nav class="pagination" aria-label="Páginas da agenda" th:if="${agenda.totalPaginas() > 1}">
+        <a class="outline-button" th:if="${agenda.pagina() > 0}"
+           th:href="@{/barbeiro/agenda(data=${agenda.data()},status=${agenda.status()},pagina=${agenda.pagina() - 1})}">Anterior</a>
+        <span th:text="${(agenda.pagina() + 1) + ' / ' + agenda.totalPaginas()}">1 / 2</span>
+        <a class="outline-button" th:if="${agenda.temProximaPagina()}"
+           th:href="@{/barbeiro/agenda(data=${agenda.data()},status=${agenda.status()},pagina=${agenda.pagina() + 1})}">Próxima</a>
+    </nav>
+    <nav class="bottom-nav" aria-label="Navegação do barbeiro">
+        <a th:href="@{/barbeiro/home}"><span aria-hidden="true">⌂</span>Home</a>
+        <a class="active" th:href="@{/barbeiro/agenda}" aria-current="page"><span aria-hidden="true">▦</span>Agenda</a>
+        <form th:action="@{/logout}" method="post"><button type="submit"><span aria-hidden="true">↪</span>Sair</button></form>
+    </nav>
+</main>
+</body>
+</html>

@@ -18,9 +18,10 @@ import static org.mockito.Mockito.*;
 class FinalizacaoAgendamentoServiceTest {
     private final AgendamentoRepository agendamentos = mock(AgendamentoRepository.class);
     private final ComissaoBarbeiroRepository comissoes = mock(ComissaoBarbeiroRepository.class);
+    private final ComissaoPlanoRepository comissoesPlano = mock(ComissaoPlanoRepository.class);
     private final PlanoMensalClienteRepository planos = mock(PlanoMensalClienteRepository.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-15T18:00:00Z"), ZoneId.of("America/Sao_Paulo"));
-    private final FinalizacaoAgendamentoService service = new FinalizacaoAgendamentoService(agendamentos, comissoes, planos, clock);
+    private final FinalizacaoAgendamentoService service = new FinalizacaoAgendamentoService(agendamentos, comissoes, comissoesPlano, planos, clock);
     private Agendamento agendamento;
 
     @BeforeEach
@@ -132,6 +133,84 @@ class FinalizacaoAgendamentoServiceTest {
         agendamento.getBarbeiro().setPorcentagemComissao(101);
         assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.PIX))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Percentual");
+    }
+
+    @Test
+    void mensalRegistraPlanoDataEPercentualSemGerarComissaoEmReais() {
+        var plano = vincularPlano();
+        agendamento.setPrecoTotal(BigDecimal.ZERO);
+        var resposta = service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL);
+        assertThat(resposta.status()).isEqualTo(StatusAgendamento.CONCLUIDO);
+        assertThat(resposta.comissao()).isNull();
+        assertThat(resposta.valorCobrar()).isZero();
+        assertThat(resposta.formaPagamento()).isEqualTo(FormaPagamento.MENSAL);
+        assertThat(resposta.comissaoPlano().percentualAplicado()).isEqualByComparingTo("40");
+        var captor = ArgumentCaptor.forClass(ComissaoPlano.class);
+        verify(comissoesPlano).save(captor.capture());
+        var registro = captor.getValue();
+        assertThat(registro.getPlanoMensal()).isSameAs(plano.getPlanoMensal());
+        assertThat(registro.getPlanoMensalCliente()).isSameAs(plano);
+        assertThat(registro.getAgendamento()).isSameAs(agendamento);
+        assertThat(registro.getBarbeiro()).isSameAs(agendamento.getBarbeiro());
+        assertThat(registro.getDataAgendamento()).isEqualTo(agendamento.getData());
+        assertThat(registro.getCriadoEm()).isEqualTo(LocalDateTime.now(clock));
+        plano.getPlanoMensal().setPorcentagemComissao(60);
+        assertThat(registro.getPercentualAplicado()).isEqualByComparingTo("40");
+        verify(comissoes, never()).save(any());
+    }
+
+    @Test
+    void previaMensalUsaPlanoMesmoSemPercentualNoBarbeiroENaoContabiliza() {
+        vincularPlano();
+        agendamento.getBarbeiro().setPorcentagemComissao(null);
+        var resposta = service.consultar("barbeiro", 1L, null);
+        assertThat(resposta.comissao()).isNull();
+        assertThat(resposta.comissaoPlano().planoId()).isEqualTo(8L);
+        assertThat(resposta.formasPagamentoDisponiveis()).containsExactly(FormaPagamento.MENSAL);
+        verifyNoInteractions(comissoes, comissoesPlano);
+    }
+
+    @Test
+    void bloqueiaPlanoInativoPercentualInvalidoEPagamentoAvulsoEmMensal() {
+        var plano = vincularPlano();
+        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.PIX))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("pagamento MENSAL");
+        plano.getPlanoMensal().setPorcentagemComissao(null);
+        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Percentual");
+        plano.getPlanoMensal().setPorcentagemComissao(40);
+        plano.setAtivo(false);
+        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("inativo");
+        verify(comissoesPlano, never()).save(any());
+    }
+
+    @Test
+    void registroDePlanoExistenteImpedeDuplicacao() {
+        vincularPlano();
+        when(comissoesPlano.existsByAgendamento_Id(1L)).thenReturn(true);
+        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("ja possui comissao");
+        verify(comissoesPlano, never()).save(any());
+    }
+
+    private PlanoMensalCliente vincularPlano() {
+        var cliente = new Cliente();
+        cliente.setId(5L);
+        agendamento.setCliente(cliente);
+        var plano = new PlanosMensal();
+        plano.setId(8L);
+        plano.setNomePlano("Plano Corte");
+        plano.setPorcentagemComissao(40);
+        plano.setAtivo(true);
+        plano.setServicosIncluidos(agendamento.getServico());
+        var contrato = new PlanoMensalCliente();
+        contrato.setId(9L);
+        contrato.setCliente(cliente);
+        contrato.setPlanoMensal(plano);
+        contrato.setAtivo(true);
+        agendamento.setPlanoMensalCliente(contrato);
+        return contrato;
     }
 
     @Test

@@ -33,7 +33,7 @@ import java.util.Set;
 @Configuration
 @EnableConfigurationProperties(AppProperties.class)
 public class DataInitializer {
-    private static final String BARBEIRO_DEMO_LOGIN = "barbeiro";
+    private static final String BARBEIRO_DEMO_LOGIN = "barbeiro@demo.com";
     private static final String CLIENTE_DEMO_LOGIN = "cliente";
 
     @Bean
@@ -139,19 +139,18 @@ public class DataInitializer {
             PlanoMensalRepository planosMensais,
             PasswordEncoder passwordEncoder
     ) {
-        Servico corte = ensureServico(servicos, "Corte", "45.00", 45);
-        Servico barba = ensureServico(servicos, "Barba", "35.00", 30);
-        Servico sobrancelha = ensureServico(servicos, "Sobrancelha", "25.00", 20);
-        Servico hidratacao = ensureServico(servicos, "Hidratacao", "40.00", 30);
-        Servico pigmentacao = ensureServico(servicos, "Pigmentacao", "55.00", 45);
+        Servico corte = ensureServico(servicos, "Corte", "45.00", 15);
+        Servico barba = ensureServico(servicos, "Barba", "35.00", 10);
+        Servico sobrancelha = ensureServico(servicos, "Sobrancelha", "25.00", 15);
+        Servico hidratacao = ensureServico(servicos, "Hidratacao", "40.00", 15);
+        Servico pigmentacao = ensureServico(servicos, "Pigmentacao", "55.00", 15);
+        servicos.findByNomeIgnoreCase("Bigode").ifPresent(bigode -> {
+            bigode.setDuracaoMinutos(10);
+            bigode.setAtualizadoEm(LocalDateTime.now());
+            servicos.save(bigode);
+        });
 
-        Usuario usuarioBarbeiro = criarUsuarioSeAusente(
-                usuarios,
-                BARBEIRO_DEMO_LOGIN,
-                "barbeiro123",
-                ROLE.BARBEIRO,
-                passwordEncoder
-        );
+        Usuario usuarioBarbeiro = ensureUsuarioBarbeiroDemo(usuarios, passwordEncoder);
         Barbeiro barbeiro = ensureBarbeiro(barbeiros, usuarioBarbeiro);
         ensureJornadaBarbeiro(jornadas, barbeiro);
 
@@ -209,6 +208,9 @@ public class DataInitializer {
         barbeiro.setTelefone("(41) 99187-8175");
         barbeiro.setAtivo(true);
         barbeiro.setUsuario(usuario);
+        if (barbeiro.getPorcentagemComissao() == null || barbeiro.getPorcentagemComissao() == 0) {
+            barbeiro.setPorcentagemComissao(40);
+        }
         barbeiro.setImgurl("https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=300&q=80");
         return barbeiros.save(barbeiro);
     }
@@ -259,6 +261,9 @@ public class DataInitializer {
         plano.setValorMensal(new BigDecimal(valor));
         plano.setDiasMaximoAntecedencia(diasMaximoAntecedencia);
         plano.setAtivo(true);
+        if (plano.getPorcentagemComissao() == null) {
+            plano.setPorcentagemComissao(0);
+        }
         plano.getServicosIncluidos().clear();
         plano.getServicosIncluidos().addAll(servicos);
         plano.setAtualizadoEm(LocalDateTime.now());
@@ -266,6 +271,20 @@ public class DataInitializer {
             plano.setCriadoEm(LocalDateTime.now());
         }
         planosMensais.save(plano);
+    }
+
+    private Usuario ensureUsuarioBarbeiroDemo(UsuarioRepository usuarios, PasswordEncoder passwordEncoder) {
+        var usuario = usuarios.findByLogin(BARBEIRO_DEMO_LOGIN)
+                .or(() -> usuarios.findByLogin("barbeiro"));
+        if (usuario.isPresent()) {
+            var existente = usuario.get();
+            if (existente.getRole() != ROLE.BARBEIRO) {
+                throw new IllegalStateException("Login do barbeiro demo pertence a outro perfil");
+            }
+            existente.setLogin(BARBEIRO_DEMO_LOGIN);
+            return usuarios.save(existente);
+        }
+        return criarUsuarioSeAusente(usuarios, BARBEIRO_DEMO_LOGIN, "barbeiro123", ROLE.BARBEIRO, passwordEncoder);
     }
 
     private Usuario criarUsuarioSeAusente(

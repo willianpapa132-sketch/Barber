@@ -25,6 +25,7 @@ public record FinalizacaoAgendamentoResponse(
         FormaPagamento formaPagamento,
         List<FormaPagamento> formasPagamentoDisponiveis,
         ComissaoResponse comissao,
+        ComissaoPlanoResponse comissaoPlano,
         boolean podeFinalizar,
         String motivoBloqueio,
         LocalDateTime finalizadoEm
@@ -32,4 +33,6 @@ public record FinalizacaoAgendamentoResponse(
     public record ServicoResponse(Long id, String nome, BigDecimal preco) {}
     public record ComissaoResponse(TipoComissao tipo, BigDecimal valorBase,
                                    BigDecimal percentualAplicado, BigDecimal valorComissao) {}
+    public record ComissaoPlanoResponse(Long planoId, Long planoMensalClienteId, String nomePlano,
+                                        LocalDate dataAgendamento, BigDecimal percentualAplicado) {}
 }
