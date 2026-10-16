@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agenda do barbeiro</title>
     <link rel="stylesheet" th:href="@{/css/barbeiro.css}">
+    <link rel="stylesheet" th:href="@{/css/barbeiro-agenda.css}">
+    <script defer th:src="@{/js/barbeiro-agenda.js}"></script>
 </head>
 <body>
-<main class="barber-shell">
+<main class="barber-shell agenda-shell" id="agenda-app" th:attr="data-date=${agenda.data()},data-status=${agenda.status()}">
     <header class="page-header"><div>
         <p class="eyebrow">SUA ROTINA · BARBEARIA</p>
-        <h1>Agendamentos</h1><p class="subtitle">Seus atendimentos do dia</p>
+        <h1>Seus atendimentos do dia</h1><p class="subtitle">Gerencie sua agenda de forma prática</p>
     </div><span class="pole" aria-hidden="true">💈</span></header>
-    <form class="filters" th:action="@{/barbeiro/agenda}" method="get">
+    <form id="agenda-filters" class="filters" th:action="@{/barbeiro/agenda}" method="get">
         <label>Data do atendimento<input type="date" name="data" th:value="${agenda.data()}" required></label>
         <label>Status<select name="status">
             <option value="" th:selected="${agenda.status() == null}">Todos</option>
@@ -23,8 +25,14 @@
         </select></label>
         <button class="primary-button" type="submit">Filtrar</button>
     </form>
-    <div class="section-heading"><h2 th:text="${#temporals.format(agenda.data(), 'dd/MM/yyyy')}">Hoje</h2>
-        <span class="subtitle" th:text="${agenda.totalAgendamentos() + ' atendimento(s)'}">0 atendimentos</span></div>
+    <div class="section-heading"><h2 id="agenda-date-title" th:text="${#temporals.format(agenda.data(), 'dd/MM/yyyy')}">Hoje</h2>
+        <span id="agenda-count" class="subtitle" th:text="${agenda.totalAgendamentos() + ' atendimento(s)'}">0 atendimentos</span></div>
+    <p id="agenda-grid-label" class="subtitle grid-label" role="status">Carregando a grade de horários...</p>
+    <p id="agenda-message" class="finish-notice" role="status" hidden></p>
+    <button id="agenda-retry" class="outline-button" type="button" hidden>Tentar novamente</button>
+    <section id="agenda-timeline" aria-label="Horários da jornada" hidden></section>
+    <section id="agenda-outside" aria-label="Atendimentos fora da jornada" hidden></section>
+    <div id="agenda-fallback">
     <div class="appointment-list">
         <article class="appointment" th:each="item : ${agenda.agendamentos()}"
                  th:classappend="${item.id() == agenda.proximoAgendamentoId()} ? 'next' : ''">
@@ -52,6 +60,46 @@
         <a class="outline-button" th:if="${agenda.temProximaPagina()}"
            th:href="@{/barbeiro/agenda(data=${agenda.data()},status=${agenda.status()},pagina=${agenda.pagina() + 1})}">Próxima</a>
     </nav>
+    </div>
+    <button id="agenda-add" class="agenda-add" type="button" aria-label="Novo bloqueio ou agendamento" hidden disabled>+</button>
+    <dialog id="agenda-dialog" class="agenda-dialog" aria-labelledby="agenda-dialog-title">
+        <header class="dialog-heading"><div><h2 id="agenda-dialog-title">Novo</h2><p id="agenda-dialog-subtitle">Escolha uma ação</p></div>
+            <button id="agenda-dialog-close" type="button" class="dialog-close" aria-label="Fechar">×</button></header>
+        <div id="agenda-action-menu" class="action-menu">
+            <button type="button" id="choose-block" class="action-choice"><span class="action-icon" aria-hidden="true"><svg width="30" height="36" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="12" width="18" height="14" rx="3"/><path d="M6 12V7a6 6 0 0 1 12 0v5M12 17v5"/></svg></span>
+                <span><strong>Criar bloqueio</strong><small>Bloqueie um horário na sua agenda para indisponibilidade.</small></span><span aria-hidden="true">›</span></button>
+            <button type="button" id="choose-appointment" class="action-choice"><span class="action-icon" aria-hidden="true"><svg width="32" height="34" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="23" height="21" rx="3"/><path d="M2 11h23M8 1v8M19 1v8M9 15v7M5.5 18.5h7M21 19v9M16.5 23.5h9"/></svg></span>
+                <span><strong>Criar agendamento</strong><small>Cadastre um novo atendimento para um cliente.</small></span><span aria-hidden="true">›</span></button>
+        </div>
+        <p id="agenda-dialog-error" class="finish-notice notice-error" role="alert" hidden></p>
+        <form id="agenda-appointment-form" class="agenda-editor" hidden>
+            <p class="dialog-date subtitle"></p>
+            <label>Tipo de cliente<select id="agenda-customer-mode"><option value="registered">Cliente cadastrado</option><option value="walkin">Cliente avulso</option></select></label>
+            <div id="agenda-registered-fields">
+                <label>Buscar cliente<input id="agenda-client-search" type="search" placeholder="Nome ou telefone" maxlength="80" autocomplete="off"></label>
+                <label>Cliente<select id="agenda-client" required><option value="">Selecione um cliente</option></select></label>
+                <small class="subtitle">Mostramos até 20 resultados. Refine a busca para encontrar o cliente.</small>
+            </div>
+            <div id="agenda-walkin-fields" hidden>
+                <label>Nome do cliente<input id="agenda-client-name" maxlength="120" autocomplete="name"></label>
+                <label>Telefone<input id="agenda-client-phone" maxlength="20" type="tel" autocomplete="tel"></label>
+            </div>
+            <fieldset class="service-picker"><legend>Serviços</legend><div id="agenda-services"></div></fieldset>
+            <label>Horário de início<select id="agenda-appointment-time" required></select></label>
+            <p id="agenda-appointment-summary" class="finish-hint" aria-live="polite"></p>
+            <p id="agenda-plan-hint" class="finish-hint" aria-live="polite">Selecione um cliente para consultar os serviços disponíveis.</p>
+            <button type="submit" class="primary-button" id="agenda-save-appointment">Criar agendamento</button>
+            <button type="button" class="dialog-back">Voltar às opções</button>
+        </form>
+        <form id="agenda-block-form" class="agenda-editor" hidden>
+            <p class="dialog-date subtitle"></p>
+            <label>Início do bloqueio<select id="agenda-block-start" required></select></label>
+            <label>Fim do bloqueio<select id="agenda-block-end" required></select></label>
+            <p class="finish-hint">Apenas este período ficará indisponível. Horários com atendimento ou bloqueio não podem ser reservados novamente.</p>
+            <button type="submit" class="primary-button" id="agenda-save-block">Criar bloqueio</button>
+            <button type="button" class="dialog-back">Voltar às opções</button>
+        </form>
+    </dialog>
     <nav class="bottom-nav" aria-label="Navegação do barbeiro">
         <a th:href="@{/barbeiro/home}"><span aria-hidden="true">⌂</span>Home</a>
         <a class="active" th:href="@{/barbeiro/agenda}" aria-current="page"><span aria-hidden="true">▦</span>Agenda</a>

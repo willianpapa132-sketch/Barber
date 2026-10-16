@@ -81,8 +81,9 @@ public class DisponibilidadeAgendamentosService {
         var horario = funcionamento.findByDiaSemana(dia.getDayOfWeek());
         var jornada = jornadas.findByDiaSemanaAndBarbeiro_id(dia.getDayOfWeek(), barbeiroId).orElse(null);
         if (horario == null || jornada == null || !Boolean.FALSE.equals(horario.getFechado())
-                || Boolean.TRUE.equals(jornada.getFolga()) || Boolean.FALSE.equals(jornada.getAtivo())
-                || bloqueios.existsByDataBloqueioAndBarbeiro_Id(dia, barbeiroId)) return List.of();
+                || Boolean.TRUE.equals(jornada.getFolga()) || Boolean.FALSE.equals(jornada.getAtivo())) return List.of();
+        var bloqueiosDoDia = bloqueios.findAllByBarbeiro_IdAndDataBloqueioOrderByHoraInicioAsc(barbeiroId, dia);
+        if (bloqueiosDoDia.stream().anyMatch(b -> b.getHoraInicio() == null || b.getHoraFim() == null)) return List.of();
         if (horario.getIntervaloMinimoEntreAgendamentos() == null || horario.getIntervaloMinimoEntreAgendamentos() <= 0
                 || horario.getHoraAbertura() == null || horario.getHoraFechamento() == null
                 || jornada.getHoraInicio() == null || jornada.getHoraFim() == null)
@@ -92,15 +93,18 @@ public class DisponibilidadeAgendamentosService {
         int duracao = servicos.stream().mapToInt(Servico::getDuracaoMinutos).sum() * 60;
         if (duracao <= 0 || duracao >= 86400) throw new BusinessException("Duração inválida");
         long passo = horario.getIntervaloMinimoEntreAgendamentos().longValue() * 60;
+        long primeiroHorario = jornada.getHoraInicio().toSecondOfDay();
+        if (primeiroHorario < inicio) primeiroHorario += ((inicio - primeiroHorario + passo - 1) / passo) * passo;
         var ocupados = agendamentos.findAllByBarbeiro_idAndData(barbeiroId, dia);
         List<LocalTime> resultado = new ArrayList<>();
         LocalDateTime agora = LocalDateTime.now();
-        for (long segundo = inicio; segundo + duracao <= fim; segundo += passo) {
+        for (long segundo = primeiroHorario; segundo + duracao <= fim; segundo += passo) {
             LocalTime hora = LocalTime.ofSecondOfDay(segundo);
             LocalTime termino = LocalTime.ofSecondOfDay(segundo + duracao);
             if (!dia.atTime(hora).isAfter(agora)) continue;
             if (jornada.getIntervaloInicio() != null && jornada.getIntervaloFim() != null
                     && conflito(hora, termino, jornada.getIntervaloInicio(), jornada.getIntervaloFim())) continue;
+            if (bloqueiosDoDia.stream().anyMatch(b -> conflito(hora, termino, b.getHoraInicio(), b.getHoraFim()))) continue;
             boolean conflito = ocupados.stream().filter(a -> a.getStatus() != StatusAgendamento.CANCELADO)
                     .anyMatch(a -> conflito(hora, termino, a.getHoraInicio(), a.getHoraFinalizacao()));
             if (!conflito) resultado.add(hora);

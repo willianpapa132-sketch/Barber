@@ -1,0 +1,8 @@
+package bruninho.Barbeiro.Controller.barbeiro.agenda;
+
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+public record CriarBloqueioAgendaRequest(@NotNull LocalDate data, @NotNull LocalTime horaInicio,
+                                        @NotNull LocalTime horaFim) {}
