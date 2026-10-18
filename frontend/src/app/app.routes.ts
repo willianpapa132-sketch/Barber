@@ -12,6 +12,9 @@ export const routes: Routes = [
   { path: 'barbeiro', component: BarberLayout, children: [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', loadComponent: () => import('./barbeiro/home.page').then(m => m.BarberHomePage), title: 'Home do barbeiro' },
+    { path: 'carteira/pontos', loadComponent: () => import('./barbeiro/valores-formulado.page').then(m => m.BarberStatementPage), data: { tipo: 'pontos' }, title: 'Pontos do plano' },
+    { path: 'carteira/comissoes', loadComponent: () => import('./barbeiro/valores-formulado.page').then(m => m.BarberStatementPage), data: { tipo: 'comissoes' }, title: 'Valor liquido de comissao' },
+    { path: 'carteira', loadComponent: () => import('./barbeiro/carteira.page').then(m => m.BarberWalletPage), title: 'Carteira do barbeiro' },
     { path: 'agenda', loadComponent: () => import('./barbeiro/agenda.page').then(m => m.BarberAgendaPage), title: 'Agenda do barbeiro' },
     { path: 'agendamentos/:id/finalizacao', loadComponent: () => import('./barbeiro/finish.page').then(m => m.BarberFinishPage), title: 'Finalizar agendamento' },
   ] },

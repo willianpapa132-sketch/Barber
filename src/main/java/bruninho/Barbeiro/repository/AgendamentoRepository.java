@@ -109,4 +109,12 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
             @Param("horaAtual") LocalTime horaAtual
     );
 
+    @Query("""
+            select coalesce(sum(a.duracaoServicoMinutos), 0) from Agendamento a
+            where a.barbeiro.id = :barbeiroId and a.data between :inicio and :fim
+              and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO
+            """)
+    long somarMinutosConcluidos(@Param("barbeiroId") Long barbeiroId,
+                               @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
 }

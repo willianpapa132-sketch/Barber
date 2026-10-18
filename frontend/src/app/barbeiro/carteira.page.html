@@ -1,0 +1,44 @@
+<main class="wallet-shell">
+  <header class="wallet-header">
+    <div><p class="wallet-eyebrow">SEU TRABALHO, SEUS RESULTADOS</p><h1>Carteira</h1><p>Acompanhe seus ganhos e desempenho</p></div>
+    <svg class="wallet-scissors" aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="36" r="6"/><circle cx="37" cy="36" r="6"/><path d="m15 31 23-26M33 31 10 5M20 25l-5 6M28 25l5 6"/></svg>
+  </header>
+
+  <section class="wallet-panel wallet-filter" aria-labelledby="period-title">
+    <div class="wallet-filter-heading"><h2 id="period-title"><span aria-hidden="true">▣</span> Período</h2><small>Selecione até 3 meses</small></div>
+    <form (ngSubmit)="load()">
+      <fieldset [disabled]="loading()"><legend class="visually-hidden">Filtrar carteira por período</legend>
+        <label>Início<input type="date" name="inicio" [(ngModel)]="inicio" required aria-describedby="wallet-period-help"></label>
+        <label>Fim<input type="date" name="fim" [(ngModel)]="fim" [min]="inicio" [max]="maxFim" required aria-describedby="wallet-period-help"></label>
+        <button type="submit" [disabled]="loading() || !!validation"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18l-7 8v7l-4-2v-5z"/></svg>{{ loading() ? 'Buscando...' : 'Filtrar' }}</button>
+      </fieldset>
+    </form>
+    <p id="wallet-period-help" class="wallet-help" [class.wallet-invalid]="!!validation" aria-live="polite">{{ validation || 'As datas de início e fim estão incluídas na consulta.' }}</p>
+  </section>
+
+  @if (loading()) { <div class="wallet-state" role="status"><span class="wallet-loader" aria-hidden="true"></span>Buscando seus resultados...</div> }
+  @if (error()) { <div class="wallet-state wallet-error" role="alert"><p>{{ error() }}</p><button type="button" (click)="load()" [disabled]="!!validation">Tentar novamente</button></div> }
+  @if (wallet(); as data) {
+    <p class="wallet-period" aria-live="polite">Resultados de {{ dateLabel(data.inicio) }} a {{ dateLabel(data.fim) }}</p>
+    @if (periodChanged) { <p class="wallet-help wallet-pending" role="status">Período alterado. Clique em Filtrar para atualizar os resultados.</p> }
+    <div class="wallet-results">
+      <a class="wallet-panel wallet-points wallet-detail-link" routerLink="/barbeiro/carteira/pontos" [queryParams]="{ inicio: data.inicio, fim: data.fim }" aria-labelledby="points-title">
+        <svg class="wallet-icon" aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="m24 5 20 12-20 12L4 17zM4 25l20 12 20-12M4 33l20 12 20-12"/></svg>
+        <div><h2 id="points-title">Pontos do plano</h2><strong>{{ data.pontos.toLocaleString('pt-BR') }} <span>pts</span></strong><p>Minutos de serviços incluídos nos planos</p></div>
+      <span class="wallet-detail-caption">Ver atendimentos <span aria-hidden="true">›</span></span>
+      </a>
+      <a class="wallet-panel wallet-income wallet-detail-link" routerLink="/barbeiro/carteira/comissoes" [queryParams]="{ inicio: data.inicio, fim: data.fim }" aria-labelledby="income-title">
+        <h2 id="income-title"><svg class="wallet-small-icon" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="14" width="4" height="7" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>Valor líquido no período</h2>
+        <strong>{{ money(data.valorLiquido) }}</strong><p>Suas comissões de atendimentos e extras</p>
+      <span class="wallet-detail-caption">Ver atendimentos <span aria-hidden="true">›</span></span>
+      </a>
+      <section class="wallet-panel wallet-hours" aria-labelledby="hours-title">
+        <h2 id="hours-title"><svg class="wallet-small-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 5v7l5 3"/></svg>Tempo total de serviço</h2>
+        <strong>{{ duration }}</strong><p>Horas trabalhadas em atendimentos concluídos</p>
+      </section>
+    </div>
+    @if (!data.minutosTrabalhados && !data.pontos && !data.valorLiquido) { <p class="wallet-empty" role="status">Nenhum resultado de atendimento concluído neste período.</p> }
+    <p class="wallet-footnote">Os totais consideram a data dos atendimentos concluídos. Serviços extras geram comissão sobre o valor após o desconto.</p>
+  }
+  <app-barber-nav />
+</main>

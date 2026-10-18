@@ -1,4 +1,10 @@
 .barber-area {
+.wallet-detail-link.wallet-panel { position: relative; text-decoration: none; display: block; padding-bottom: 46px; }
+.wallet-detail-link.wallet-points { display: flex; }
+.wallet-detail-link:hover { border-color: #edc373; }
+.wallet-detail-link:focus-visible { outline: 2px solid #edc373; outline-offset: 4px; }
+.wallet-detail-caption { position: absolute; right: 24px; bottom: 14px; color: #edc373; font-size: 11px; }
+
 & { color-scheme: dark; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #080a0c; color: #f3f3f4; }
 [hidden] { display: none !important; }
 .appointment { position: relative; }
@@ -98,7 +104,7 @@ h2 > span { color: #edc373; margin-right: 7px; }
 .empty-state p { color: #aeb8c7; margin: 0 0 26px; line-height: 1.65; font-size: 14px; }
 .outline-button { display: inline-block; padding: 11px 17px; border: 1px solid #705a35; color: #edc373; border-radius: 10px; font-size: 13px; }
 .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); display: flex; justify-content: space-around; width: min(100%, 780px); border: 1px solid #2b2c2d; border-bottom: 0; padding: 14px 16px max(14px, env(safe-area-inset-bottom)); background: #101315f5; border-radius: 22px 22px 0 0; backdrop-filter: blur(14px); z-index: 10; }
-.bottom-nav a, .bottom-nav button { display: grid; justify-items: center; gap: 5px; border: 0; background: transparent; color: #acb6c7; font-size: 12px; padding: 2px 24px; cursor: pointer; }
+.bottom-nav a, .bottom-nav button { display: grid; justify-items: center; gap: 5px; border: 0; background: transparent; color: #acb6c7; font-size: 12px; padding: 2px clamp(8px, 3vw, 24px); cursor: pointer; }
 .bottom-nav form { margin: 0; }
 .bottom-nav span { font-size: 27px; line-height: 1; }
 .bottom-nav .active, .bottom-nav a:hover, .bottom-nav button:hover { color: #edc373; }

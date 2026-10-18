@@ -1,0 +1,41 @@
+<main class="wallet-shell statement-shell">
+  <a class="statement-back" routerLink="/barbeiro/carteira" [queryParams]="backPeriod"><span aria-hidden="true">‹</span> Voltar à carteira</a>
+  <header class="wallet-header"><div><h1>{{ isPoints ? 'Pontos do plano' : 'Valor líquido' }}</h1><p>{{ isPoints ? 'Veja os atendimentos que geraram seus pontos.' : 'Atendimentos e extras que geraram sua comissão.' }}</p></div></header>
+  <section class="wallet-panel wallet-filter" aria-labelledby="period-title">
+    <div class="wallet-filter-heading"><h2 id="period-title"><span aria-hidden="true">▣</span> Período</h2><small>Selecione até 3 meses</small></div>
+    <form (ngSubmit)="load()"><fieldset [disabled]="loading()"><legend class="visually-hidden">Filtrar extrato por período</legend>
+      <label>Início<input name="inicio" type="date" [(ngModel)]="inicio" required aria-describedby="statement-period-help"></label>
+      <label>Fim<input name="fim" type="date" [(ngModel)]="fim" [min]="inicio" [max]="maxFim" required aria-describedby="statement-period-help"></label>
+      <button type="submit" [disabled]="loading() || !!validation">{{ loading() ? 'Buscando...' : 'Filtrar' }}</button>
+    </fieldset></form>
+    <p id="statement-period-help" class="wallet-help" [class.wallet-invalid]="!!validation" aria-live="polite">{{ validation || 'As datas de início e fim estão incluídas na consulta.' }}</p>
+  </section>
+  @if (loading()) { <p class="wallet-state" role="status"><span class="wallet-loader" aria-hidden="true"></span>Buscando atendimentos...</p> }
+  @if (error()) { <div class="wallet-state wallet-error" role="alert"><p>{{ error() }}</p><button type="button" (click)="load()" [disabled]="!!validation">Tentar novamente</button></div> }
+  @if (statement(); as data) {
+    <section class="wallet-panel statement-total" [class.statement-money]="!isPoints" aria-labelledby="statement-total-title">
+      <svg class="wallet-icon" aria-hidden="true" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round">
+        @if (isPoints) { <path d="m24 5 20 12-20 12L4 17zM4 25l20 12 20-12M4 33l20 12 20-12"/> }
+        @else { <ellipse cx="24" cy="9" rx="16" ry="6"/><path d="M8 9v29c0 8 32 8 32 0V9M8 19c0 8 32 8 32 0M8 29c0 8 32 8 32 0"/> }
+      </svg>
+      <div><h2 id="statement-total-title">{{ isPoints ? 'Pontos do plano no período' : 'Valor líquido no período' }}</h2><strong>{{ isPoints ? (data.totalPontos ?? 0).toLocaleString('pt-BR') + ' pts' : money(data.valorLiquido ?? 0) }}</strong><p>{{ dateLabel(data.inicio) }} a {{ dateLabel(data.fim) }}</p></div>
+    </section>
+    @if (periodChanged) { <p class="wallet-help wallet-pending" role="status">Período alterado. Clique em Filtrar para atualizar os resultados.</p> }
+    <div class="statement-list-heading"><h2>{{ isPoints ? 'Atendimentos do plano' : 'Atendimentos que geraram comissão' }}</h2><span>{{ data.totalAtendimentos }} atendimento(s)</span></div>
+    <ol class="statement-list" aria-label="Atendimentos do extrato">
+      @for (item of data.atendimentos; track item.agendamentoId) {
+        <li class="wallet-panel statement-row">
+          <time class="statement-date" [attr.datetime]="item.data"><strong>{{ item.data.slice(8, 10) }}</strong><span>{{ month(item.data) }}</span><small>{{ item.data.slice(0, 4) }}</small></time>
+          <div class="statement-description"><p class="statement-time">{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFim) }} <small>({{ duration(item.duracaoMinutos) }} no total)</small></p><h3>{{ item.nomeCliente }}</h3><p class="statement-services">{{ item.servicos.join(' + ') || 'Serviços não detalhados neste registro' }}</p>
+            @if (isPoints) { <p class="statement-formula">{{ item.pontos }} min incluídos × 1 ponto/min</p> }
+            @else { @if (item.valorBase !== null && item.percentualAplicado !== null) { <p class="statement-formula">{{ money(item.valorBase) }} × {{ item.percentualAplicado }}% = {{ money(item.valorComissao ?? 0) }}</p><small class="statement-net">Base após os descontos aplicados</small> } @else { <p class="statement-formula">Comissão registrada na finalização</p> } }
+          </div>
+          <div class="statement-value"><span class="statement-tag">{{ isPoints ? 'Plano' : item.nomePlano ? 'Extras do plano' : 'Normal' }}</span><strong>{{ isPoints ? item.pontos + ' pts' : money(item.valorComissao ?? 0) }}</strong>@if (item.nomePlano) { <small>{{ item.nomePlano }}</small> }</div>
+        </li>
+      } @empty { <li class="wallet-panel statement-empty">{{ isPoints ? 'Nenhum atendimento gerou pontos neste período.' : 'Nenhuma comissão registrada neste período.' }}</li> }
+    </ol>
+    @if (data.totalPaginas > 1) { <nav class="statement-pagination" aria-label="Páginas do extrato"><button type="button" (click)="load(data.pagina - 1)" [disabled]="loading() || periodChanged || data.pagina === 0">Anterior</button><span aria-live="polite">{{ data.pagina + 1 }} de {{ data.totalPaginas }}</span><button type="button" (click)="load(data.pagina + 1)" [disabled]="loading() || periodChanged || data.pagina + 1 >= data.totalPaginas">Próxima</button></nav> }
+    <p class="wallet-footnote">{{ isPoints ? 'Apenas os serviços incluídos no plano geram pontos. Os extras não entram nessa pontuação.' : 'Os valores exibidos são as comissões registradas na finalização, sobre o preço líquido dos serviços cobrados.' }}</p>
+  }
+  <app-barber-nav />
+</main>
