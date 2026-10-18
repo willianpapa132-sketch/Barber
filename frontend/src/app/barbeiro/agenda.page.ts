@@ -93,7 +93,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
   }
   get selectedServices() { return this.services().filter(s => this.selectedIds.includes(s.id)); }
   get duration() { return this.selectedServices.reduce((sum, s) => sum + s.duracaoMinutos, 0); }
-  get serviceTotal() { return this.selectedServices.reduce((sum, s) => sum + Number(s.preco), 0); }
+  get serviceTotal() { return this.selectedServices.reduce((sum, s) => sum + Number(s.precoLiquido), 0); }
   get times() { return this.grade()?.horarios.map(hhmm) || []; }
   get blockEnds() { return [...this.times, hhmm(this.grade()?.fim || '')].filter(t => minutes(t) > minutes(this.blockStart)); }
   get canSaveAppointment() {

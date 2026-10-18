@@ -30,7 +30,8 @@ public record FinalizacaoAgendamentoResponse(
         String motivoBloqueio,
         LocalDateTime finalizadoEm
 ) {
-    public record ServicoResponse(Long id, String nome, BigDecimal preco) {}
+    public record ServicoResponse(Long id, String nome, BigDecimal preco, BigDecimal precoLiquido,
+                                  int porcentagemDesconto, boolean inclusoNoPlano) {}
     public record ComissaoResponse(TipoComissao tipo, BigDecimal valorBase,
                                    BigDecimal percentualAplicado, BigDecimal valorComissao) {}
     public record ComissaoPlanoResponse(Long planoId, Long planoMensalClienteId, String nomePlano,

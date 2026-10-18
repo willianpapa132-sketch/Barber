@@ -43,7 +43,14 @@ public class GestaoAgendaBarbeiroController {
     }
 
     public record ClienteOpcao(Long id, String nome, String telefone) {}
-    public record ServicoOpcao(Long id, String nome, BigDecimal preco, Integer duracaoMinutos) {}
+    public record ServicoOpcao(Long id, String nome, BigDecimal preco, Integer duracaoMinutos,
+                               boolean inclusoNoPlano, int porcentagemDesconto, BigDecimal precoLiquido) {}
+
+    private ServicoOpcao opcao(bruninho.Barbeiro.domain.Servico servico, bruninho.Barbeiro.domain.PlanosMensal plano) {
+        var item = bruninho.Barbeiro.service.CalculoServicosPlano.calcular(servico, plano);
+        return new ServicoOpcao(servico.getId(), servico.getNome(), item.getPrecoOriginal(), servico.getDuracaoMinutos(),
+                item.isInclusoNoPlano(), item.getPorcentagemDesconto(), item.getPrecoLiquido());
+    }
     public record ServicosClienteResponse(boolean possuiPlano, String nomePlano, List<ServicoOpcao> servicos) {}
 
     @GetMapping("/clientes/{clienteId}/servicos")
@@ -58,11 +65,8 @@ public class GestaoAgendaBarbeiroController {
         if (!Boolean.TRUE.equals(plano.getAtivo())) {
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "Plano mensal do cliente esta inativo");
         }
-        var incluidos = plano.getServicosIncluidos().stream()
-                .filter(bruninho.Barbeiro.domain.Servico::isAtivo)
-                .sorted(java.util.Comparator.comparing(bruninho.Barbeiro.domain.Servico::getNome, String.CASE_INSENSITIVE_ORDER))
-                .map(s -> new ServicoOpcao(s.getId(), s.getNome(), s.getPreco(), s.getDuracaoMinutos())).toList();
-        return new ServicosClienteResponse(true, plano.getNomePlano(), incluidos);
+        var opcoes = servicos.findAllByAtivoTrueOrderByNomeAsc().stream().map(s -> opcao(s, plano)).toList();
+        return new ServicosClienteResponse(true, plano.getNomePlano(), opcoes);
     }
 
     @GetMapping("/clientes")
@@ -75,7 +79,7 @@ public class GestaoAgendaBarbeiroController {
     @GetMapping("/servicos")
     public List<ServicoOpcao> servicos() {
         return servicos.findAllByAtivoTrueOrderByNomeAsc().stream()
-                .map(s -> new ServicoOpcao(s.getId(), s.getNome(), s.getPreco(), s.getDuracaoMinutos())).toList();
+                .map(s -> opcao(s, null)).toList();
     }
 
     @PostMapping("/agendamentos")

@@ -42,6 +42,9 @@ public class PlanosMensal {
     )
     private Set<Servico> servicosIncluidos = new HashSet<>();
 
+    @OneToMany(mappedBy = "planoMensal", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ServicosPlanosDesconto> descontosServicos = new HashSet<>();
+
     @Positive
     private Integer diasMaximoAntecedencia;
 

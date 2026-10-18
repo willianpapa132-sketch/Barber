@@ -228,6 +228,31 @@ class FinalizacaoAgendamentoServiceTest {
         verify(comissoesPlano, never()).save(any());
     }
 
+    @Test
+    void somenteExtrasGeramComissaoSemCreditarPontos() {
+        var contrato = vincularPlano();
+        contrato.getPlanoMensal().setServicosIncluidos(Set.of());
+        agendamento.getServico().iterator().next().setDuracaoMinutos(40);
+        var resposta = service.finalizar("barbeiro", 1L, FormaPagamento.PIX);
+        assertThat(resposta.comissaoPlano().pontos()).isZero();
+        assertThat(resposta.valorCobrar()).isEqualByComparingTo("70");
+        assertThat(resposta.comissao().valorComissao()).isEqualByComparingTo("24.50");
+        verify(comissoesPlano, never()).save(any());
+        verify(comissoes).save(any());
+    }
+
+    @Test
+    void extraComDescontoIntegralNaoGeraPontosNemComissaoEmReais() {
+        var contrato = vincularPlano(); contrato.getPlanoMensal().setServicosIncluidos(Set.of());
+        var regra = new ServicosPlanosDesconto(); regra.setPlanoMensal(contrato.getPlanoMensal());
+        regra.setPorcentagemDesconto(100); regra.setServicos(agendamento.getServico());
+        contrato.getPlanoMensal().getDescontosServicos().add(regra);
+        var resposta = service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL);
+        assertThat(resposta.valorCobrar()).isZero(); assertThat(resposta.comissao()).isNull();
+        assertThat(resposta.comissaoPlano().pontos()).isZero();
+        verify(comissoesPlano, never()).save(any()); verify(comissoes, never()).save(any());
+    }
+
     private PlanoMensalCliente vincularPlano() {
         var cliente = new Cliente();
         cliente.setId(5L);

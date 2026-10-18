@@ -7,6 +7,7 @@ import bruninho.Barbeiro.domain.HorarioFuncionamento;
 import bruninho.Barbeiro.domain.JornadaBarbeiro;
 import bruninho.Barbeiro.domain.PlanosMensal;
 import bruninho.Barbeiro.domain.Servico;
+import bruninho.Barbeiro.domain.ServicosPlanosDesconto;
 import bruninho.Barbeiro.repository.BarbeiroRepository;
 import bruninho.Barbeiro.repository.ClienteRepository;
 import bruninho.Barbeiro.repository.ConfiguracaoBarbeariaRepository;
@@ -144,6 +145,8 @@ public class DataInitializer {
         Servico sobrancelha = ensureServico(servicos, "Sobrancelha", "25.00", 15);
         Servico hidratacao = ensureServico(servicos, "Hidratacao", "40.00", 15);
         Servico pigmentacao = ensureServico(servicos, "Pigmentacao", "55.00", 15);
+        ensureServico(servicos, "Raspa na maquininha", "25.00", 15);
+        ensureServico(servicos, "Acabamento bigode + barba", "20.00", 10);
         servicos.findByNomeIgnoreCase("Bigode").ifPresent(bigode -> {
             bigode.setDuracaoMinutos(10);
             bigode.setAtualizadoEm(LocalDateTime.now());
@@ -163,7 +166,7 @@ public class DataInitializer {
         );
         ensureCliente(clientes, usuarioCliente);
 
-        ensurePlano(
+        var essencial = ensurePlano(
                 planosMensais,
                 "Plano Essencial",
                 "Cuidado mensal essencial para manter o visual em dia.",
@@ -171,6 +174,7 @@ public class DataInitializer {
                 15,
                 Set.of(corte, barba, sobrancelha)
         );
+        ensureDescontoHidratacao(planosMensais, essencial, hidratacao);
         ensurePlano(
                 planosMensais,
                 "Plano Completo",
@@ -247,7 +251,7 @@ public class DataInitializer {
         }
     }
 
-    private void ensurePlano(
+    private PlanosMensal ensurePlano(
             PlanoMensalRepository planosMensais,
             String nome,
             String descricao,
@@ -268,6 +272,18 @@ public class DataInitializer {
         if (plano.getCriadoEm() == null) {
             plano.setCriadoEm(LocalDateTime.now());
         }
+        return planosMensais.save(plano);
+    }
+
+    private void ensureDescontoHidratacao(PlanoMensalRepository planosMensais, PlanosMensal plano, Servico hidratacao) {
+        boolean configurado = plano.getDescontosServicos().stream()
+                .anyMatch(regra -> regra.getServicos().stream().anyMatch(s -> s.getId().equals(hidratacao.getId())));
+        if (configurado) return;
+        var desconto = new ServicosPlanosDesconto();
+        desconto.setPlanoMensal(plano);
+        desconto.setPorcentagemDesconto(20);
+        desconto.setServicos(new java.util.HashSet<>(Set.of(hidratacao)));
+        plano.getDescontosServicos().add(desconto);
         planosMensais.save(plano);
     }
 

@@ -64,12 +64,12 @@
           <fieldset class="service-picker"><legend>Serviços</legend><div id="agenda-services">
             @if (servicesLoading()) { <p class="subtitle">Carregando serviços...</p> }
             @for (service of services(); track service.id) {
-              <label><input type="checkbox" [checked]="selectedIds.includes(service.id)" (change)="toggleService(service.id, $any($event.target).checked)"><span>{{ service.nome }} · {{ service.duracaoMinutos }} min · {{ activePlan() ? 'Incluso no plano' : money(service.preco) }}</span></label>
+              <label><input type="checkbox" [checked]="selectedIds.includes(service.id)" (change)="toggleService(service.id, $any($event.target).checked)"><span>{{ service.nome }} · {{ service.duracaoMinutos }} min · {{ service.inclusoNoPlano ? 'Incluso no plano' : money(service.precoLiquido) }}@if (service.porcentagemDesconto > 0) { <small> ({{ service.porcentagemDesconto }}% de desconto; de {{ money(service.preco) }})</small> }</span></label>
             } @empty { @if (!servicesLoading()) { <p class="subtitle">{{ customerMode === 'registered' && !clientId ? 'Selecione um cliente para consultar os serviços.' : 'Nenhum serviço ativo disponível.' }}</p> } }
           </div></fieldset>
           <label>Horário de início<select name="appointmentTime" [(ngModel)]="appointmentTime" required><option value="">Selecione um horário</option>@for (time of times; track time) { <option [value]="time" [disabled]="!canFit(time, duration || 1)">{{ time }}</option> }</select></label>
-          <p class="finish-hint" aria-live="polite">@if (selectedIds.length) { {{ duration }} min · {{ activePlan() ? 'Incluso no plano mensal' : 'Serviços avulsos: ' + money(serviceTotal) }} @if (!appointmentTime) { · Sem horário livre para esta duração. } } @else { Selecione pelo menos um serviço. }</p>
-          <p class="finish-hint">{{ activePlan() ? activePlan() + ': apenas os serviços incluídos no plano estão disponíveis.' : 'Selecione o cliente e os serviços desejados.' }}</p>
+          <p class="finish-hint" aria-live="polite">@if (selectedIds.length) { {{ duration }} min · {{ activePlan() ? 'Extras a pagar: ' + money(serviceTotal) : 'Serviços avulsos: ' + money(serviceTotal) }} @if (!appointmentTime) { · Sem horário livre para esta duração. } } @else { Selecione pelo menos um serviço. }</p>
+          <p class="finish-hint">{{ activePlan() ? activePlan() + ': serviços incluídos geram pontos; extras são cobrados com o desconto indicado.' : 'Selecione o cliente e os serviços desejados.' }}</p>
           <button type="submit" class="primary-button" [disabled]="!canSaveAppointment || !appointmentForm.valid">{{ saving() ? 'Aguarde...' : 'Criar agendamento' }}</button>
           <button type="button" class="dialog-back" (click)="mode = 'menu'">Voltar às opções</button>
         </fieldset>

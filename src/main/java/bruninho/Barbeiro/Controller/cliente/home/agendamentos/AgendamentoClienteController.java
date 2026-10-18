@@ -1,6 +1,5 @@
 package bruninho.Barbeiro.Controller.cliente.home.agendamentos;
 
-import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.exception.NotFoundException;
 import bruninho.Barbeiro.repository.BarbeiroRepository;
 import bruninho.Barbeiro.repository.ClienteRepository;
@@ -14,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.time.*;
-import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -51,15 +49,9 @@ public class AgendamentoClienteController {
         var planoCliente = planosCliente.findByCliente_IdAndAtivoTrue(cliente.getId())
                 .filter(plano -> Boolean.TRUE.equals(plano.getPlanoMensal().getAtivo()));
 
-        var servicosDisponiveis = planoCliente
-                .map(plano -> plano.getPlanoMensal().getServicosIncluidos().stream()
-                        .filter(Servico::isAtivo)
-                        .sorted(Comparator.comparing(Servico::getNome, String.CASE_INSENSITIVE_ORDER))
-                        .map(servico -> ServicoAgendamentoResponse.de(servico, true))
-                        .toList())
-                .orElseGet(() -> servicos.findAllByAtivoTrueOrderByNomeAsc().stream()
-                        .map(servico -> ServicoAgendamentoResponse.de(servico, false))
-                        .toList());
+        var plano = planoCliente.map(p -> p.getPlanoMensal()).orElse(null);
+        var servicosDisponiveis = servicos.findAllByAtivoTrueOrderByNomeAsc().stream()
+                .map(servico -> ServicoAgendamentoResponse.de(servico, plano)).toList();
 
         var barbeirosDisponiveis = barbeiros.findAllByAtivoTrueOrderByNomeAsc().stream()
                 .map(BarbeiroAgendamentoResponse::de)
@@ -69,7 +61,7 @@ public class AgendamentoClienteController {
                 cliente.getUsuario().getId(),
                 cliente.getId(),
                 planoCliente.isPresent(),
-                planoCliente.map(plano -> plano.getPlanoMensal().getNomePlano()).orElse(null),
+                planoCliente.map(contrato -> contrato.getPlanoMensal().getNomePlano()).orElse(null),
                 barbeirosDisponiveis,
                 servicosDisponiveis
         );

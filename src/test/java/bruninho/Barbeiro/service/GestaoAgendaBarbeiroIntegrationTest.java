@@ -121,18 +121,24 @@ class GestaoAgendaBarbeiroIntegrationTest {
         contrato.setDiasMaximoAntecedencia(30); contrato = contratos.save(contrato);
         var foraDoPlano = new Servico(); foraDoPlano.setNome("Barba"); foraDoPlano.setDuracaoMinutos(10);
         foraDoPlano.setPreco(new BigDecimal("30.00")); foraDoPlano = servicos.save(foraDoPlano);
+        var regra = new ServicosPlanosDesconto(); regra.setPlanoMensal(plano);
+        regra.setPorcentagemDesconto(20); regra.setServicos(new HashSet<>(List.of(foraDoPlano)));
+        plano.getDescontosServicos().add(regra); planos.saveAndFlush(plano);
         mvc.perform(get("/api/barbeiro/agenda/clientes/" + cliente.getId() + "/servicos").with(user(LOGIN).roles("BARBEIRO")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.possuiPlano").value(true))
                 .andExpect(jsonPath("$.nomePlano").value("Plano da agenda"))
-                .andExpect(jsonPath("$.servicos.length()").value(1))
-                .andExpect(jsonPath("$.servicos[0].id").value(corte.getId()));
-        postJson("/agendamentos", "{\"clienteId\":%d,\"servicosIds\":[%d],\"data\":\"%s\",\"horaInicio\":\"09:10\"}"
-                .formatted(cliente.getId(), foraDoPlano.getId(), dia)).andExpect(status().isBadRequest());
-        assertThat(agendamentos.count()).isZero();
-        postJson("/agendamentos", atendimento("09:10", false)).andExpect(status().isCreated());
+                .andExpect(jsonPath("$.servicos.length()").value(2))
+                .andExpect(jsonPath("$.servicos[0].inclusoNoPlano").value(false))
+                .andExpect(jsonPath("$.servicos[0].porcentagemDesconto").value(20))
+                .andExpect(jsonPath("$.servicos[0].precoLiquido").value(24))
+                .andExpect(jsonPath("$.servicos[1].inclusoNoPlano").value(true));
+        postJson("/agendamentos", "{\"clienteId\":%d,\"servicosIds\":[%d,%d],\"data\":\"%s\",\"horaInicio\":\"09:10\"}"
+                .formatted(cliente.getId(), corte.getId(), foraDoPlano.getId(), dia)).andExpect(status().isCreated());
         var salvo = agendamentos.findAll().getFirst();
         assertThat(salvo.getPlanoMensalCliente().getId()).isEqualTo(contrato.getId());
-        assertThat(salvo.getPrecoTotal()).isZero();
+        assertThat(salvo.getPrecoTotal()).isEqualByComparingTo("24.00");
+        assertThat(salvo.getDuracaoServicoMinutos()).isEqualTo(25);
+        assertThat(CalculoServicosPlano.pontos(salvo.getServicosPlano())).isEqualTo(15);
     }
 
     @Test

@@ -16,6 +16,8 @@ interface ServiceOption {
   preco: number;
   duracaoMinutos: number;
   inclusoNoPlano: boolean;
+  porcentagemDesconto: number;
+  precoLiquido: number;
 }
 
 interface BookingScreenResponse {
@@ -65,7 +67,7 @@ interface BookingScreenResponse {
             <span aria-hidden="true">&#9819;</span>
             <p>
               <strong>{{ data.nomePlano }}</strong>
-              <small>Voce pode agendar apenas os servicos incluidos no seu plano mensal.</small>
+              <small>Escolha servicos incluidos e extras. Os extras sao cobrados a parte, com os descontos do seu plano.</small>
             </p>
           </section>
         }
@@ -113,10 +115,11 @@ interface BookingScreenResponse {
                     <small>{{ service.duracaoMinutos }} min</small>
                   </span>
                   <span class="service-price">
-                    @if (data.possuiPlano) {
+                    @if (service.inclusoNoPlano) {
                       <b>Incluido</b>
                     } @else {
-                      <b>{{ formatPrice(service.preco) }}</b>
+                      <b>{{ formatPrice(service.precoLiquido) }}</b>
+                      @if (service.porcentagemDesconto > 0) { <small>{{ service.porcentagemDesconto }}% de desconto (de {{ formatPrice(service.preco) }})</small> }
                     }
                     <i [class.checked]="isServiceSelected(service.id)" aria-hidden="true">&#10003;</i>
                   </span>
@@ -135,7 +138,7 @@ interface BookingScreenResponse {
                   <strong>{{ selectedServices.length }} servico(s) selecionado(s)</strong>
                   <small>{{ selectedServicesLabel }}</small>
                 </p>
-                <b>{{ data.possuiPlano ? 'Plano mensal' : formatPrice(totalPrice) }}</b>
+                <b>{{ totalPrice === 0 && data.possuiPlano ? 'Incluido no plano' : formatPrice(totalPrice) }}</b>
               </section>
             }
 
@@ -165,7 +168,7 @@ interface BookingScreenResponse {
                 <strong>{{ selectedServicesLabel }}</strong>
                 <small>{{ totalDuration }} min aprox.</small>
               </span>
-              <b>{{ data.possuiPlano ? 'Plano' : formatPrice(totalPrice) }}</b>
+              <b>{{ totalPrice === 0 && data.possuiPlano ? 'Incluido no plano' : formatPrice(totalPrice) }}</b>
             </section>
 
             @if (loadingAvailability) {
@@ -229,7 +232,7 @@ interface BookingScreenResponse {
                 <strong>{{ selectedServicesLabel }}</strong>
                 <small>{{ totalDuration }} min aprox.</small>
               </span>
-              <b>{{ data.possuiPlano ? 'Plano' : formatPrice(totalPrice) }}</b>
+              <b>{{ totalPrice === 0 && data.possuiPlano ? 'Incluido no plano' : formatPrice(totalPrice) }}</b>
             </section>
 
             <section class="booking-selected-card">
@@ -308,7 +311,7 @@ export class NovoAgendamentoPage implements OnInit {
   }
 
   protected get totalPrice(): number {
-    return this.selectedServices.reduce((total, service) => total + service.preco, 0);
+    return this.selectedServices.reduce((total, service) => total + service.precoLiquido, 0);
   }
 
   protected get currentMonthLabel(): string {

@@ -21,8 +21,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class AgendamentoService {
@@ -109,12 +107,13 @@ public class AgendamentoService {
         agendamento.setData(request.data());
         agendamento.setHoraInicio(request.horaInicio());
 
-        validarServicosDentroDoPlano(agendamento.getServico(), planoCliente);
         validarDiaPermitidoParaPlano(request.data());
         validarLimiteSemanalDoPlano(planoCliente, request.data());
         validacao.validaAgendamento(agendamento, disponibilidade);
         validacao.validarPagamentoPlano(planoCliente);
-        preencherDadosDoAgendamento(agendamento, cliente, BigDecimal.ZERO);
+        var itens = CalculoServicosPlano.calcular(agendamento.getServico(), planoCliente.getPlanoMensal());
+        agendamento.getServicosPlano().addAll(itens);
+        preencherDadosDoAgendamento(agendamento, cliente, CalculoServicosPlano.total(itens));
 
         return agendamentos.save(agendamento);
     }
@@ -122,20 +121,6 @@ public class AgendamentoService {
     private void validarPlanoDoCliente(PlanoMensalCliente planoCliente) {
         if (!Boolean.TRUE.equals(planoCliente.getAtivo()) || !Boolean.TRUE.equals(planoCliente.getPlanoMensal().getAtivo())) {
             throw new BusinessException("Plano mensal inativo");
-        }
-    }
-
-    private void validarServicosDentroDoPlano(Set<Servico> servicosSolicitados, PlanoMensalCliente planoCliente) {
-        Set<Long> servicosDoPlano = planoCliente.getPlanoMensal().getServicosIncluidos().stream()
-                .map(Servico::getId)
-                .collect(Collectors.toSet());
-
-        boolean todosIncluidos = servicosSolicitados.stream()
-                .map(Servico::getId)
-                .allMatch(servicosDoPlano::contains);
-
-        if (!todosIncluidos) {
-            throw new BusinessException("Servico solicitado nao pertence ao plano mensal do cliente");
         }
     }
 

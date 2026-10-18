@@ -22,7 +22,7 @@
 .attendance-state strong { font-size: 13px; }
 .attendance-state p { font-size: 11px; color: #a9b0bc; margin: 5px 0 0; line-height: 1.6; }
 .attendance-check { display: grid; place-items: center; width: 29px; height: 29px; flex-shrink: 0; color: #231d12; background: #dbb868; border-radius: 50%; font-weight: 800; }
-.commission-banner { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-radius: 14px; background: linear-gradient(120deg, #f1d491, #c99b4e); color: #241c0f; padding: 22px; margin-bottom: 16px; }
+.commission-banner { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; border-radius: 14px; background: linear-gradient(120deg, #f1d491, #c99b4e); color: #241c0f; padding: 22px; margin-bottom: 16px; }
 .commission-banner h2 { font-size: 15px; margin-bottom: 6px; }
 .commission-banner p { margin: 0; font-size: 11px; line-height: 1.6; }
 .commission-banner > strong { font-size: 25px; white-space: nowrap; }

@@ -23,6 +23,9 @@ public class AtualizarPlanoMensal {
 
     private Set<Long> servicosId;
 
+    @jakarta.validation.Valid
+    private java.util.List<DescontoServicoPlanoRequest> descontosServicos;
+
     @NotBlank
     private String descricao;
 

@@ -43,6 +43,10 @@ class AgendamentoIntegrationTest {
     @Autowired PlanoMensalRepository planosMensais;
     @Autowired PlanoMensalClienteRepository planosClientes;
     @Autowired MockMvc mvc;
+    @Autowired FinalizacaoAgendamentoService finalizacao;
+    @Autowired ComissaoBarbeiroRepository comissoes;
+    @Autowired ComissaoPlanoRepository comissoesPlano;
+    @Autowired jakarta.persistence.EntityManager entityManager;
 
     Usuario usuario;
     Cliente cliente;
@@ -63,6 +67,7 @@ class AgendamentoIntegrationTest {
         barbeiros.deleteAll();
         servicos.deleteAll();
         usuarios.deleteAll();
+        usuarios.flush();
         var config = configuracoes.findById(1L).orElseThrow();
         config.setDiasMaximoAntecedentia(10);
         configuracoes.save(config);
@@ -152,7 +157,7 @@ class AgendamentoIntegrationTest {
     }
 
     @Test
-    void telaDeAgendamentoComPlanoListaApenasServicosIncluidosNoPlano() throws Exception {
+    void telaDeAgendamentoComPlanoListaTodosOsServicos() throws Exception {
         novoServico("Pigmentacao", 40, "70.00");
         contratarPlano();
 
@@ -162,14 +167,14 @@ class AgendamentoIntegrationTest {
                 .andExpect(jsonPath("$.usuarioId").value(usuario.getId()))
                 .andExpect(jsonPath("$.possuiPlano").value(true))
                 .andExpect(jsonPath("$.barbeiros[0].id").value(barbeiro.getId()))
-                .andExpect(jsonPath("$.servicos.length()").value(2))
+                .andExpect(jsonPath("$.servicos.length()").value(3))
                 .andExpect(jsonPath("$.servicos[0].inclusoNoPlano").value(true))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         assertThat(resposta).contains("Corte", "Barba");
-        assertThat(resposta).doesNotContain("Pigmentacao");
+        assertThat(resposta).contains("Pigmentacao");
     }
 
     @Test
@@ -462,6 +467,51 @@ class AgendamentoIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("plano esta com pagamento atrasado"));
         assertThat(agendamentos.count()).isZero();
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void planoMistoPreservaCondicoesECobraExtrasComComissaoEPontosSeparados() throws Exception {
+        var contrato = contratarPlano();
+        var plano = planosMensais.findById(contrato.getPlanoMensal().getId()).orElseThrow();
+        var pigmentacao = novoServico("Pigmentacao", 20, "50.00");
+        var bigode = novoServico("Bigode extra", 10, "10.00");
+        var regra = new ServicosPlanosDesconto();
+        regra.setPlanoMensal(plano); regra.setPorcentagemDesconto(20);
+        regra.setServicos(new HashSet<>(List.of(pigmentacao)));
+        plano.getDescontosServicos().add(regra);
+        planosMensais.saveAndFlush(plano);
+        barbeiro.setPorcentagemComissao(40); barbeiros.saveAndFlush(barbeiro);
+
+        mvc.perform(get("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.servicos.length()").value(4))
+                .andExpect(jsonPath("$.servicos[3].porcentagemDesconto").value(20))
+                .andExpect(jsonPath("$.servicos[3].precoLiquido").value(40));
+        var salvo = service.agendar(new CriarAgendamentoRequest(usuario.getId(), cliente.getId(),
+                barbeiro.getId(), List.of(corte.getId(), pigmentacao.getId(), bigode.getId()), dia, LocalTime.of(10, 0)));
+        assertThat(salvo.getDuracaoServicoMinutos()).isEqualTo(60);
+        assertThat(salvo.getPrecoTotal()).isEqualByComparingTo("50.00");
+        assertThat(CalculoServicosPlano.pontos(salvo.getServicosPlano())).isEqualTo(30);
+
+        pigmentacao.setPreco(new BigDecimal("100.00")); servicos.save(pigmentacao);
+        corte.setDuracaoMinutos(90); servicos.save(corte);
+        regra.setPorcentagemDesconto(50);
+        salvo.setData(LocalDate.now().minusDays(1)); agendamentos.saveAndFlush(salvo);
+        entityManager.clear();
+        var previa = finalizacao.consultar("barbeiro", salvo.getId(), null);
+        assertThat(previa.valorCobrar()).isEqualByComparingTo("50.00");
+        assertThat(previa.comissaoPlano().pontos()).isEqualTo(30);
+        assertThat(previa.formasPagamentoDisponiveis()).doesNotContain(FormaPagamento.MENSAL);
+        assertThatThrownBy(() -> finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.MENSAL))
+                .hasMessageContaining("pagamento dos servicos extras");
+        var resposta = finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.PIX);
+        assertThat(resposta.comissao().valorBase()).isEqualByComparingTo("50.00");
+        assertThat(resposta.comissao().valorComissao()).isEqualByComparingTo("20.00");
+        assertThat(resposta.comissaoPlano().pontos()).isEqualTo(30);
+        assertThat(comissoesPlano.findByAgendamento_Id(salvo.getId()).orElseThrow().getPontos()).isEqualTo(30);
+        assertThat(comissoes.existsByAgendamento_Id(salvo.getId())).isTrue();
+        assertThatThrownBy(() -> finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.PIX))
+                .hasMessageContaining("AGENDADO");
     }
 
     private List<Long> ids() { return List.of(corte.getId(), barba.getId()); }

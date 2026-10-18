@@ -40,6 +40,11 @@ public class Agendamento {
     )
     private Set<Servico> servico = new HashSet<>();
 
+    @ElementCollection
+    @CollectionTable(name = "agendamento_servicos_plano", joinColumns = @JoinColumn(name = "agendamento_id"))
+    @OrderColumn(name = "ordem")
+    private java.util.List<ServicoAgendadoPlano> servicosPlano = new java.util.ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "plano_mensal_cliente_id")
     private PlanoMensalCliente planoMensalCliente;

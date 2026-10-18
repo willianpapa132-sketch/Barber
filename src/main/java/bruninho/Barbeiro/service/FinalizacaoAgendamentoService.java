@@ -69,7 +69,7 @@ public class FinalizacaoAgendamentoService {
             throw erro(HttpStatus.CONFLICT, "Agendamento ja possui comissao");
         }
         var calculo = preparar(agendamento, formaPagamento);
-        if (calculo.plano() != null) {
+        if (calculo.comissaoPlano() != null && calculo.comissaoPlano().pontos() > 0) {
             var registro = new ComissaoPlano();
             registro.setAgendamento(agendamento);
             registro.setPlanoMensal(calculo.plano().getPlanoMensal());
@@ -79,9 +79,14 @@ public class FinalizacaoAgendamentoService {
             registro.setPontos(calculo.comissaoPlano().pontos());
             registro.setCriadoEm(agora);
             comissoesPlano.save(registro);
-        } else {
+        }
+        if (calculo.comissao() != null) {
             registrarComissaoPadrao(agendamento, calculo, agora);
         }
+        if (calculo.plano() != null && agendamento.getServicosPlano().isEmpty()) {
+            agendamento.getServicosPlano().addAll(CalculoServicosPlano.calcular(agendamento.getServico(), calculo.plano().getPlanoMensal()));
+        }
+        agendamento.setPrecoTotal(calculo.valorCobrar());
 
         agendamento.setPlanoMensalCliente(calculo.plano());
         agendamento.setFormaPagamento(calculo.formaPagamento());
@@ -136,33 +141,36 @@ public class FinalizacaoAgendamentoService {
 
     private Calculo preparar(Agendamento agendamento, FormaPagamento escolha) {
         boolean mensal = agendamento.getPlanoMensalCliente() != null || escolha == FormaPagamento.MENSAL;
-        if (agendamento.getPlanoMensalCliente() != null && escolha != null && escolha != FormaPagamento.MENSAL) {
+        PlanoMensalCliente plano = mensal ? validarPlano(agendamento) : null;
+        var itens = plano != null && !agendamento.getServicosPlano().isEmpty()
+                ? agendamento.getServicosPlano()
+                : CalculoServicosPlano.calcular(agendamento.getServico(), plano == null ? null : plano.getPlanoMensal());
+        var servicos = itens.stream().map(i -> new ServicoResponse(i.getServicoId(), i.getNome(),
+                i.getPrecoOriginal(), i.getPrecoLiquido(), i.getPorcentagemDesconto(), i.isInclusoNoPlano())).toList();
+        var valorServicos = itens.stream().map(ServicoAgendadoPlano::getPrecoOriginal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var cobrar = plano == null ? valorValido(agendamento.getPrecoTotal()) : CalculoServicosPlano.total(itens);
+        boolean temExtras = plano != null && itens.stream().anyMatch(i -> !i.isInclusoNoPlano());
+        if (plano != null && !temExtras && escolha != null && escolha != FormaPagamento.MENSAL) {
             throw erro(HttpStatus.BAD_REQUEST, "Agendamento do plano mensal deve usar pagamento MENSAL");
         }
-        PlanoMensalCliente plano = mensal ? validarPlano(agendamento) : null;
-        var servicos = agendamento.getServico().stream()
-                .sorted(Comparator.comparing(Servico::getNome).thenComparing(Servico::getId))
-                .map(s -> new ServicoResponse(s.getId(), s.getNome(), valorValido(s.getPreco())))
-                .toList();
-        var valorServicos = servicos.stream().map(ServicoResponse::preco).reduce(BigDecimal.ZERO, BigDecimal::add);
-        var comissao = mensal ? null : calcularComissao(agendamento);
+        if (temExtras && cobrar.signum() > 0 && escolha == FormaPagamento.MENSAL) {
+            throw erro(HttpStatus.BAD_REQUEST, "Selecione a forma de pagamento dos servicos extras");
+        }
+        var comissao = plano == null || (temExtras && cobrar.signum() > 0) ? calcularComissao(agendamento, cobrar) : null;
         ComissaoPlanoResponse comissaoPlano = null;
-        if (mensal) {
-
+        if (plano != null) {
+            int pontos = CalculoServicosPlano.pontos(itens);
+            // Agendamentos anteriores ao detalhamento por servico eram integralmente cobertos.
+            if (agendamento.getServicosPlano().isEmpty() && !temExtras) {
+                pontos = agendamento.getDuracaoServicoMinutos();
+                if (pontos <= 0) throw erro(HttpStatus.CONFLICT, "Agendamento sem duracao valida para gerar pontos");
+            }
             comissaoPlano = new ComissaoPlanoResponse(plano.getPlanoMensal().getId(), plano.getId(),
-                    plano.getPlanoMensal().getNomePlano(), agendamento.getData(), pontosDoPlano(agendamento));
+                    plano.getPlanoMensal().getNomePlano(), agendamento.getData(), pontos);
         }
-        return new Calculo(plano, mensal ? FormaPagamento.MENSAL : escolha, servicos, valorServicos,
-                mensal ? BigDecimal.ZERO.setScale(2) : valorValido(agendamento.getPrecoTotal()), comissao, comissaoPlano);
-    }
-
-    private int pontosDoPlano(Agendamento agendamento) {
-        // Duracao total registrada ao agendar: preserva os minutos mesmo se o catalogo mudar.
-        int minutos = agendamento.getDuracaoServicoMinutos();
-        if (minutos <= 0) {
-            throw erro(HttpStatus.CONFLICT, "Agendamento sem duracao valida para gerar pontos");
-        }
-        return minutos;
+        var pagamento = plano != null && cobrar.signum() == 0 ? FormaPagamento.MENSAL : escolha;
+        return new Calculo(plano, pagamento, servicos, valorServicos, cobrar, comissao, comissaoPlano);
     }
 
     private PlanoMensalCliente validarPlano(Agendamento agendamento) {
@@ -181,10 +189,8 @@ public class FinalizacaoAgendamentoService {
                 || Boolean.TRUE.equals(plano.getPagamentoAtrasado())) {
             throw erro(HttpStatus.BAD_REQUEST, "Plano mensal do cliente inativo, invalido ou com pagamento atrasado");
         }
-        var incluidos = plano.getPlanoMensal().getServicosIncluidos().stream().map(Servico::getId).toList();
-        if (agendamento.getServico().isEmpty()
-                || agendamento.getServico().stream().anyMatch(s -> !incluidos.contains(s.getId()))) {
-            throw erro(HttpStatus.BAD_REQUEST, "Servicos do atendimento nao estao incluidos no plano mensal");
+        if (agendamento.getServico().isEmpty()) {
+            throw erro(HttpStatus.BAD_REQUEST, "Selecione os servicos do atendimento");
         }
         return plano;
     }
@@ -196,8 +202,7 @@ public class FinalizacaoAgendamentoService {
         return BigDecimal.valueOf(percentual);
     }
 
-    private ComissaoResponse calcularComissao(Agendamento agendamento) {
-        var base = valorValido(agendamento.getPrecoTotal());
+    private ComissaoResponse calcularComissao(Agendamento agendamento, BigDecimal base) {
         var porcentagem = percentualValido(agendamento.getBarbeiro().getPorcentagemComissao());
         var valor = base.multiply(porcentagem).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         return new ComissaoResponse(TipoComissao.PADRAO_BARBEIRO, base, porcentagem, valor);
@@ -237,7 +242,7 @@ public class FinalizacaoAgendamentoService {
 
     private List<FormaPagamento> formasDisponiveis(Agendamento agendamento, Calculo calculo) {
         if (calculo.plano() != null) {
-            return List.of(FormaPagamento.MENSAL);
+            return calculo.valorCobrar().signum() > 0 ? PAGAMENTOS_AVULSOS : List.of(FormaPagamento.MENSAL);
         }
         try {
             validarPlano(agendamento);

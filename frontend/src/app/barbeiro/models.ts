@@ -12,7 +12,7 @@ export interface Grade {
   data: string; inicio: string; fim: string; intervaloGrade: number; horarios: string[];
   agendamentos: Appointment[]; indisponibilidades: Period[]; podeCriar: boolean; aviso: string;
 }
-export interface Service { id: number; nome: string; preco: number; duracaoMinutos: number }
+export interface Service { id: number; nome: string; preco: number; duracaoMinutos: number; inclusoNoPlano: boolean; porcentagemDesconto: number; precoLiquido: number }
 export interface Customer { id: number; nome: string; telefone: string }
 export interface CustomerServices { possuiPlano: boolean; nomePlano: string; servicos: Service[] }
 export interface Finish {

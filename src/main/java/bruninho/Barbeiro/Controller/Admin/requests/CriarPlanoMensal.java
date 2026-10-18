@@ -27,6 +27,9 @@ public class CriarPlanoMensal {
 
     private Set<Long> servicosId;
 
+    @jakarta.validation.Valid
+    private java.util.List<DescontoServicoPlanoRequest> descontosServicos;
+
     @NotBlank
     private String descricao;
 

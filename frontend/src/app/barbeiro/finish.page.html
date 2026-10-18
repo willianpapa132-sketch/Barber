@@ -2,7 +2,7 @@
   <header class="finish-header"><a class="back-button" routerLink="/barbeiro/agenda" aria-label="Voltar para a agenda">‹</a><h1>Finalizar agendamento</h1></header>
   @if (busy() && !appointment()) { <p class="finish-notice" role="status">Carregando atendimento...</p> }
   @if (error()) { <div class="finish-notice notice-error" role="alert">{{ error() }}</div><button id="finish-retry" class="outline-button" type="button" [disabled]="busy()" (click)="load()">Tentar novamente</button> }
-  @if (completed()) { <div class="finish-notice notice-success" role="status"><strong>Atendimento finalizado!</strong><p>{{ appointment()?.atendimentoMensal ? 'O atendimento e os pontos foram registrados com sucesso.' : 'O atendimento e a comissão foram registrados com sucesso.' }}</p><a class="outline-button" routerLink="/barbeiro/agenda">Voltar para a agenda</a></div> }
+  @if (completed()) { <div class="finish-notice notice-success" role="status"><strong>Atendimento finalizado!</strong><p>{{ appointment()?.atendimentoMensal ? 'O atendimento e seus pontos e/ou comissão foram registrados com sucesso.' : 'O atendimento e a comissão foram registrados com sucesso.' }}</p><a class="outline-button" routerLink="/barbeiro/agenda">Voltar para a agenda</a></div> }
   @if (outcome()) {
     <div class="finish-notice" role="status"><strong>{{ outcome() === 'CANCELADO' ? 'Agendamento cancelado.' : 'Não comparecimento registrado.' }}</strong><p>O status foi atualizado na agenda. Nenhum pagamento ou comissão foi registrado.</p><a class="outline-button" routerLink="/barbeiro/agenda">Voltar para a agenda</a></div>
   }
@@ -16,17 +16,18 @@
     <section class="commission-banner" aria-labelledby="commission-title">
       @if (data.comissaoPlano; as plan) {
         <div><h2 id="commission-title">Pontos do plano</h2><p>{{ plan.nomePlano }} · {{ completed() ? 'Pontos adicionados ao barbeiro.' : 'Pontos serão adicionados ao finalizar.' }}</p></div><strong>{{ plan.pontos }} pontos</strong>
-      } @else if (data.comissao; as commission) {
-        <div><h2 id="commission-title">Sua comissão</h2><p>{{ percent(commission.percentualAplicado) }}% sobre {{ money(commission.valorBase) }}</p></div><strong>{{ money(commission.valorComissao) }}</strong>
+      }
+      @if (data.comissao; as commission) {
+        <div><h2 [id]="data.comissaoPlano ? null : 'commission-title'">Sua comissão</h2><p>{{ percent(commission.percentualAplicado) }}% sobre {{ money(commission.valorBase) }}</p></div><strong>{{ money(commission.valorComissao) }}</strong>
       }
     </section>
-    <div class="finish-panel total-row"><div><strong>Valor a receber do cliente</strong><small>{{ data.atendimentoMensal ? 'Atendimento coberto pelo plano mensal' : 'Valor do atendimento' }}</small></div><strong>{{ money(data.valorCobrar) }}</strong></div>
+    <div class="finish-panel total-row"><div><strong>Valor a receber do cliente</strong><small>{{ data.atendimentoMensal ? (data.valorCobrar > 0 ? 'Extras do plano, com os descontos aplicados' : 'Atendimento coberto pelo plano mensal') : 'Valor do atendimento' }}</small></div><strong>{{ money(data.valorCobrar) }}</strong></div>
     <section class="finish-panel service-summary" aria-labelledby="services-title"><h2 id="services-title"><span aria-hidden="true">✂</span> Serviços do agendamento</h2><ul>
-      @for (service of data.servicos; track service.id) { <li><span>{{ service.nome }}</span><span>{{ money(service.preco) }}</span></li> } @empty { <li>Nenhum serviço detalhado neste atendimento.</li> }
+      @for (service of data.servicos; track service.id) { <li><span>{{ service.nome }}</span><span>@if (service.inclusoNoPlano) { Incluso no plano } @else { {{ money(service.precoLiquido) }} @if (service.porcentagemDesconto > 0) { <small>{{ service.porcentagemDesconto }}% de desconto sobre {{ money(service.preco) }}</small> } }</span></li> } @empty { <li>Nenhum serviço detalhado neste atendimento.</li> }
     </ul><div class="services-total"><span>Total dos serviços</span><strong>{{ money(data.valorTotalServicos) }}</strong></div></section>
     <form (ngSubmit)="finish()"><fieldset class="payment-fieldset" [disabled]="busy() || completed()"><legend>Forma de pagamento</legend><div class="payment-options">
       @for (method of data.formasPagamentoDisponiveis; track method) { <label class="payment-choice"><input type="radio" name="formaPagamento" [value]="method" [ngModel]="selected" (ngModelChange)="load($event)" required><span><span class="payment-icon" aria-hidden="true">{{ icons[method] }}</span><span>{{ names[method] }}</span></span></label> }
-    </div></fieldset><p class="finish-hint" aria-live="polite">{{ completed() ? '' : !data.podeFinalizar ? data.motivoBloqueio : !selected ? 'Selecione a forma de pagamento para finalizar.' : data.atendimentoMensal ? 'A conclusão adicionará os pontos deste atendimento ao barbeiro.' : 'Ao confirmar, o atendimento será concluído e a comissão registrada.' }}</p>
+    </div></fieldset><p class="finish-hint" aria-live="polite">{{ completed() ? '' : !data.podeFinalizar ? data.motivoBloqueio : !selected ? 'Selecione a forma de pagamento para finalizar.' : data.atendimentoMensal ? (data.valorCobrar > 0 ? 'Confirme o pagamento dos extras. Os incluídos geram pontos e os extras geram comissão sobre o valor com desconto.' : 'A conclusão adicionará os pontos dos serviços incluídos ao barbeiro.') : 'Ao confirmar, o atendimento será concluído e a comissão registrada.' }}</p>
       <button class="primary-button finish-submit" type="submit" [disabled]="busy() || completed() || !data.podeFinalizar || !selected">{{ busy() ? 'Aguarde...' : completed() ? 'Atendimento finalizado' : 'Finalizar atendimento' }}</button>
     </form>
     @if (!completed() && data.status === 'AGENDADO') {

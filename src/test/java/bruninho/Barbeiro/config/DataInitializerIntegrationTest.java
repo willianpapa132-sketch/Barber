@@ -56,6 +56,31 @@ class DataInitializerIntegrationTest {
     }
 
     @Test
+    void essencialTemHidratacaoComDescontoENovosServicosAvulsosSemDuplicar() throws Exception {
+        var plano = planos.findByNomePlanoIgnoreCase("Plano Essencial").orElseThrow();
+        var hidratacao = servicos.findByNomeIgnoreCase("Hidratacao").orElseThrow();
+        var raspa = servicos.findByNomeIgnoreCase("Raspa na maquininha").orElseThrow();
+        var acabamento = servicos.findByNomeIgnoreCase("Acabamento bigode + barba").orElseThrow();
+        assertThat(raspa.getPreco()).isEqualByComparingTo("25.00");
+        assertThat(raspa.getDuracaoMinutos()).isEqualTo(15);
+        assertThat(acabamento.getPreco()).isEqualByComparingTo("20.00");
+        assertThat(acabamento.getDuracaoMinutos()).isEqualTo(10);
+        var regra = plano.getDescontosServicos().iterator().next();
+        assertThat(regra.getPorcentagemDesconto()).isEqualTo(20);
+        assertThat(regra.getServicos()).extracting(s -> s.getId()).containsExactly(hidratacao.getId());
+        assertThat(plano.getServicosIncluidos()).extracting(s -> s.getId())
+                .doesNotContain(hidratacao.getId(), raspa.getId(), acabamento.getId());
+        assertThat(bruninho.Barbeiro.service.CalculoServicosPlano.calcular(hidratacao, plano).getPrecoLiquido())
+                .isEqualByComparingTo("32.00");
+        long quantidade = servicos.count();
+        regra.setPorcentagemDesconto(25); planos.saveAndFlush(plano);
+        bootstrap.run(); planos.flush();
+        assertThat(plano.getDescontosServicos()).hasSize(1);
+        assertThat(regra.getPorcentagemDesconto()).isEqualTo(25);
+        assertThat(servicos.count()).isEqualTo(quantidade);
+    }
+
+    @Test
     void loginDoBarbeiroDemoFuncionaComEmailESenha() throws Exception {
         var login = mvc.perform(post("/login").with(csrf())
                         .param("username", "barbeiro@demo.com").param("password", "barbeiro123"))
