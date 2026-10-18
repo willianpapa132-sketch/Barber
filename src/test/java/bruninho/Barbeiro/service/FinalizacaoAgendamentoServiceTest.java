@@ -136,15 +136,16 @@ class FinalizacaoAgendamentoServiceTest {
     }
 
     @Test
-    void mensalRegistraPlanoDataEPercentualSemGerarComissaoEmReais() {
+    void mensalRegistraPlanoDataEPontosSemGerarComissaoEmReais() {
         var plano = vincularPlano();
+        agendamento.getBarbeiro().setPorcentagemComissao(null);
         agendamento.setPrecoTotal(BigDecimal.ZERO);
         var resposta = service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL);
         assertThat(resposta.status()).isEqualTo(StatusAgendamento.CONCLUIDO);
         assertThat(resposta.comissao()).isNull();
         assertThat(resposta.valorCobrar()).isZero();
         assertThat(resposta.formaPagamento()).isEqualTo(FormaPagamento.MENSAL);
-        assertThat(resposta.comissaoPlano().percentualAplicado()).isEqualByComparingTo("40");
+
         var captor = ArgumentCaptor.forClass(ComissaoPlano.class);
         verify(comissoesPlano).save(captor.capture());
         var registro = captor.getValue();
@@ -152,10 +153,11 @@ class FinalizacaoAgendamentoServiceTest {
         assertThat(registro.getPlanoMensalCliente()).isSameAs(plano);
         assertThat(registro.getAgendamento()).isSameAs(agendamento);
         assertThat(registro.getBarbeiro()).isSameAs(agendamento.getBarbeiro());
+        assertThat(registro.getPontos()).isEqualTo(40);
+        assertThat(resposta.comissaoPlano().pontos()).isEqualTo(40);
         assertThat(registro.getDataAgendamento()).isEqualTo(agendamento.getData());
         assertThat(registro.getCriadoEm()).isEqualTo(LocalDateTime.now(clock));
-        plano.getPlanoMensal().setPorcentagemComissao(60);
-        assertThat(registro.getPercentualAplicado()).isEqualByComparingTo("40");
+
         verify(comissoes, never()).save(any());
     }
 
@@ -171,14 +173,11 @@ class FinalizacaoAgendamentoServiceTest {
     }
 
     @Test
-    void bloqueiaPlanoInativoPercentualInvalidoEPagamentoAvulsoEmMensal() {
+    void bloqueiaPlanoInativoEPagamentoAvulsoEmMensal() {
         var plano = vincularPlano();
         assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.PIX))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("pagamento MENSAL");
-        plano.getPlanoMensal().setPorcentagemComissao(null);
-        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
-                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Percentual");
-        plano.getPlanoMensal().setPorcentagemComissao(40);
+
         plano.setAtivo(false);
         assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("inativo");
@@ -194,6 +193,41 @@ class FinalizacaoAgendamentoServiceTest {
         verify(comissoesPlano, never()).save(any());
     }
 
+    @Test
+    void planoDeMultiplosServicosGeraSessentaPontosUmaUnicaVez() {
+        var bigode = new Servico();
+        bigode.setId(3L);
+        bigode.setNome("Bigode");
+        bigode.setPreco(BigDecimal.TEN);
+        bigode.setDuracaoMinutos(20);
+        agendamento.getServico().iterator().next().setDuracaoMinutos(40);
+        agendamento.setServico(Set.of(agendamento.getServico().iterator().next(), bigode));
+        agendamento.setDuracaoServicoMinutos(60);
+        vincularPlano();
+        assertThat(service.consultar("barbeiro", 1L, null).comissaoPlano().pontos()).isEqualTo(60);
+        verify(comissoesPlano, never()).save(any());
+        // Uma alteracao posterior do catalogo nao muda a duracao contratada.
+        bigode.setDuracaoMinutos(10);
+        assertThat(service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL).comissaoPlano().pontos()).isEqualTo(60);
+        var captor = ArgumentCaptor.forClass(ComissaoPlano.class);
+        verify(comissoesPlano).save(captor.capture());
+        assertThat(captor.getValue().getPontos()).isEqualTo(60);
+        assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(comissoesPlano, times(1)).save(any());
+    }
+
+    @Test
+    void planoSemDuracaoValidaNaoGeraPontos() {
+        vincularPlano();
+        for (int minutos : new int[] {0, -10}) {
+            agendamento.setDuracaoServicoMinutos(minutos);
+            assertThatThrownBy(() -> service.finalizar("barbeiro", 1L, FormaPagamento.MENSAL))
+                    .isInstanceOf(ResponseStatusException.class).hasMessageContaining("duracao valida");
+        }
+        verify(comissoesPlano, never()).save(any());
+    }
+
     private PlanoMensalCliente vincularPlano() {
         var cliente = new Cliente();
         cliente.setId(5L);
@@ -201,7 +235,7 @@ class FinalizacaoAgendamentoServiceTest {
         var plano = new PlanosMensal();
         plano.setId(8L);
         plano.setNomePlano("Plano Corte");
-        plano.setPorcentagemComissao(40);
+
         plano.setAtivo(true);
         plano.setServicosIncluidos(agendamento.getServico());
         var contrato = new PlanoMensalCliente();

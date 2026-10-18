@@ -21,5 +21,5 @@ export interface Finish {
   valorTotalServicos: number; valorCobrar: number; formaPagamento: string | null;
   formasPagamentoDisponiveis: string[]; podeFinalizar: boolean; motivoBloqueio: string;
   comissao: { percentualAplicado: number; valorBase: number; valorComissao: number } | null;
-  comissaoPlano: { nomePlano: string; percentualAplicado: number } | null;
+  comissaoPlano: { nomePlano: string; pontos: number } | null;
 }

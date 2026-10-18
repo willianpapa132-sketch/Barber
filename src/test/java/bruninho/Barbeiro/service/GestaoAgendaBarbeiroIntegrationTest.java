@@ -113,7 +113,8 @@ class GestaoAgendaBarbeiroIntegrationTest {
     @Test
     void clienteMensalSegueRegrasERecebeVinculoDoPlano() throws Exception {
         var plano = new PlanosMensal(); plano.setNomePlano("Plano da agenda"); plano.setDescricao("Corte");
-        plano.setValorMensal(new BigDecimal("100.00")); plano.setAtivo(true); plano.setPorcentagemComissao(25);
+
+        plano.setValorMensal(new BigDecimal("100.00")); plano.setAtivo(true);
         plano.setServicosIncluidos(new HashSet<>(List.of(corte))); plano.setDiasMaximoAntecedencia(30); plano = planos.save(plano);
         var contrato = new PlanoMensalCliente(); contrato.setCliente(cliente); contrato.setUsuario(cliente.getUsuario());
         contrato.setPlanoMensal(plano); contrato.setValorMensal(plano.getValorMensal()); contrato.setAtivo(true);

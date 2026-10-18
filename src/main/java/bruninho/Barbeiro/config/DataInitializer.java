@@ -261,9 +261,7 @@ public class DataInitializer {
         plano.setValorMensal(new BigDecimal(valor));
         plano.setDiasMaximoAntecedencia(diasMaximoAntecedencia);
         plano.setAtivo(true);
-        if (plano.getPorcentagemComissao() == null) {
-            plano.setPorcentagemComissao(0);
-        }
+
         plano.getServicosIncluidos().clear();
         plano.getServicosIncluidos().addAll(servicos);
         plano.setAtualizadoEm(LocalDateTime.now());

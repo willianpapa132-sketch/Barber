@@ -2,13 +2,6 @@
 -- O projeto usa ddl-auto=validate e ainda nao possui historico de migrations versionadas.
 BEGIN;
 
--- Planos antigos precisam de um valor inicial antes de exigir NOT NULL.
--- Percentuais ja configurados sao preservados. Ajustar os 0% conforme a regra da barbearia.
-ALTER TABLE plano_mensal ADD COLUMN IF NOT EXISTS porcentagem_comissao integer DEFAULT 0;
-UPDATE plano_mensal SET porcentagem_comissao = 0 WHERE porcentagem_comissao IS NULL;
-ALTER TABLE plano_mensal ALTER COLUMN porcentagem_comissao SET DEFAULT 0;
-ALTER TABLE plano_mensal ALTER COLUMN porcentagem_comissao SET NOT NULL;
-
 ALTER TABLE agendamento ADD COLUMN IF NOT EXISTS forma_pagamento varchar(255);
 ALTER TABLE agendamento ADD COLUMN IF NOT EXISTS finalizado_em timestamp(6);
 
@@ -34,9 +27,29 @@ CREATE TABLE IF NOT EXISTS comissao_plano (
     plano_mensal_cliente_id bigint NOT NULL REFERENCES plano_mensal_cliente(id),
     barbeiro_id bigint NOT NULL REFERENCES barbeiro(id),
     data_agendamento date NOT NULL,
-    percentual_aplicado numeric(5,2) NOT NULL CHECK (percentual_aplicado BETWEEN 0 AND 100),
     criado_em timestamp(6) NOT NULL
 );
+
+-- Colunas antigas deixam de ser usadas. Preserva o historico e libera novos inserts sem percentual.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = current_schema() AND table_name = 'plano_mensal'
+                 AND column_name = 'porcentagem_comissao') THEN
+        ALTER TABLE plano_mensal ALTER COLUMN porcentagem_comissao DROP NOT NULL;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = current_schema() AND table_name = 'comissao_plano'
+                 AND column_name = 'percentual_aplicado') THEN
+        ALTER TABLE comissao_plano ALTER COLUMN percentual_aplicado DROP NOT NULL;
+    END IF;
+END $$;
+
+-- Pontos historicos usam a duracao registrada no agendamento.
+ALTER TABLE comissao_plano ADD COLUMN IF NOT EXISTS pontos integer;
+UPDATE comissao_plano c SET pontos = a.duracao_servico_minutos
+FROM agendamento a WHERE a.id = c.agendamento_id AND c.pontos IS NULL;
+ALTER TABLE comissao_plano ALTER COLUMN pontos SET NOT NULL;
 
 CREATE INDEX IF NOT EXISTS ix_comissao_plano_periodo
     ON comissao_plano (plano_mensal_id, data_agendamento);

@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -38,8 +37,8 @@ public class ComissaoPlano {
     @Column(name = "data_agendamento", nullable = false)
     private LocalDate dataAgendamento;
 
-    @Column(name = "percentual_aplicado", nullable = false, precision = 5, scale = 2)
-    private BigDecimal percentualAplicado;
+    @Column(name = "pontos", nullable = false)
+    private int pontos;
 
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;

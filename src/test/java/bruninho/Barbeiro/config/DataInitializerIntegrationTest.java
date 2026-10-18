@@ -36,26 +36,21 @@ class DataInitializerIntegrationTest {
     @Autowired @Qualifier("bootstrap") CommandLineRunner bootstrap;
 
     @Test
-    void iniciaComDadosDemoSemPercentuaisNulos() {
-        assertThat(planos.findAll()).hasSize(3)
-                .allSatisfy(plano -> assertThat(plano.getPorcentagemComissao()).isZero());
+    void iniciaComPlanosDemoEComissaoDoBarbeiro() {
+        assertThat(planos.findAll()).hasSize(3);
         assertThat(barbeiros.findByUsuario_Login("barbeiro@demo.com").orElseThrow().getPorcentagemComissao()).isEqualTo(40);
         assertThat(servicos.findByNomeIgnoreCase("Corte").orElseThrow().getDuracaoMinutos()).isEqualTo(15);
         assertThat(servicos.findByNomeIgnoreCase("Barba").orElseThrow().getDuracaoMinutos()).isEqualTo(10);
     }
 
     @Test
-    void reinicializarPreservaPercentuaisConfigurados() throws Exception {
-        var plano = planos.findByNomePlanoIgnoreCase("Plano Essencial").orElseThrow();
-        plano.setPorcentagemComissao(25);
-        planos.saveAndFlush(plano);
+    void reinicializarPreservaComissaoDoBarbeiro() throws Exception {
         var barbeiro = barbeiros.findByUsuario_Login("barbeiro@demo.com").orElseThrow();
         barbeiro.setPorcentagemComissao(35);
         barbeiros.saveAndFlush(barbeiro);
 
         bootstrap.run();
 
-        assertThat(planos.findById(plano.getId()).orElseThrow().getPorcentagemComissao()).isEqualTo(25);
         assertThat(barbeiros.findById(barbeiro.getId()).orElseThrow().getPorcentagemComissao()).isEqualTo(35);
         assertThat(planos.count()).isEqualTo(3);
     }

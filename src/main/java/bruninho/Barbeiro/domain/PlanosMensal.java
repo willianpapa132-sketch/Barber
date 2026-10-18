@@ -25,7 +25,6 @@ public class PlanosMensal {
     @Column(nullable = false)
     private String nomePlano;
 
-
     @Column(nullable = false)
     private String descricao;
 
@@ -46,12 +45,8 @@ public class PlanosMensal {
     @Positive
     private Integer diasMaximoAntecedencia;
 
-
     private LocalDateTime criadoEm;
 
     private LocalDateTime atualizadoEm ;
 
-    @org.hibernate.annotations.ColumnDefault("0")
-    @Column(nullable = false)
-    private Integer porcentagemComissao;
 }

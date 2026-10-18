@@ -76,7 +76,7 @@ public class FinalizacaoAgendamentoService {
             registro.setPlanoMensalCliente(calculo.plano());
             registro.setBarbeiro(agendamento.getBarbeiro());
             registro.setDataAgendamento(agendamento.getData());
-            registro.setPercentualAplicado(calculo.comissaoPlano().percentualAplicado());
+            registro.setPontos(calculo.comissaoPlano().pontos());
             registro.setCriadoEm(agora);
             comissoesPlano.save(registro);
         } else {
@@ -90,6 +90,36 @@ public class FinalizacaoAgendamentoService {
         agendamento.setAtualizadoEm(agora);
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         return resposta(agendamento, calculo, agora);
+    }
+
+    @Transactional
+    public void cancelar(String login, Long id) {
+        alterarStatus(login, id, StatusAgendamento.CANCELADO);
+    }
+
+    @Transactional
+    public void registrarNaoComparecimento(String login, Long id) {
+        alterarStatus(login, id, StatusAgendamento.NAO_COMPARECEU);
+    }
+
+    private void alterarStatus(String login, Long id, StatusAgendamento novoStatus) {
+        var agendamento = agendamentos.findParaFinalizar(id, login)
+                .orElseThrow(() -> erro(HttpStatus.NOT_FOUND, "Agendamento nao encontrado"));
+        if (agendamento.getStatus() != StatusAgendamento.AGENDADO) {
+            throw erro(HttpStatus.CONFLICT, "Somente agendamentos com status AGENDADO podem ser alterados");
+        }
+        if (comissoes.existsByAgendamento_Id(id) || comissoesPlano.existsByAgendamento_Id(id)
+                || Boolean.TRUE.equals(agendamento.getPagamentoRecebido())) {
+            throw erro(HttpStatus.CONFLICT, "Agendamento ja possui pagamento ou comissao");
+        }
+        var agora = LocalDateTime.now(clock);
+        if (novoStatus == StatusAgendamento.NAO_COMPARECEU
+                && (agendamento.getData() == null || agendamento.getHoraInicio() == null
+                || agora.isBefore(agendamento.getData().atTime(agendamento.getHoraInicio())))) {
+            throw erro(HttpStatus.CONFLICT, "Nao comparecimento so pode ser registrado a partir do horario de inicio");
+        }
+        agendamento.setStatus(novoStatus);
+        agendamento.setAtualizadoEm(agora);
     }
 
     private void registrarComissaoPadrao(Agendamento agendamento, Calculo calculo, LocalDateTime agora) {
@@ -118,12 +148,21 @@ public class FinalizacaoAgendamentoService {
         var comissao = mensal ? null : calcularComissao(agendamento);
         ComissaoPlanoResponse comissaoPlano = null;
         if (mensal) {
-            var percentual = percentualValido(plano.getPlanoMensal().getPorcentagemComissao());
+
             comissaoPlano = new ComissaoPlanoResponse(plano.getPlanoMensal().getId(), plano.getId(),
-                    plano.getPlanoMensal().getNomePlano(), agendamento.getData(), percentual);
+                    plano.getPlanoMensal().getNomePlano(), agendamento.getData(), pontosDoPlano(agendamento));
         }
         return new Calculo(plano, mensal ? FormaPagamento.MENSAL : escolha, servicos, valorServicos,
                 mensal ? BigDecimal.ZERO.setScale(2) : valorValido(agendamento.getPrecoTotal()), comissao, comissaoPlano);
+    }
+
+    private int pontosDoPlano(Agendamento agendamento) {
+        // Duracao total registrada ao agendar: preserva os minutos mesmo se o catalogo mudar.
+        int minutos = agendamento.getDuracaoServicoMinutos();
+        if (minutos <= 0) {
+            throw erro(HttpStatus.CONFLICT, "Agendamento sem duracao valida para gerar pontos");
+        }
+        return minutos;
     }
 
     private PlanoMensalCliente validarPlano(Agendamento agendamento) {

@@ -64,6 +64,79 @@ class FinalizacaoAgendamentoIntegrationTest {
         agendamento = agendamentos.save(agendamento);
     }
 
+    @Test
+    void barbeiroCancelaSemPagamentoNemComissaoInclusiveAtendimentoFuturo() throws Exception {
+        agendamento.setData(LocalDate.now().plusDays(1));
+        mvc.perform(post(endpoint() + "/cancelar").with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isNoContent());
+        agendamentos.flush();
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.CANCELADO);
+        assertThat(agendamento.getAtualizadoEm()).isNotNull();
+        assertThat(agendamento.getFinalizadoEm()).isNull();
+        assertThat(agendamento.getPagamentoRecebido()).isNotEqualTo(true);
+        assertThat(comissoes.existsByAgendamento_Id(agendamento.getId())).isFalse();
+        assertThat(comissoesPlano.existsByAgendamento_Id(agendamento.getId())).isFalse();
+    }
+
+    @Test
+    void barbeiroRegistraNaoComparecimentoSemComissao() throws Exception {
+        mvc.perform(post(endpoint() + "/nao-compareceu").with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isNoContent());
+        agendamentos.flush();
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.NAO_COMPARECEU);
+        assertThat(agendamento.getPagamentoRecebido()).isNotEqualTo(true);
+        assertThat(agendamento.getFinalizadoEm()).isNull();
+        assertThat(comissoes.existsByAgendamento_Id(agendamento.getId())).isFalse();
+        assertThat(comissoesPlano.existsByAgendamento_Id(agendamento.getId())).isFalse();
+    }
+
+    @Test
+    void naoPermiteNaoComparecimentoAntesDoInicio() throws Exception {
+        agendamento.setData(LocalDate.now().plusDays(1));
+        mvc.perform(post(endpoint() + "/nao-compareceu").with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isConflict());
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.AGENDADO);
+    }
+
+    @Test
+    void protegeNovasAcoesContraOutroBarbeiroECliente() throws Exception {
+        for (String acao : new String[] { "/cancelar", "/nao-compareceu" }) {
+            mvc.perform(post(endpoint() + acao).with(user("outro").roles("BARBEIRO")))
+                    .andExpect(status().isNotFound());
+            mvc.perform(post(endpoint() + acao).with(user("cliente").roles("CLIENTE")))
+                    .andExpect(status().isForbidden());
+        }
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.AGENDADO);
+    }
+
+    @Test
+    void naoAlteraAtendimentoConcluidoNemDuplicaOperacao() throws Exception {
+        agendamento.setStatus(StatusAgendamento.CONCLUIDO);
+        for (String acao : new String[] { "/cancelar", "/nao-compareceu" }) {
+            mvc.perform(post(endpoint() + acao).with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                    .andExpect(status().isConflict());
+        }
+        agendamento.setStatus(StatusAgendamento.AGENDADO);
+        mvc.perform(post(endpoint() + "/cancelar").with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isNoContent());
+        for (String acao : new String[] { "/cancelar", "/nao-compareceu" }) {
+            mvc.perform(post(endpoint() + acao).with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                    .andExpect(status().isConflict());
+        }
+        mvc.perform(post(endpoint()).with(user("finalizar-barbeiro").roles("BARBEIRO"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"formaPagamento\":\"PIX\"}"))
+                .andExpect(status().isConflict());
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.CANCELADO);
+    }
+
+    @Test
+    void naoCancelaAtendimentoQueJaPossuiPagamento() throws Exception {
+        agendamento.setPagamentoRecebido(true);
+        mvc.perform(post(endpoint() + "/cancelar").with(user("finalizar-barbeiro").roles("BARBEIRO")))
+                .andExpect(status().isConflict());
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.AGENDADO);
+    }
+
     private String endpoint() {
         return "/api/barbeiro/agendamentos/" + agendamento.getId() + "/finalizacao";
     }
@@ -92,7 +165,7 @@ class FinalizacaoAgendamentoIntegrationTest {
     }
 
     @Test
-    void mensalContaUmAtendimentoComDoisServicosEPreservaPercentualDoPlano() throws Exception {
+    void mensalContaUmAtendimentoComDoisServicosEPontosSemPercentual() throws Exception {
         var usuario = new Usuario();
         usuario.setLogin("cliente-finalizacao-mensal");
         usuario.setSenha("senha-teste");
@@ -119,7 +192,7 @@ class FinalizacaoAgendamentoIntegrationTest {
         plano.setDescricao("Plano mensal");
         plano.setAtivo(true);
         plano.setValorMensal(new BigDecimal("150.00"));
-        plano.setPorcentagemComissao(25);
+
         plano.setServicosIncluidos(new java.util.HashSet<>(java.util.List.of(corte, barba)));
         plano = planosMensais.save(plano);
         var contrato = new PlanoMensalCliente();
@@ -138,7 +211,8 @@ class FinalizacaoAgendamentoIntegrationTest {
         mvc.perform(get(endpoint()).with(user("finalizar-barbeiro").roles("BARBEIRO")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.formaPagamento").value("MENSAL"))
-                .andExpect(jsonPath("$.comissaoPlano.percentualAplicado").value(25));
+                .andExpect(jsonPath("$.comissaoPlano.percentualAplicado").doesNotExist())
+                .andExpect(jsonPath("$.comissaoPlano.pontos").value(agendamento.getDuracaoServicoMinutos()));
         assertThat(comissoesPlano.existsByAgendamento_Id(agendamento.getId())).isFalse();
 
         mvc.perform(post(endpoint()).with(user("finalizar-barbeiro").roles("BARBEIRO"))
@@ -150,6 +224,7 @@ class FinalizacaoAgendamentoIntegrationTest {
                 .andExpect(jsonPath("$.comissaoPlano.dataAgendamento").value(agendamento.getData().toString()));
         comissoesPlano.flush();
         var registro = comissoesPlano.findByAgendamento_Id(agendamento.getId()).orElseThrow();
+        assertThat(registro.getPontos()).isEqualTo(agendamento.getDuracaoServicoMinutos());
         assertThat(registro.getDataAgendamento()).isEqualTo(agendamento.getData());
         assertThat(registro.getBarbeiro().getId()).isEqualTo(agendamento.getBarbeiro().getId());
         assertThat(registro.getPlanoMensalCliente().getId()).isEqualTo(contrato.getId());
@@ -160,9 +235,8 @@ class FinalizacaoAgendamentoIntegrationTest {
                 plano.getId(), agendamento.getBarbeiro().getId(), data, data)).isEqualTo(1);
         assertThat(comissoesPlano.countByPlanoMensal_IdAndDataAgendamentoBetween(
                 plano.getId(), data.plusDays(1), data.plusDays(2))).isZero();
-        plano.setPorcentagemComissao(50);
+
         planosMensais.flush();
-        assertThat(registro.getPercentualAplicado()).isEqualByComparingTo("25");
 
         mvc.perform(post(endpoint()).with(user("finalizar-barbeiro").roles("BARBEIRO"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"formaPagamento\":\"MENSAL\"}"))

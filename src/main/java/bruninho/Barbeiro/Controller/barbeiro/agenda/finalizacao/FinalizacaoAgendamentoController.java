@@ -3,6 +3,7 @@ package bruninho.Barbeiro.Controller.barbeiro.agenda.finalizacao;
 import bruninho.Barbeiro.domain.FormaPagamento;
 import bruninho.Barbeiro.service.FinalizacaoAgendamentoService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,18 @@ public class FinalizacaoAgendamentoController {
             Authentication authentication
     ) {
         return finalizacao.consultar(authentication.getName(), agendamentoId, formaPagamento);
+    }
+
+    @PostMapping("/cancelar")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelar(@PathVariable Long agendamentoId, Authentication authentication) {
+        finalizacao.cancelar(authentication.getName(), agendamentoId);
+    }
+
+    @PostMapping("/nao-compareceu")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void naoCompareceu(@PathVariable Long agendamentoId, Authentication authentication) {
+        finalizacao.registrarNaoComparecimento(authentication.getName(), agendamentoId);
     }
 
     @PostMapping

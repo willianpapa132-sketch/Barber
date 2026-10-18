@@ -34,5 +34,5 @@ public record FinalizacaoAgendamentoResponse(
     public record ComissaoResponse(TipoComissao tipo, BigDecimal valorBase,
                                    BigDecimal percentualAplicado, BigDecimal valorComissao) {}
     public record ComissaoPlanoResponse(Long planoId, Long planoMensalClienteId, String nomePlano,
-                                        LocalDate dataAgendamento, BigDecimal percentualAplicado) {}
+                                        LocalDate dataAgendamento, int pontos) {}
 }

@@ -207,3 +207,10 @@ a.timeline-event:hover { border-color: #e5bc6b; box-shadow: inset 0 0 0 1px #e5b
 .timeline-time:disabled { cursor: default; }
 .timeline-event:has(.appointment-open):hover { border-color: #e5bc6b; }
 }
+.barber-area {
+.finish-more { width: 100%; margin-top: 12px; padding: 14px 20px; border: 1px solid #a8433c; border-radius: 9px; background: #7d2824; color: #fff; font-weight: 700; cursor: pointer; }
+.finish-more:hover { background: #96332d; }
+.finish-more-actions { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid #68342f; border-radius: 12px; background: #231718; }
+.finish-more-actions button { padding: 13px; text-align: left; color: #ffc1ba; background: #351f20; border: 1px solid #68342f; border-radius: 8px; cursor: pointer; }
+.finish-more:disabled, .finish-more-actions button:disabled { opacity: .5; cursor: wait; }
+}
