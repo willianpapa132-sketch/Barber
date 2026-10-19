@@ -11,6 +11,9 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Authentication authentication) {
+        if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return "redirect:/admin/home";
+        }
         boolean barbeiro = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_BARBEIRO"));
 
@@ -23,6 +26,11 @@ public class HomeController {
     @GetMapping("/home")
     public String homeCompatibilidade() {
         return "redirect:/";
+    }
+
+    @GetMapping({"/admin", "/admin/home"})
+    public String admin() {
+        return "forward:/client/index.html";
     }
 
     @GetMapping("/favicon.ico")

@@ -1,0 +1,13 @@
+<div class="admin-layout">
+  <aside><div class="brand"><span aria-hidden="true">✂</span><div>BARBEARIA<small>ADMINISTRATIVO</small></div></div><nav aria-label="Menu administrativo"><a href="/admin/home" aria-current="page">⌂ <span>Home</span></a>@for (card of cards; track card) { <span class="nav-pending">{{ card }} <small>Em breve</small></span> }</nav><form action="/logout" method="post"><button type="submit">Sair da conta ↗</button></form></aside>
+  <div class="workspace"><header><span>Gestão da barbearia</span><div><span class="avatar">AD</span><span>Administrador<small>Barbearia</small></span></div></header>
+    <main><section class="hero"><p>VISÃO GERAL</p><h1>Painel Administrativo</h1><h2>Acompanhe o dia da sua barbearia.</h2><span>Todos os barbeiros, reunidos em um só lugar.</span></section>
+      @if (loading()) { <p role="status">Carregando resumo...</p> }
+      @if (error()) { <div class="error" role="alert">{{ error() }} <button (click)="load()">Tentar novamente</button></div> }
+      @if (resumo(); as resumo) {
+        <section class="summary" aria-labelledby="resumo-title"><div class="section-title"><h2 id="resumo-title">Resumo do dia</h2><time [attr.datetime]="resumo.data">{{ data }}</time></div><div class="metrics"><article><span class="icon" aria-hidden="true">▦</span><div><p>Agendamentos do dia</p><strong>{{ resumo.agendamentosHoje }}</strong><small>Todos os barbeiros · todos os status</small></div></article><article><span class="icon" aria-hidden="true">R$</span><div><p>Valor líquido do dia</p><strong>{{ resumo.valorLiquidoHoje | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong><small>Atendimentos concluídos menos comissões</small></div></article></div></section>
+      }
+      <section class="shortcuts" aria-labelledby="acessos-title"><div class="section-title"><h2 id="acessos-title">Acessos rápidos</h2><span>A definir</span></div><div class="cards">@for (card of cards; track card; let i = $index) { <article><span class="icon" aria-hidden="true">{{ ['▦', '▥', '♙', '%', '$', '▤'][i] }}</span><div><h3>{{ card }}</h3><p>Acesso rápido a definir</p><small>Em breve</small></div></article> }</div></section>
+    </main>
+  </div>
+</div>

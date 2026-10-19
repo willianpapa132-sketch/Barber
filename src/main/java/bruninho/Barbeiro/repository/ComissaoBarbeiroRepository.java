@@ -4,6 +4,8 @@ import bruninho.Barbeiro.domain.ComissaoBarbeiro;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ComissaoBarbeiroRepository extends JpaRepository<ComissaoBarbeiro, Long> {
+    @org.springframework.data.jpa.repository.Query("select coalesce(sum(c.valorComissao), 0) from ComissaoBarbeiro c join c.agendamento a where a.data = :data and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO")
+    java.math.BigDecimal somarComissoesConcluidasNoDia(@org.springframework.data.repository.query.Param("data") java.time.LocalDate data);
     boolean existsByAgendamento_Id(Long agendamentoId);
     @org.springframework.data.jpa.repository.Query("""
             select coalesce(sum(c.valorComissao), 0) from ComissaoBarbeiro c join c.agendamento a

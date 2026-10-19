@@ -9,6 +9,8 @@ import { PlanoPage } from './pages/plano.page';
 import { BarberLayout } from './barbeiro/layout';
 
 export const routes: Routes = [
+  { path: 'admin', redirectTo: 'admin/home', pathMatch: 'full' },
+  { path: 'admin/home', loadComponent: () => import('./admin/home.page').then(m => m.AdminHomePage), title: 'Painel administrativo' },
   { path: 'barbeiro', component: BarberLayout, children: [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', loadComponent: () => import('./barbeiro/home.page').then(m => m.BarberHomePage), title: 'Home do barbeiro' },

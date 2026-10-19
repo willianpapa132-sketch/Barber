@@ -15,6 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
+    long countByData(LocalDate data);
+
+    @Query("select coalesce(sum(a.precoTotal), 0) from Agendamento a where a.data = :data and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO")
+    java.math.BigDecimal somarValoresConcluidos(@Param("data") LocalDate data);
 
     Optional<Agendamento> findByIdAndBarbeiro_Usuario_Login(Long id, String login);
 
