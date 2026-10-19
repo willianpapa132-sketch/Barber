@@ -1,0 +1,32 @@
+<app-admin-layout>
+  <section class="barbeiros-hero">
+    <div><span class="gold-line" aria-hidden="true"></span><h1>Cadastro de Barbeiros</h1><p>Gerencie os barbeiros da sua barbearia.</p><small>Cadastre novos barbeiros, edite informações e acompanhe o status de cada profissional.</small></div>
+    <button class="gold-button" (click)="abrir()">＋ Novo Barbeiro</button>
+  </section>
+  <section class="list-panel" aria-label="Barbeiros cadastrados" [attr.aria-busy]="loading()">
+    @if (success()) { <p role="status">{{ success() }}</p> }
+    <form class="filters" (ngSubmit)="load()">
+      <label class="search"><span class="sr-only">Buscar por nome ou telefone</span><input name="busca" [(ngModel)]="busca" placeholder="Buscar barbeiro por nome ou telefone..."><button type="submit" [disabled]="loading()">Buscar</button></label>
+      <label><span class="sr-only">Status do barbeiro</span><select name="status" [(ngModel)]="status" (ngModelChange)="load()"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select></label>
+    </form>
+    @if (loading()) { <p class="notice" role="status">Carregando barbeiros...</p> }
+    @else if (error()) { <div class="notice error" role="alert">{{ error() }} <button (click)="load()">Tentar novamente</button></div> }
+    @else if (resultado(); as resultado) {
+      @if (resultado.itens.length) {
+        <div class="table-scroll"><table><thead><tr><th>Barbeiro</th><th>Telefone</th><th>Comissão</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+          @for (barbeiro of resultado.itens; track barbeiro.id) {
+            <tr><td><div class="person"><span class="photo">@if (barbeiro.imgUrl) { <img [src]="barbeiro.imgUrl" alt="" referrerpolicy="no-referrer" (error)="$any($event.target).hidden = true"> }{{ iniciais(barbeiro.nome) }}</span><strong>{{ barbeiro.nome }}</strong></div></td><td>{{ barbeiro.telefone }}</td><td class="commission">{{ barbeiro.comissao === null ? '—' : barbeiro.comissao + '%' }}</td><td><span class="badge" [class.inactive]="!barbeiro.ativo">● {{ barbeiro.ativo ? 'Ativo' : 'Inativo' }}</span></td><td><div class="actions"><button (click)="abrir(barbeiro.id)">Editar</button><button (click)="abrir(barbeiro.id)">Ver jornada</button></div></td></tr>
+          }
+        </tbody></table></div>
+        <footer><span>Mostrando {{ resultado.itens.length }} de {{ resultado.total }} barbeiros</span><div class="pagination"><button aria-label="Página anterior" [disabled]="resultado.pagina === 0" (click)="load(resultado.pagina - 1)">‹</button><span>{{ resultado.pagina + 1 }} / {{ resultado.totalPaginas }}</span><button aria-label="Próxima página" [disabled]="resultado.pagina + 1 >= resultado.totalPaginas" (click)="load(resultado.pagina + 1)">›</button></div></footer>
+      } @else {
+        <div class="empty-state">
+          <span class="chair" aria-hidden="true"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="24" y="12" width="18" height="12" rx="4"/><rect x="24" y="25" width="24" height="36" rx="7" transform="rotate(-8 24 25)"/><rect x="33" y="61" width="46" height="12" rx="4"/><path d="M48 43h24a6 6 0 0 1 0 12H48M53 73v13M43 86h21l9 7H34zM31 58v9"/></svg></span>
+          @if (busca.trim() || status !== '') { <h2>Nenhum barbeiro encontrado</h2><p>Tente outro nome, telefone ou status.</p><button (click)="busca = ''; status = ''; load()">Limpar filtros</button> }
+          @else { <h2>Nenhum barbeiro cadastrado</h2><p>Cadastre o primeiro barbeiro para começar a organizar sua equipe.</p><button class="gold-button" (click)="abrir()">＋ Cadastrar Barbeiro</button> }
+        </div>
+      }
+    }
+  </section>
+</app-admin-layout>
+@if (formOpen()) { <app-barbeiro-form [id]="selectedId" (closed)="formOpen.set(false)" (saved)="salvo()" /> }

@@ -1,6 +1,8 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.requests.*;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.AtualizarPlanoMensal;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.CriarPlanoMensal;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.DescontoServicoPlanoRequest;
 import bruninho.Barbeiro.domain.*;
 import bruninho.Barbeiro.repository.*;
 import org.junit.jupiter.api.Test;

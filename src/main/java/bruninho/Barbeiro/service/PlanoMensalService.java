@@ -1,10 +1,10 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.requests.AtualizarPlanoMensal;
-import bruninho.Barbeiro.Controller.Admin.requests.CriarPlanoMensal;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.AtualizarPlanoMensal;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.CriarPlanoMensal;
 import bruninho.Barbeiro.domain.PlanoMensalCliente;
 import bruninho.Barbeiro.domain.ServicosPlanosDesconto;
-import bruninho.Barbeiro.Controller.Admin.requests.DescontoServicoPlanoRequest;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.DescontoServicoPlanoRequest;
 import bruninho.Barbeiro.exception.BusinessException;
 import bruninho.Barbeiro.domain.PlanosMensal;
 import bruninho.Barbeiro.domain.Servico;

@@ -10,7 +10,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "jornada_barbeiro")
+@Table(name = "jornada_barbeiro", uniqueConstraints = @UniqueConstraint(name = "uk_jornada_barbeiro_dia", columnNames = {"barbeiro_id", "dia_semana"}))
 @Getter
 @Setter
 @AllArgsConstructor
@@ -25,7 +25,7 @@ public class JornadaBarbeiro {
     private Barbeiro barbeiro;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true, nullable = false)
+    @Column(name = "dia_semana", nullable = false)
     private DayOfWeek diaSemana;
 
     @Column(name = "hora_inicio")

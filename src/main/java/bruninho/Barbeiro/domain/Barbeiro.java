@@ -33,6 +33,7 @@ public class Barbeiro {
     @OneToOne(optional = false)
     private Usuario usuario;
 
+    @Column(columnDefinition = "text")
     private String imgurl;
 
     private Integer porcentagemComissao;

@@ -1,0 +1,28 @@
+<dialog #dialog aria-labelledby="barbeiro-form-title" (cancel)="$event.preventDefault(); close()">
+  <header><div><h2 id="barbeiro-form-title">{{ id() === null ? 'Cadastrar Barbeiro' : 'Editar Barbeiro' }}</h2><p>Preencha os dados do barbeiro e defina sua jornada de trabalho</p></div><button type="button" class="close" aria-label="Fechar" (click)="close()" [disabled]="saving()">×</button></header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (loading()) { <p role="status">Carregando cadastro...</p> }
+  <form #form="ngForm" (ngSubmit)="form.valid && salvar()">
+    <fieldset [disabled]="saving() || loading()"><div class="columns">
+      <section class="dados"><h3><span aria-hidden="true">♙</span> Dados do Barbeiro</h3>
+        <label>Nome <span>*</span><input name="nome" [(ngModel)]="model.nome" required maxlength="120" placeholder="Digite o nome do barbeiro" autofocus></label>
+        <label>Telefone <span>*</span><input name="telefone" type="tel" [(ngModel)]="model.telefone" required maxlength="30" placeholder="(00) 00000-0000"></label>
+        <label>Login (deve ser e-mail) <span>*</span><input name="login" type="email" email [(ngModel)]="model.login" required maxlength="254" placeholder="exemplo@seuemail.com" autocomplete="off"></label>
+        <label>Senha {{ id() === null ? '*' : '(deixe vazia para manter)' }}<div class="password"><input name="senha" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="model.senha" [required]="id() === null" minlength="8" maxlength="72" autocomplete="new-password" placeholder="No mínimo 8 caracteres"><button type="button" [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'" (click)="showPassword = !showPassword">{{ showPassword ? 'Ocultar' : 'Ver' }}</button></div></label>
+        <label>Porcentagem de Comissão (%)<input name="comissao" type="number" [(ngModel)]="model.comissao" min="0" max="100" step="1" required></label>
+        <label>Foto do Barbeiro<div class="upload">@if (model.imgUrl) { <img [src]="model.imgUrl" alt="Prévia da foto"> }<span>Escolher foto · PNG ou JPG até 2 MB</span><input type="file" accept="image/png,image/jpeg" (change)="foto($event)"></div></label>
+        @if (model.imgUrl) { <button type="button" class="remove" (click)="model.imgUrl = null">Remover foto</button> }
+        <label class="active"><input name="ativo" type="checkbox" [(ngModel)]="model.ativo"><span>Barbeiro ativo<small>Barbeiro pode receber agendamentos e acessar sua conta</small></span></label>
+      </section>
+      <section class="jornada"><h3><span aria-hidden="true">◷</span> Jornada de Trabalho</h3><p>Defina os dias e horários de atendimento do barbeiro</p>
+        <div class="week">@for (dia of model.jornada; track dia.diaSemana; let i = $index) {
+          <div class="day"><strong>{{ nomes[i] }}</strong><label class="folga" [class.off]="dia.folga"><input type="checkbox" [name]="'folga' + i" [(ngModel)]="dia.folga">Folga</label>
+            <label><span class="sr-only">{{ nomes[i] }} início</span><input type="time" [name]="'inicio' + i" [(ngModel)]="dia.horaInicio" [disabled]="dia.folga" [required]="!dia.folga"></label><span class="separator">até</span><label><span class="sr-only">{{ nomes[i] }} fim</span><input type="time" [name]="'fim' + i" [(ngModel)]="dia.horaFim" [disabled]="dia.folga" [required]="!dia.folga"></label>
+            <span class="interval-label">Intervalo</span><label><span class="sr-only">{{ nomes[i] }} início do intervalo</span><input type="time" [name]="'intervaloInicio' + i" [(ngModel)]="dia.intervaloInicio" [disabled]="dia.folga"></label><span class="separator">até</span><label><span class="sr-only">{{ nomes[i] }} fim do intervalo</span><input type="time" [name]="'intervaloFim' + i" [(ngModel)]="dia.intervaloFim" [disabled]="dia.folga"></label>
+          </div>
+        }</div><p class="hint">Marque Folga nos dias sem atendimento. O intervalo é opcional e deve ficar dentro da jornada.</p>
+      </section>
+    </div></fieldset>
+    <footer><button type="button" (click)="close()" [disabled]="saving()">Cancelar</button><button class="save" type="submit" [disabled]="saving() || loading() || form.invalid">{{ saving() ? 'Salvando...' : 'Salvar' }}</button></footer>
+  </form>
+</dialog>

@@ -1,4 +1,4 @@
-package bruninho.Barbeiro.Controller.Admin.requests;
+package bruninho.Barbeiro.Controller.Admin.cadastros.planomensal;
 
 
 import jakarta.validation.constraints.NotBlank;

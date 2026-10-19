@@ -30,7 +30,7 @@ services:
       DB_PASSWORD: barber_dev
       SPRING_FLYWAY_ENABLED: "false"
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      APP_INITIAL_ADMIN_USERNAME: admin
+      APP_INITIAL_ADMIN_USERNAME: admin@barbearia.com
       APP_INITIAL_ADMIN_PASSWORD: admin12345
       APP_INITIAL_ADMIN_NAME: Administrador
       APP_DEMO_DATA: "true"

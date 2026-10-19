@@ -2,13 +2,15 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { registerLocaleData } from '@angular/common';
 import pt from '@angular/common/locales/pt';
+import { RouterLink } from '@angular/router';
+import { AdminLayout } from './layout';
 
 registerLocaleData(pt);
 
 interface Resumo { data: string; agendamentosHoje: number; valorLiquidoHoje: number }
 
 @Component({
-  selector: 'app-admin-home', imports: [CurrencyPipe],
+  selector: 'app-admin-home', imports: [CurrencyPipe, RouterLink, AdminLayout],
   templateUrl: './home.page.html', styleUrl: './home.page.scss'
 })
 export class AdminHomePage implements OnInit, OnDestroy {
