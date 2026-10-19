@@ -27,21 +27,29 @@ public class FinalizacaoAgendamentoService {
     private final ComissaoPlanoRepository comissoesPlano;
     private final PlanoMensalClienteRepository planos;
     private final Clock clock;
+    private final CaixaService caixa;
 
     @Autowired
     public FinalizacaoAgendamentoService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
                                          ComissaoPlanoRepository comissoesPlano,
-                                         PlanoMensalClienteRepository planos, AppProperties properties) {
-        this(agendamentos, comissoes, comissoesPlano, planos, Clock.system(ZoneId.of(properties.getZone())));
+                                         PlanoMensalClienteRepository planos, AppProperties properties, CaixaService caixa) {
+        this(agendamentos, comissoes, comissoesPlano, planos, Clock.system(ZoneId.of(properties.getZone())), caixa);
     }
 
     FinalizacaoAgendamentoService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
-                                  ComissaoPlanoRepository comissoesPlano, PlanoMensalClienteRepository planos, Clock clock) {
+                                  ComissaoPlanoRepository comissoesPlano, PlanoMensalClienteRepository planos, Clock clock, CaixaService caixa) {
         this.agendamentos = agendamentos;
         this.comissoes = comissoes;
         this.comissoesPlano = comissoesPlano;
         this.planos = planos;
         this.clock = clock;
+        this.caixa = caixa;
+    }
+
+    // Mantem a construcao usada pelos testes unitarios existentes.
+    FinalizacaoAgendamentoService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
+                                  ComissaoPlanoRepository comissoesPlano, PlanoMensalClienteRepository planos, Clock clock) {
+        this(agendamentos, comissoes, comissoesPlano, planos, clock, null);
     }
 
     @Transactional(readOnly = true)
@@ -94,6 +102,7 @@ public class FinalizacaoAgendamentoService {
         agendamento.setFinalizadoEm(agora);
         agendamento.setAtualizadoEm(agora);
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
+        if (caixa != null) caixa.registrarEntrada(agendamento, calculo.valorCobrar(), agora);
         return resposta(agendamento, calculo, agora);
     }
 
