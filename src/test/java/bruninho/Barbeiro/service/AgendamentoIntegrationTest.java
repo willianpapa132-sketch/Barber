@@ -44,6 +44,7 @@ class AgendamentoIntegrationTest {
     @Autowired PlanoMensalClienteRepository planosClientes;
     @Autowired MockMvc mvc;
     @Autowired FinalizacaoAgendamentoService finalizacao;
+    @Autowired CaixaService caixa;
     @Autowired ComissaoBarbeiroRepository comissoes;
     @Autowired ComissaoPlanoRepository comissoesPlano;
     @Autowired jakarta.persistence.EntityManager entityManager;
@@ -472,6 +473,7 @@ class AgendamentoIntegrationTest {
     @Test
     @org.springframework.transaction.annotation.Transactional
     void planoMistoPreservaCondicoesECobraExtrasComComissaoEPontosSeparados() throws Exception {
+        caixa.abrir(new bruninho.Barbeiro.Controller.Admin.caixa.AbrirCaixaRequest(BigDecimal.ZERO));
         var contrato = contratarPlano();
         var plano = planosMensais.findById(contrato.getPlanoMensal().getId()).orElseThrow();
         var pigmentacao = novoServico("Pigmentacao", 20, "50.00");

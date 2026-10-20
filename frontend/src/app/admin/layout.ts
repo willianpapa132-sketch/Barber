@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 @Component({
   selector: 'app-admin-layout', imports: [RouterLink, RouterLinkActive],
   styleUrl: './home.page.scss',
+  styles: ['@media(max-width:760px){nav{flex-wrap:wrap}nav a{gap:8px}}'],
   template: `
     <div class="admin-layout">
       <aside>
@@ -14,7 +15,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           <span class="nav-pending">Dashboard <small>Em breve</small></span>
           <a routerLink="/admin/cadastros" routerLinkActive="selected" ariaCurrentWhenActive="page">♙ <span>Cadastros</span></a>
           <span class="nav-pending">Comissões <small>Em breve</small></span>
-          <span class="nav-pending">Financeiro <small>Em breve</small></span>
+          <a routerLink="/admin/gerenciamento-planos" routerLinkActive="selected" ariaCurrentWhenActive="page">▤ <span>Gerenciamento de Planos</span></a>
+          <a routerLink="/admin/financeiro" routerLinkActive="selected" ariaCurrentWhenActive="page">$ <span>Financeiro</span></a>
           <a routerLink="/admin/caixa" routerLinkActive="selected" ariaCurrentWhenActive="page">▣ <span>Caixa</span></a>
           <span class="nav-pending">Configurações <small>Em breve</small></span>
         </nav>

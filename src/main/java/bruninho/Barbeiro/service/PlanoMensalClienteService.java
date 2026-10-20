@@ -79,6 +79,7 @@ public class PlanoMensalClienteService {
         planoMensalCliente.setValorMensal(plano.getValorMensal());
         planoMensalCliente.setDiasMaximoAntecedencia(plano.getDiasMaximoAntecedencia());
         planoMensalCliente.setCriadoEm(LocalDateTime.now());
+        planoMensalCliente.setProximoVencimento(planoMensalCliente.getCriadoEm().toLocalDate());
         planoMensalCliente.setAtualizadoEm(LocalDateTime.now());
         planoMensalCliente.setAtivo(true);
 

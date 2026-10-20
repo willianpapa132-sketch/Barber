@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class FinalizacaoAgendamentoIntegrationTest {
+    @Autowired CaixaService caixa;
     @Autowired MockMvc mvc;
     @Autowired UsuarioRepository usuarios;
     @Autowired BarbeiroRepository barbeiros;
@@ -143,6 +144,7 @@ class FinalizacaoAgendamentoIntegrationTest {
 
     @Test
     void consultaNaoMudaEstadoEPostPersistePagamentoComissaoEConclusao() throws Exception {
+        caixa.abrir(new bruninho.Barbeiro.Controller.Admin.caixa.AbrirCaixaRequest(BigDecimal.ZERO));
         mvc.perform(get(endpoint()).with(user("finalizar-barbeiro").roles("BARBEIRO")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.podeFinalizar").value(true))

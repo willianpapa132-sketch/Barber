@@ -4,6 +4,17 @@ import bruninho.Barbeiro.domain.ComissaoBarbeiro;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ComissaoBarbeiroRepository extends JpaRepository<ComissaoBarbeiro, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"barbeiro", "agendamento", "agendamento.cliente", "agendamento.servico"})
+    @org.springframework.data.jpa.repository.Query("""
+            select c from ComissaoBarbeiro c join c.agendamento a
+            where a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO
+            and a.pagamentoRecebido = true and c.valorComissao > 0
+            and a.finalizadoEm >= :inicio and a.finalizadoEm < :fim
+            order by a.finalizadoEm desc, c.id desc
+            """)
+    java.util.List<ComissaoBarbeiro> despesasFinanceiro(
+            @org.springframework.data.repository.query.Param("inicio") java.time.LocalDateTime inicio,
+            @org.springframework.data.repository.query.Param("fim") java.time.LocalDateTime fim);
     @org.springframework.data.jpa.repository.Query("select coalesce(sum(c.valorComissao), 0) from ComissaoBarbeiro c join c.agendamento a where a.data = :data and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO")
     java.math.BigDecimal somarComissoesConcluidasNoDia(@org.springframework.data.repository.query.Param("data") java.time.LocalDate data);
     boolean existsByAgendamento_Id(Long agendamentoId);

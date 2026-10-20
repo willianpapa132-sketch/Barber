@@ -1,0 +1,40 @@
+<app-admin-layout>
+  <section class="hero">
+    <div><h1>Financeiro</h1><p>Acompanhe as entradas, despesas e o resultado da barbearia</p></div>
+    <form (ngSubmit)="carregar()" class="periodo">
+      <label>Data inicial<input type="date" name="inicio" [(ngModel)]="inicio" required [disabled]="loading()"></label>
+      <label>Data final<input type="date" name="fim" [(ngModel)]="fim" required [min]="inicio" [disabled]="loading()"></label>
+      <button class="gold" [disabled]="loading()">Filtrar</button>
+      <small>Período de até 3 meses</small>
+    </form>
+  </section>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (loading()) { <p role="status">Carregando financeiro...</p> }
+  @if (dados(); as dados) {
+    <section class="metrics" aria-label="Resumo financeiro do período">
+      <article><span class="icon green" aria-hidden="true">↑</span><div><p>Valor Bruto</p><strong>{{ dados.valorBruto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong><small>Total de pagamentos recebidos</small></div></article>
+      <article><span class="icon red" aria-hidden="true">↓</span><div><p>Despesas</p><strong>{{ dados.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong><small>Comissões dos barbeiros</small></div></article>
+      <article><span class="icon blue" aria-hidden="true">▥</span><div><p>Valor Líquido</p><strong>{{ dados.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong><small>Entradas menos comissões no período</small></div></article>
+    </section>
+    <div class="tabs" role="group" aria-label="Tipo de lançamento">
+      <button [class.active]="aba() === 'entradas'" [attr.aria-pressed]="aba() === 'entradas'" (click)="trocar('entradas')">Entradas (Lucros)</button>
+      <button [class.active]="aba() === 'saidas'" [attr.aria-pressed]="aba() === 'saidas'" (click)="trocar('saidas')">Despesas (Gastos)</button>
+    </div>
+    <section class="panel">
+      <div class="table-header">
+        <div><h2>{{ aba() === 'entradas' ? 'Entradas (Lucros)' : 'Despesas (Gastos)' }}</h2><p>{{ aba() === 'entradas' ? 'Pagamentos de atendimentos e mensalidades recebidas no período' : 'Comissões geradas pelos atendimentos concluídos no período' }}</p></div>
+        <div class="tools"><input type="search" aria-label="Buscar lançamentos" placeholder="Buscar descrição, nome..." [ngModel]="busca()" (ngModelChange)="pesquisar($event)"><button (click)="exportar()" [disabled]="!itens().length">↓ Exportar</button></div>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Descrição</th><th>Cliente</th><th>{{ aba() === 'entradas' ? 'Forma de pagamento' : 'Barbeiro' }}</th><th class="valor">Valor</th></tr></thead>
+        <tbody>
+          @for (item of visiveis(); track item.id) {
+            <tr><td>{{ item.dataHora | date:'dd/MM/yyyy HH:mm' }}</td><td><span class="badge" [class.expense]="aba() === 'saidas'">{{ item.tipo }}</span></td><td>{{ item.descricao }}</td><td>{{ item.cliente }}</td><td>{{ aba() === 'entradas' ? pagamento(item.formaPagamento) : item.barbeiro }}</td><td class="valor" [class.negative]="aba() === 'saidas'">{{ item.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td></tr>
+          } @empty { <tr><td colspan="6" class="empty">{{ busca() ? 'Nenhum lançamento encontrado para esta busca.' : 'Nenhum lançamento neste período.' }}</td></tr> }
+        </tbody>
+      </table></div>
+      <footer><span>{{ itens().length }} lançamento(s) encontrado(s)</span><div><button aria-label="Página anterior" [disabled]="pagina() === 0" (click)="pagina.set(pagina() - 1)">‹</button><span>Página {{ pagina() + 1 }} de {{ paginas() }}</span><button aria-label="Próxima página" [disabled]="pagina() + 1 >= paginas()" (click)="pagina.set(pagina() + 1)">›</button></div></footer>
+    </section>
+    <p class="note">Atendimentos pela data de finalização e mensalidades pela data do pagamento. Despesas representam comissões geradas, sem controle de quitação. Pontos de planos mensais não compõem as despesas em dinheiro.</p>
+  }
+</app-admin-layout>

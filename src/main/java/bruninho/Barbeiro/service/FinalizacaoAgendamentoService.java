@@ -28,12 +28,15 @@ public class FinalizacaoAgendamentoService {
     private final PlanoMensalClienteRepository planos;
     private final Clock clock;
     private final CaixaService caixa;
+    private CobrancaPlanoService cobranca;
 
     @Autowired
     public FinalizacaoAgendamentoService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
                                          ComissaoPlanoRepository comissoesPlano,
-                                         PlanoMensalClienteRepository planos, AppProperties properties, CaixaService caixa) {
+                                         PlanoMensalClienteRepository planos, AppProperties properties, CaixaService caixa,
+                                         CobrancaPlanoService cobranca) {
         this(agendamentos, comissoes, comissoesPlano, planos, Clock.system(ZoneId.of(properties.getZone())), caixa);
+        this.cobranca = cobranca;
     }
 
     FinalizacaoAgendamentoService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
@@ -195,7 +198,7 @@ public class FinalizacaoAgendamentoService {
         if (!Objects.equals(cliente.getId(), plano.getCliente().getId())
                 || !Boolean.TRUE.equals(plano.getAtivo()) || plano.getPlanoMensal() == null
                 || !Boolean.TRUE.equals(plano.getPlanoMensal().getAtivo())
-                || Boolean.TRUE.equals(plano.getPagamentoAtrasado())) {
+                || (cobranca != null ? cobranca.bloqueado(plano) : Boolean.TRUE.equals(plano.getPagamentoAtrasado()))) {
             throw erro(HttpStatus.BAD_REQUEST, "Plano mensal do cliente inativo, invalido ou com pagamento atrasado");
         }
         if (agendamento.getServico().isEmpty()) {

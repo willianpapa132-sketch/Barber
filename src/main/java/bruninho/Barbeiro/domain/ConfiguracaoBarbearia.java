@@ -27,5 +27,9 @@ public class ConfiguracaoBarbearia {
     @Max(30)
     private Integer diasMaximoAntecedentia;
 
+    @PositiveOrZero
+    @Max(30)
+    private Integer diasToleranciaPagamentoPlano = 0;
+
 
 }

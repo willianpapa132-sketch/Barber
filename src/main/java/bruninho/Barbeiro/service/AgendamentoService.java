@@ -93,6 +93,7 @@ public class AgendamentoService {
             PlanoMensalCliente planoCliente
     ) {
         validarPlanoDoCliente(planoCliente);
+        validacao.validarPagamentoPlano(planoCliente);
 
         validacao.validarId(request.barbeiroId());
         var barbeiro = barbeiros.findByIdParaAgendar(request.barbeiroId())

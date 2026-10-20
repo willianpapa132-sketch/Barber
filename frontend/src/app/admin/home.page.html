@@ -17,6 +17,8 @@
       @for (card of cards; track card; let i = $index) {
         @if (i === 2) {
           <a class="shortcut-link" routerLink="/admin/cadastros"><span class="icon" aria-hidden="true">♙</span><div><h3>{{ card }}</h3><p>Gerencie barbeiros, serviços e planos mensais.</p><small>Acessar cadastros ›</small></div></a>
+        } @else if (i === 4) {
+          <a class="shortcut-link" routerLink="/admin/financeiro"><span class="icon" aria-hidden="true">$</span><div><h3>{{ card }}</h3><p>Consulte entradas, comissões e resultado do período.</p><small>Acessar financeiro ›</small></div></a>
         } @else {
           <article><span class="icon" aria-hidden="true">{{ ['▦', '▥', '♙', '%', '$', '▤'][i] }}</span><div><h3>{{ card }}</h3><p>Acesso rápido a definir</p><small>Em breve</small></div></article>
         }

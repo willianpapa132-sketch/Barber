@@ -18,13 +18,15 @@ public class ValidacaoAgendamentoService {
     private final ClienteRepository clientes;
     private final BarbeiroRepository barbeiros;
     private final ServicoRepository servicos;
+    private final CobrancaPlanoService cobranca;
 
     public ValidacaoAgendamentoService(UsuarioRepository usuarios, ClienteRepository clientes,
-                                      BarbeiroRepository barbeiros, ServicoRepository servicos) {
+                                      BarbeiroRepository barbeiros, ServicoRepository servicos, CobrancaPlanoService cobranca) {
         this.usuarios = usuarios;
         this.clientes = clientes;
         this.barbeiros = barbeiros;
         this.servicos = servicos;
+        this.cobranca = cobranca;
     }
 
     public Cliente validarCliente(Long usuarioId, Long clienteId) {
@@ -88,7 +90,7 @@ public class ValidacaoAgendamentoService {
     }
 
     public void validarPagamentoPlano(PlanoMensalCliente planoMensalCliente) {
-        if (Boolean.TRUE.equals(planoMensalCliente.getPagamentoAtrasado())) {
+        if (cobranca.bloqueado(planoMensalCliente)) {
             throw new BusinessException("plano esta com pagamento atrasado");
         }
     }

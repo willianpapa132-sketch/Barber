@@ -55,4 +55,8 @@ public class PlanoMensalCliente {
     private Integer diasMaximoAntecedencia;
 
     private Boolean pagamentoAtrasado = false;
+
+    private java.time.LocalDate proximoVencimento;
+
+    private java.time.LocalDate liberadoAte;
 }
