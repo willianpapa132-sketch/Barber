@@ -9,6 +9,7 @@ import { PlanoPage } from './pages/plano.page';
 import { BarberLayout } from './barbeiro/layout';
 
 export const routes: Routes = [
+  { path: 'admin/caixa', loadComponent: () => import('./admin/caixa.page').then(m => m.AdminCaixaPage), title: 'Caixa' },
   { path: 'admin/cadastros/planos-mensais', loadComponent: () => import('./admin/planos-mensais.page').then(m => m.AdminPlanosMensaisPage), title: 'Planos Mensais' },
   { path: 'admin/cadastros/servicos', loadComponent: () => import('./admin/servicos.page').then(m => m.AdminServicosPage), title: 'Servi\u00e7os' },
   { path: 'admin/cadastros/barbeiros', loadComponent: () => import('./admin/barbeiros.page').then(m => m.AdminBarbeirosPage), title: 'Cadastro de Barbeiros' },

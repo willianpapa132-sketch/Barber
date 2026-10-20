@@ -15,7 +15,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           <a routerLink="/admin/cadastros" routerLinkActive="selected" ariaCurrentWhenActive="page">♙ <span>Cadastros</span></a>
           <span class="nav-pending">Comissões <small>Em breve</small></span>
           <span class="nav-pending">Financeiro <small>Em breve</small></span>
-          <span class="nav-pending">Caixa <small>Em breve</small></span>
+          <a routerLink="/admin/caixa" routerLinkActive="selected" ariaCurrentWhenActive="page">▣ <span>Caixa</span></a>
           <span class="nav-pending">Configurações <small>Em breve</small></span>
         </nav>
         <form action="/logout" method="post"><button type="submit">Sair da conta ↗</button></form>

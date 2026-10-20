@@ -25,6 +25,7 @@ public class CaixaService {
   }
   var c=new Caixa();
   c.setSaldoInicial(r.saldoInicial());
+  c.setSaldoFinal(BigDecimal.ZERO);
   c.setTotalEntradas(BigDecimal.ZERO);
   c.setTotalSangrias(BigDecimal.ZERO);
   c.setStatus(StatusCaixa.ABERTO);
