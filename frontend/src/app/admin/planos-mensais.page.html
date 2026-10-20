@@ -1,0 +1,45 @@
+<app-admin-layout>
+  <header class="hero"><div><h1>Planos Mensais</h1><p>Gerencie os planos mensais da sua barbearia</p></div><button class="gold" (click)="abrir()">+ Novo Plano</button></header>
+  <form class="filters" (ngSubmit)="load()"><div class="search"><label class="sr-only" for="busca-plano">Buscar plano</label><input id="busca-plano" name="busca" [(ngModel)]="busca" placeholder="Buscar plano..."><button type="submit">Buscar</button></div><label class="sr-only" for="status-plano">Status</label><select id="status-plano" name="status" [(ngModel)]="status" (ngModelChange)="load()"><option value="">Todos os status</option><option value="true">Ativos</option><option value="false">Inativos</option></select></form>
+  @if (success()) { <p class="success" role="status">{{success()}}</p> }
+  @if (error()) { <p class="error" role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p> }
+  <section class="panel" aria-label="Lista de planos mensais" [attr.aria-busy]="loading()">
+    @if (loading()) { <p class="notice" role="status">Carregando planos...</p> }
+    @else if (!error()) {
+      @if (resultado(); as lista) {
+        @if (lista.itens.length) {
+          <div class="table-scroll"><table><thead><tr><th>Nome do Plano</th><th>Valor Mensal</th><th>Serviços Incluídos</th><th>Dias de Antecedência</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+          @for (p of lista.itens; track p.id) {
+            <tr><td><div class="plan-name"><span class="crown" aria-hidden="true">♛</span><div><strong>{{p.nomePlano}}</strong><small>{{p.descricao}}</small></div></div></td><td class="price">{{p.valorMensal | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td><td><div class="chips">@for (s of p.servicosIncluidos.slice(0, 3); track s.id) { <span class="chip" [title]="s.nome + ' · ' + s.duracaoMinutos + ' min'">{{s.nome}}</span> } @if (p.servicosIncluidos.length > 3) { <span class="chip">+{{p.servicosIncluidos.length - 3}}</span> }</div><small class="discount-note">{{p.descontosServicos.length ? 'Descontos em serviços extras' : 'Sem descontos em extras'}}</small></td><td>{{p.diasMaximoAntecedencia === null ? 'Não definido' : p.diasMaximoAntecedencia + ' dias'}}</td><td><span class="badge" [class.inactive]="!p.ativo">{{p.ativo ? 'Ativo' : 'Inativo'}}</span></td><td><div class="actions"><button (click)="abrir(p)" title="Editar" [attr.aria-label]="'Editar ' + p.nomePlano">✎</button><button (click)="abrir(p,true)" title="Visualizar" [attr.aria-label]="'Visualizar ' + p.nomePlano">◉</button><button class="danger" (click)="excluir(p)" [disabled]="!p.podeExcluir || saving()" [title]="p.podeExcluir ? 'Excluir' : 'Plano com contratações. Você pode desativá-lo.'" [attr.aria-label]="'Excluir ' + p.nomePlano">Excluir</button></div></td></tr>
+          }
+          </tbody></table></div>
+          <footer><span>Mostrando {{lista.pagina * 10 + 1}} a {{lista.pagina * 10 + lista.itens.length}} de {{lista.total}} planos</span><nav aria-label="Paginação"><button (click)="load(lista.pagina - 1)" [disabled]="lista.pagina === 0" aria-label="Página anterior">‹</button><span>{{lista.pagina + 1}} / {{lista.totalPaginas}}</span><button (click)="load(lista.pagina + 1)" [disabled]="lista.pagina + 1 >= lista.totalPaginas" aria-label="Próxima página">›</button></nav></footer>
+        } @else {
+          <div class="empty"><span class="empty-icon" aria-hidden="true">♛</span><h2>{{busca.trim() || status ? 'Nenhum plano encontrado' : 'Nenhum plano cadastrado'}}</h2><p>{{busca.trim() || status ? 'Tente outro nome ou altere o filtro de status.' : 'Crie planos mensais para oferecer pacotes de serviços com benefícios especiais para seus clientes.'}}</p><button class="gold" (click)="abrir()">+ {{busca.trim() || status ? 'Novo Plano' : 'Cadastrar Primeiro Plano'}}</button></div>
+        }
+      }
+    }
+  </section>
+  <dialog #dialog (cancel)="cancelar($event)" aria-labelledby="titulo-plano">
+    <form #form="ngForm" (ngSubmit)="salvar()">
+      <header><h2 id="titulo-plano">{{leitura ? 'Detalhes do plano' : selectedId === null ? 'Novo plano mensal' : 'Editar plano mensal'}}</h2><button type="button" (click)="fechar()" [disabled]="saving()" aria-label="Fechar">×</button></header>
+      @if (formError()) { <p class="error" role="alert">{{formError()}}</p> }
+      @if (formLoading()) { <p role="status">Carregando serviços e plano...</p> }
+      @else if (!servicos.length) { <p class="notice">Cadastre serviços antes de configurar um plano.</p><button type="button" (click)="carregarFormulario()">Recarregar</button> }
+      @else {
+        <fieldset [disabled]="leitura || saving()"><div class="fields"><label>Nome do plano<input name="nome" [(ngModel)]="model.nomePlano" required maxlength="255"></label><label>Valor mensal (R$)<input type="number" name="valor" [(ngModel)]="model.valorMensal" required min="0.01" max="9999999999.99" step="0.01"></label><label>Dias de antecedência<input type="number" name="dias" [(ngModel)]="model.diasMaximoAntecedencia" required min="1" max="2147483647" step="1"><small>Limite para agendar com antecedência.</small></label><label>Status<select name="ativo" [(ngModel)]="model.ativo"><option [ngValue]="true">Ativo</option><option [ngValue]="false">Inativo</option></select></label><label class="wide">Descrição<textarea name="descricao" [(ngModel)]="model.descricao" required maxlength="255" rows="2"></textarea></label></div>
+        <section class="included"><h3>Serviços incluídos</h3><p>Selecione os serviços cobertos pelo valor mensal.</p><div class="service-options">@for (s of servicos; track s.id) { <label class="service-option"><input type="checkbox" [checked]="incluidos.includes(s.id)" (change)="incluir(s.id,$event)"><span>{{s.nome}}<small>{{s.duracaoMinutos}} min · {{s.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}{{s.ativo ? '' : ' · Inativo'}}</small></span></label> }</div>@if (!incluidos.length) { <p class="hint">Selecione ao menos um serviço incluído.</p> }</section>
+        <section class="discounts"><label class="toggle"><input type="checkbox" name="comDescontos" [(ngModel)]="comDescontos">Oferecer descontos em serviços extras</label><p>Opcional. Serviços não incluídos e sem regra de desconto são cobrados pelo preço normal.</p>
+          @if (comDescontos) {
+            @for (regra of regras; track regra; let i = $index) {
+              <div class="discount-row"><label>Serviço extra<select [name]="'servico-extra-' + i" [(ngModel)]="regra.servicoId" required><option [ngValue]="null">Selecione um serviço</option>@for (s of extras(regra); track s.id) { <option [ngValue]="s.id">{{s.nome}}{{s.ativo ? '' : ' (Inativo)'}}</option> }</select></label><label>Desconto (%)<input type="number" [name]="'percentual-' + i" [(ngModel)]="regra.percentual" required min="0" max="100" step="1"></label>@if (!leitura) { <button type="button" class="danger" (click)="regras.splice(i,1)" [attr.aria-label]="'Remover desconto ' + (i + 1)">Remover</button> }</div>
+            }
+            @if (!leitura) { <button type="button" (click)="adicionarDesconto()" [disabled]="regras.length >= servicos.length - incluidos.length">+ Adicionar desconto</button> }
+            @if (!regras.length) { <p class="hint">Adicione uma regra ou desmarque a opção de descontos.</p> }
+          }
+        </section></fieldset>
+      }
+      <footer><button type="button" (click)="fechar()" [disabled]="saving()">{{leitura ? 'Fechar' : 'Cancelar'}}</button>@if (!leitura) { <button class="gold" type="submit" [disabled]="form.invalid || formLoading() || !servicos.length || !incluidos.length || !model.nomePlano.trim() || !model.descricao.trim() || !descontoValido() || saving()">{{saving() ? 'Salvando...' : 'Salvar plano'}}</button> }</footer>
+    </form>
+  </dialog>
+</app-admin-layout>

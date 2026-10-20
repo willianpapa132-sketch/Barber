@@ -61,6 +61,7 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
     );
 
     Boolean existsByServico_Id(Long id);
+    boolean existsByServicosPlano_ServicoId(Long id);
 
     Optional<Agendamento> findByIdAndCliente_Id(Long id, Long clienteId);
 

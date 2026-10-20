@@ -17,9 +17,9 @@
             }
           </svg>
         </span>
-        <h2>@if (item.icon === 'barbeiro') { <a class="cadastro-link" routerLink="/admin/cadastros/barbeiros">{{ item.titulo }}</a> } @else { {{ item.titulo }} }</h2>
+        <h2>@if (item.icon === 'barbeiro') { <a class="cadastro-link" routerLink="/admin/cadastros/barbeiros">{{ item.titulo }}</a> } @else if (item.icon === 'servico') { <a class="cadastro-link" routerLink="/admin/cadastros/servicos">{{ item.titulo }}</a> } @else { <a class="cadastro-link" routerLink="/admin/cadastros/planos-mensais">{{ item.titulo }}</a> }</h2>
         <p>{{ item.descricao }}</p>
-        <span class="pending">{{ item.icon === 'barbeiro' ? 'Acessar ›' : 'Em breve' }}</span>
+        <span class="pending">Acessar ›</span>
       </article>
     }
   </section>

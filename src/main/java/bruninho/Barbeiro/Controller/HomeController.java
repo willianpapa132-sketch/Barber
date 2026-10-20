@@ -28,7 +28,7 @@ public class HomeController {
         return "redirect:/";
     }
 
-    @GetMapping({"/admin", "/admin/home", "/admin/cadastros", "/admin/cadastros/barbeiros"})
+    @GetMapping({"/admin", "/admin/home", "/admin/cadastros", "/admin/cadastros/barbeiros", "/admin/cadastros/servicos", "/admin/cadastros/planos-mensais"})
     public String admin() {
         return "forward:/client/index.html";
     }

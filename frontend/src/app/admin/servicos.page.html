@@ -1,0 +1,21 @@
+<app-admin-layout>
+  <header class="hero"><div><h1>Serviços</h1><p>Gerencie os serviços oferecidos na barbearia</p></div><button class="gold" (click)="abrir()">+ Novo Serviço</button></header>
+  <form class="search" (ngSubmit)="load()"><label for="busca">Buscar serviço</label><input id="busca" name="busca" [(ngModel)]="busca" placeholder="Buscar serviço..."><button type="submit">Buscar</button></form>
+  @if (success()) { <p class="success" role="status">{{success()}}</p> }
+  @if (error()) { <p class="error" role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p> }
+  <section class="panel" aria-label="Lista de serviços" [attr.aria-busy]="loading()">
+  @if (loading()) { <p class="notice" role="status">Carregando serviços...</p> }
+  @else if (resultado(); as lista) {
+    @if (lista.itens.length) {
+      <div class="table-scroll"><table><thead><tr><th>Nome</th><th>Preço</th><th>Duração</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead><tbody>
+      @for (s of lista.itens; track s.id) { <tr><td>{{s.nome}}</td><td>{{s.preco | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td><td>◷ {{s.duracaoMinutos}} min</td><td><span class="badge" [class.inactive]="!s.ativo">{{s.ativo ? 'Ativo' : 'Inativo'}}</span></td><td>{{s.criadoEm | date:'dd/MM/yyyy HH:mm'}}</td><td><div class="actions"><button (click)="abrir(s)" [attr.aria-label]="'Editar ' + s.nome" title="Editar">✎</button><button (click)="abrir(s,true)" [attr.aria-label]="'Visualizar ' + s.nome" title="Visualizar">◉</button><button class="danger" (click)="excluir(s)" [disabled]="!s.podeExcluir || saving()" [attr.aria-label]="'Excluir ' + s.nome" [title]="s.podeExcluir ? 'Excluir' : 'Serviço vinculado a agendamentos ou planos. Você pode desativá-lo.'">Excluir</button></div></td></tr> }
+      </tbody></table></div><footer><span>Mostrando {{lista.pagina * 10 + 1}} a {{lista.pagina * 10 + lista.itens.length}} de {{lista.total}} serviços</span><nav aria-label="Paginação"><button [disabled]="lista.pagina === 0" (click)="load(lista.pagina - 1)" aria-label="Página anterior">‹</button><span>{{lista.pagina + 1}} / {{lista.totalPaginas}}</span><button [disabled]="lista.pagina + 1 >= lista.totalPaginas" (click)="load(lista.pagina + 1)" aria-label="Próxima página">›</button></nav></footer>
+    } @else { <div class="empty"><span class="scissors" aria-hidden="true">✂</span><h2>{{busca.trim() ? 'Nenhum serviço encontrado' : 'Nenhum serviço cadastrado'}}</h2><p>{{busca.trim() ? 'Tente buscar por outro nome.' : 'Cadastre os serviços da sua barbearia para que eles fiquem disponíveis nos agendamentos.'}}</p><button class="gold" (click)="abrir()">+ {{busca.trim() ? 'Novo Serviço' : 'Cadastrar Primeiro Serviço'}}</button></div> }
+  }
+  </section>
+  <dialog #dialog (cancel)="saving() ? $event.preventDefault() : null" aria-labelledby="form-title"><form #form="ngForm" (ngSubmit)="salvar()"><header><h2 id="form-title">{{leitura ? 'Detalhes do serviço' : selected ? 'Editar serviço' : 'Novo serviço'}}</h2><button type="button" (click)="fechar()" [disabled]="saving()" aria-label="Fechar">×</button></header>
+    @if (formError()) { <p class="error" role="alert">{{formError()}}</p> }
+    <fieldset [disabled]="saving() || leitura"><label>Nome<input name="nome" [(ngModel)]="model.nome" required maxlength="255"></label><label>Preço (R$)<input type="number" name="valor" [(ngModel)]="model.valor" required min="0" max="9999999999.99" step="0.01"></label><label>Duração (minutos)<input type="number" name="duracao" [(ngModel)]="model.duracaoMinutos" required min="1" step="1"></label>@if (selected) { <label>Status<select name="ativo" [(ngModel)]="model.ativo"><option [ngValue]="true">Ativo</option><option [ngValue]="false">Inativo</option></select></label> }</fieldset>
+    <footer><button type="button" (click)="fechar()" [disabled]="saving()">{{leitura ? 'Fechar' : 'Cancelar'}}</button>@if (!leitura) { <button class="gold" type="submit" [disabled]="form.invalid || !model.nome.trim() || saving()">{{saving() ? 'Salvando...' : 'Salvar serviço'}}</button> }</footer>
+  </form></dialog>
+</app-admin-layout>

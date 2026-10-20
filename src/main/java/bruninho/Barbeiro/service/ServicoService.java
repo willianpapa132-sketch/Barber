@@ -1,7 +1,6 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.requests.CriarServico;
-import bruninho.Barbeiro.Controller.Admin.requests.ServicoAtualizar;
+import bruninho.Barbeiro.Controller.Admin.cadastros.servicos.SalvarServicoRequest;
 import bruninho.Barbeiro.domain.Servico;
 import bruninho.Barbeiro.repository.AgendamentoRepository;
 import bruninho.Barbeiro.repository.PlanoMensalRepository;
@@ -19,8 +18,10 @@ public class ServicoService {
     private ServicoRepository servicoRepository;
     private AgendamentoRepository agendamentoRepository;
     private PlanoMensalRepository planoMensalRepository;
+    private final bruninho.Barbeiro.repository.ServicosPlanosDescontoRepository descontos;
 
-    public ServicoService(ServicoRepository servicoRepository,  AgendamentoRepository agendamentoRepository, PlanoMensalRepository planoMensalRepository) {
+    public ServicoService(ServicoRepository servicoRepository,  AgendamentoRepository agendamentoRepository, PlanoMensalRepository planoMensalRepository, bruninho.Barbeiro.repository.ServicosPlanosDescontoRepository descontos) {
+        this.descontos = descontos;
         this.servicoRepository = servicoRepository;
         this.agendamentoRepository = agendamentoRepository;
         this.planoMensalRepository = planoMensalRepository;
@@ -28,16 +29,15 @@ public class ServicoService {
 
 
     @Transactional
-    public String cadastrarServico(CriarServico criacaoServico){
+    public String cadastrarServico(SalvarServicoRequest criacaoServico){
 
-        if(criacaoServico.getValor().compareTo(BigDecimal.ZERO) < 0 ){
-            throw new RuntimeException("não pode ter valor menor que zero");
-        }
+        validar(criacaoServico.nome(), criacaoServico.valor(), criacaoServico.duracaoMinutos());
 
         Servico servico = new Servico();
-        servico.setNome(criacaoServico.getNome());
-        servico.setPreco(criacaoServico.getValor());
-        servico.setDuracaoMinutos(criacaoServico.getDuracaoMinutos());
+        servico.setNome(criacaoServico.nome().trim());
+        servico.setPreco(criacaoServico.valor());
+        servico.setDuracaoMinutos(criacaoServico.duracaoMinutos());
+        servico.setAtivo(Boolean.TRUE.equals(criacaoServico.ativo()));
         servico.setCriadoEm(LocalDateTime.now());
         servico.setAtualizadoEm(null);
         servicoRepository.save(servico);
@@ -45,32 +45,34 @@ public class ServicoService {
     }
 
     @Transactional
-    public String atualizarServico(ServicoAtualizar servicoAtualizar){
+    public String atualizarServico(Long id, SalvarServicoRequest servicoAtualizar){
 
-        if(servicoAtualizar.getValor().compareTo(BigDecimal.ZERO) < 0 ){
-            throw new RuntimeException("valor tem que ser maior que zero");
-        }
+        validar(servicoAtualizar.nome(), servicoAtualizar.valor(), servicoAtualizar.duracaoMinutos());
+        if (servicoAtualizar.ativo() == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Informe o status do serviço.");
 
-        Servico servicoLocalizado = localizarServicoPorID(servicoAtualizar.getId());
-        servicoLocalizado.setNome(servicoAtualizar.getNome());
-        servicoLocalizado.setPreco(servicoAtualizar.getValor());
-        servicoLocalizado.setAtivo(servicoAtualizar.getAtivo());
+        Servico servicoLocalizado = localizarServicoPorID(id);
+        servicoLocalizado.setNome(servicoAtualizar.nome().trim());
+        servicoLocalizado.setPreco(servicoAtualizar.valor());
+        servicoLocalizado.setAtivo(servicoAtualizar.ativo());
         servicoLocalizado.setAtualizadoEm(LocalDateTime.now());
-        servicoLocalizado.setDuracaoMinutos(servicoAtualizar.getTempoMinutos());
+        servicoLocalizado.setDuracaoMinutos(servicoAtualizar.duracaoMinutos());
+
 
         servicoRepository.save(servicoLocalizado);
         return "Atualizado com sucesso!";
     }
 
     public Servico localizarServicoPorID(Long id){
-        return servicoRepository.findById(id).orElseThrow(()-> new RuntimeException("não foi localizado o servico")) ;
+        return servicoRepository.findById(id).orElseThrow(()-> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Serviço não encontrado.")) ;
     }
 
+    @Transactional
     public String DeletarServicoPorID(Long id){
         Servico servico = localizarServicoPorID(id);
 
-        if(agendamentoRepository.existsByServico_Id(servico.getId()) || planoMensalRepository.existsByServicosIncluidos_Id(servico.getId()) ){
-            throw new RuntimeException("não pode ser feito a exclusão desse servico pois ele esta em um Plano Mensal");
+        if (possuiVinculos(id)) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "Não é possível excluir: o serviço possui vínculos com agendamentos ou planos. Você pode desativá-lo.");
         }
         servicoRepository.delete(servico);
         return "Deletado com sucesso!";
@@ -81,4 +83,18 @@ public class ServicoService {
     }
 
 
+    public boolean possuiVinculos(Long id) {
+        return agendamentoRepository.existsByServico_Id(id)
+                || agendamentoRepository.existsByServicosPlano_ServicoId(id)
+                || planoMensalRepository.existsByServicosIncluidos_Id(id)
+                || descontos.existsByServicos_Id(id);
+    }
+
+    private void validar(String nome, BigDecimal valor, int minutos) {
+        if (nome == null || nome.isBlank() || nome.trim().length() > 255 || valor == null
+                || valor.signum() < 0 || valor.scale() > 2 || valor.precision() - valor.scale() > 10 || minutos <= 0) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Informe nome (até 255 caracteres), preço não negativo com até duas casas decimais e duração maior que zero.");
+        }
+    }
 }

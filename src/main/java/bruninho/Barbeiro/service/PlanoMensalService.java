@@ -1,86 +1,121 @@
 package bruninho.Barbeiro.service;
 
-import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.AtualizarPlanoMensal;
-import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.CriarPlanoMensal;
-import bruninho.Barbeiro.domain.PlanoMensalCliente;
-import bruninho.Barbeiro.domain.ServicosPlanosDesconto;
-import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.DescontoServicoPlanoRequest;
+import bruninho.Barbeiro.Controller.Admin.cadastros.planomensal.*;
+import bruninho.Barbeiro.domain.*;
 import bruninho.Barbeiro.exception.BusinessException;
-import bruninho.Barbeiro.domain.PlanosMensal;
-import bruninho.Barbeiro.domain.Servico;
-import bruninho.Barbeiro.repository.PlanoMensalClienteRepository;
-import bruninho.Barbeiro.repository.PlanoMensalRepository;
-import bruninho.Barbeiro.repository.ServicoRepository;
-import jakarta.transaction.Transactional;
+import bruninho.Barbeiro.repository.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class PlanoMensalService {
-
     private final PlanoMensalRepository planoMensalRepository;
     private final ServicoRepository servicoRepository;
     private final PlanoMensalClienteRepository planoMensalClienteRepository;
 
-    public PlanoMensalService(
-            PlanoMensalRepository planoMensalRepository,
-            ServicoRepository servicoRepository,
-            PlanoMensalClienteRepository planoMensalClienteRepository
-    ) {
-        this.planoMensalRepository = planoMensalRepository;
-        this.servicoRepository = servicoRepository;
-        this.planoMensalClienteRepository = planoMensalClienteRepository;
+    public PlanoMensalService(PlanoMensalRepository planos, ServicoRepository servicos, PlanoMensalClienteRepository contratos) {
+        this.planoMensalRepository = planos;
+        this.servicoRepository = servicos;
+        this.planoMensalClienteRepository = contratos;
+    }
+
+    @Transactional(readOnly = true)
+    public ListagemPlanosMensaisResponse listar(String busca, Boolean ativo, int pagina) {
+        if (pagina < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Página inválida.");
+        var page = planoMensalRepository.listarParaAdmin(busca.trim(), ativo,
+                PageRequest.of(pagina, 10, Sort.by("nomePlano").and(Sort.by("id"))));
+        return new ListagemPlanosMensaisResponse(page.getContent().stream().map(this::resposta).toList(),
+                page.getTotalElements(), page.getTotalPages(), pagina);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServicoPlanoAdminResponse> listarServicos() {
+        return servicoRepository.findAll(Sort.by("nome").and(Sort.by("id"))).stream()
+                .map(ServicoPlanoAdminResponse::de).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PlanoMensalAdminResponse consultar(Long id) { return resposta(localizar(id)); }
+
+    @Transactional
+    public PlanoMensalAdminResponse cadastrar(SalvarPlanoMensalRequest request) {
+        var plano = new PlanosMensal();
+        preencher(plano, request);
+        plano.setCriadoEm(LocalDateTime.now());
+        return resposta(planoMensalRepository.save(plano));
     }
 
     @Transactional
-    public void CadastrarPlanosMensais(CriarPlanoMensal criarPlanoMensal) {
-        PlanosMensal planosMensal = new PlanosMensal();
-        planosMensal.setNomePlano(criarPlanoMensal.getNomePlano());
-        planosMensal.setValorMensal(criarPlanoMensal.getValorMensal());
-        planosMensal.setAtivo(criarPlanoMensal.isAtivo());
-        planosMensal.setServicosIncluidos(buscarServicos(criarPlanoMensal.getServicosId()));
-        planosMensal.setCriadoEm(LocalDateTime.now());
-        planosMensal.setDiasMaximoAntecedencia(criarPlanoMensal.getDiasMaximoAntecedencia());
-        planosMensal.setDescricao(criarPlanoMensal.getDescricao());
-        configurarDescontos(planosMensal, criarPlanoMensal.getDescontosServicos());
-        planoMensalRepository.save(planosMensal);
+    public PlanoMensalAdminResponse atualizar(Long id, SalvarPlanoMensalRequest request) {
+        var plano = localizar(id);
+        preencher(plano, request);
+        plano.setAtualizadoEm(LocalDateTime.now());
+        atualizarPlanosContratados(plano);
+        return resposta(plano);
     }
 
     @Transactional
-    public void AtualizarPlanoMensal(AtualizarPlanoMensal atualizarPlanoMensal) {
-        PlanosMensal planosMensalLocalizado = planoMensalRepository.findById(atualizarPlanoMensal.getId())
-                .orElseThrow(() -> new RuntimeException("plano mensal nao localizado"));
-
-        planosMensalLocalizado.setNomePlano(atualizarPlanoMensal.getNomePlano());
-        planosMensalLocalizado.setDescricao(atualizarPlanoMensal.getDescricao());
-        planosMensalLocalizado.setValorMensal(atualizarPlanoMensal.getValorMensal());
-        planosMensalLocalizado.setDiasMaximoAntecedencia(atualizarPlanoMensal.getDiasMaximoAntecedencia());
-        planosMensalLocalizado.getServicosIncluidos().clear();
-        planosMensalLocalizado.getServicosIncluidos().addAll(buscarServicos(atualizarPlanoMensal.getServicosId()));
-        planosMensalLocalizado.setAtualizadoEm(LocalDateTime.now());
-
-        configurarDescontos(planosMensalLocalizado, atualizarPlanoMensal.getDescontosServicos());
-        planoMensalRepository.save(planosMensalLocalizado);
-        atualizarPlanosContratados(planosMensalLocalizado);
+    public void excluir(Long id) {
+        var plano = localizar(id);
+        if (planoMensalClienteRepository.existsByPlanoMensal_id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Não é possível excluir um plano com contratações. Você pode desativá-lo.");
+        }
+        planoMensalRepository.delete(plano);
+        planoMensalRepository.flush();
     }
 
-    private void configurarDescontos(PlanosMensal plano, java.util.List<DescontoServicoPlanoRequest> descontos) {
+    private PlanosMensal localizar(Long id) {
+        return planoMensalRepository.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Plano mensal não encontrado."));
+    }
+
+    private void preencher(PlanosMensal plano, SalvarPlanoMensalRequest r) {
+        if (r == null || r.nomePlano() == null || r.nomePlano().isBlank() || r.nomePlano().trim().length() > 255
+                || r.descricao() == null || r.descricao().isBlank() || r.descricao().trim().length() > 255
+                || r.valorMensal() == null || r.valorMensal().signum() <= 0 || r.valorMensal().scale() > 2
+                || r.valorMensal().precision() - r.valorMensal().scale() > 10 || r.ativo() == null
+                || r.diasMaximoAntecedencia() == null || r.diasMaximoAntecedencia() <= 0
+                || r.servicosId() == null || r.servicosId().isEmpty()) {
+            throw new BusinessException("Informe nome, descrição, valor positivo, antecedência e ao menos um serviço incluído.");
+        }
+        var incluidos = buscarServicos(r.servicosId());
+        plano.setNomePlano(r.nomePlano().trim());
+        plano.setDescricao(r.descricao().trim());
+        plano.setValorMensal(r.valorMensal());
+        plano.setAtivo(r.ativo());
+        plano.setDiasMaximoAntecedencia(r.diasMaximoAntecedencia());
+        plano.getServicosIncluidos().clear();
+        plano.getServicosIncluidos().addAll(incluidos);
+        configurarDescontos(plano, r.descontosServicos());
+    }
+
+    private void configurarDescontos(PlanosMensal plano, List<DescontoServicoPlanoRequest> descontos) {
         // Campo omitido preserva as regras; lista vazia remove todos os descontos.
-        if (descontos == null) return;
+        var incluidos = plano.getServicosIncluidos().stream().map(Servico::getId).collect(java.util.stream.Collectors.toSet());
+        if (descontos == null) {
+            if (plano.getDescontosServicos().stream().flatMap(d -> d.getServicos().stream()).anyMatch(s -> incluidos.contains(s.getId()))) {
+                throw new BusinessException("Serviço incluído no plano não pode ter regra de desconto adicional.");
+            }
+            return;
+        }
         var usados = new HashSet<Long>();
         var novasRegras = new HashSet<ServicosPlanosDesconto>();
         for (var desconto : descontos) {
             if (desconto == null || desconto.porcentagemDesconto() == null
                     || desconto.porcentagemDesconto() < 0 || desconto.porcentagemDesconto() > 100
-                    || desconto.servicosIds() == null || desconto.servicosIds().isEmpty()
-                    || desconto.servicosIds().stream().anyMatch(id -> id == null || id <= 0)) {
-                throw new BusinessException("Informe servicos e desconto entre 0 e 100");
+                    || desconto.servicosIds() == null || desconto.servicosIds().isEmpty()) {
+                throw new BusinessException("Informe serviços e desconto entre 0 e 100.");
             }
             for (var id : desconto.servicosIds()) {
-                if (!usados.add(id)) throw new BusinessException("Servico com mais de uma regra de desconto no plano");
+                if (incluidos.contains(id)) throw new BusinessException("Serviço incluído no plano não pode ter regra de desconto adicional.");
+                if (!usados.add(id)) throw new BusinessException("Serviço com mais de uma regra de desconto no plano.");
             }
             var regra = new ServicosPlanosDesconto();
             regra.setPlanoMensal(plano);
@@ -92,22 +127,32 @@ public class PlanoMensalService {
         plano.getDescontosServicos().addAll(novasRegras);
     }
 
-    private void atualizarPlanosContratados(PlanosMensal planoMensal) {
-        for (PlanoMensalCliente planoCliente : planoMensalClienteRepository.findAllByPlanoMensal_Id(planoMensal.getId())) {
-            planoCliente.setValorMensal(planoMensal.getValorMensal());
-            planoCliente.setDiasMaximoAntecedencia(planoMensal.getDiasMaximoAntecedencia());
-            planoCliente.setAtualizadoEm(LocalDateTime.now());
-            planoMensalClienteRepository.save(planoCliente);
+    private void atualizarPlanosContratados(PlanosMensal plano) {
+        for (var contrato : planoMensalClienteRepository.findAllByPlanoMensal_Id(plano.getId())) {
+            contrato.setValorMensal(plano.getValorMensal());
+            contrato.setDiasMaximoAntecedencia(plano.getDiasMaximoAntecedencia());
+            contrato.setAtualizadoEm(LocalDateTime.now());
         }
     }
 
-    private Set<Servico> buscarServicos(Set<Long> servicosIds) {
-        Set<Servico> servicosIncluidos = new HashSet<>(servicoRepository.findAllById(servicosIds));
+    private Set<Servico> buscarServicos(Set<Long> ids) {
+        if (ids == null || ids.stream().anyMatch(id -> id == null || id <= 0)) throw new BusinessException("Informe serviços válidos.");
+        var servicos = new HashSet<>(servicoRepository.findAllById(ids));
+        if (servicos.size() != ids.size()) throw new BusinessException("Um ou mais serviços não foram encontrados.");
+        return servicos;
+    }
 
-        if (servicosIncluidos.size() != servicosIds.size()) {
-            throw new RuntimeException("servicos nao localizados");
-        }
+    private List<ServicoPlanoAdminResponse> servicosOrdenados(Set<Servico> servicos) {
+        return servicos.stream().sorted(Comparator.comparing(Servico::getNome).thenComparing(Servico::getId))
+                .map(ServicoPlanoAdminResponse::de).toList();
+    }
 
-        return servicosIncluidos;
+    private PlanoMensalAdminResponse resposta(PlanosMensal plano) {
+        var descontos = plano.getDescontosServicos().stream()
+                .sorted(Comparator.comparing(ServicosPlanosDesconto::getPorcentagemDesconto))
+                .map(d -> new DescontoPlanoAdminResponse(d.getPorcentagemDesconto(), servicosOrdenados(d.getServicos()))).toList();
+        return new PlanoMensalAdminResponse(plano.getId(), plano.getNomePlano(), plano.getDescricao(), plano.getValorMensal(),
+                Boolean.TRUE.equals(plano.getAtivo()), plano.getDiasMaximoAntecedencia(), servicosOrdenados(plano.getServicosIncluidos()),
+                descontos, !planoMensalClienteRepository.existsByPlanoMensal_id(plano.getId()));
     }
 }
