@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import org.springframework.data.domain.Sort;
 @Service
 public class CaixaService {
  private final CaixaRepository caixas;
@@ -18,8 +20,6 @@ public class CaixaService {
 
  @Transactional
  public Caixa abrir(AbrirCaixaRequest r){
-  if(caixas.count()>0)
-   throw erro("Este caixa ja foi aberto e nao pode ser reaberto");
   if (caixas.findAberto().isPresent()) {
    throw erro("Ja existe um caixa aberto");
   }
@@ -32,9 +32,21 @@ public class CaixaService {
   c.setAbertoEm(LocalDateTime.now());
   return caixas.save(c);
  }
- @Transactional(readOnly=true)
+ // findAberto usa bloqueio pessimista, que exige uma transacao de escrita no PostgreSQL.
+ @Transactional
  public Caixa atual(){
    return caixas.findAberto().orElseThrow(()->erro("Nao existe caixa aberto"));
+ }
+ @Transactional(readOnly=true)
+ public List<Caixa> listar(){
+   return caixas.findAll(Sort.by(Sort.Direction.DESC, "id"));
+ }
+ @Transactional(readOnly=true)
+ public List<bruninho.Barbeiro.Controller.Admin.caixa.MovimentoCaixaResponse> movimentos(Long id){
+   if(!caixas.existsById(id))
+     throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Caixa nao encontrado");
+   return movimentos.findByCaixa_IdOrderByCriadoEmDescIdDesc(id).stream()
+     .map(bruninho.Barbeiro.Controller.Admin.caixa.MovimentoCaixaResponse::de).toList();
  }
  @Transactional
  public Caixa sangria(SangriaRequest r){

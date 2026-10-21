@@ -1,0 +1,25 @@
+<app-admin-layout>
+  <header><h1>Comissões por barbeiro</h1><p>Visualize as comissões e os indicadores dos barbeiros no período selecionado.</p></header>
+  <form class="panel filters" (ngSubmit)="load()">
+    <label>Barbeiro<select name="barbeiro" [(ngModel)]="barbeiroId"><option value="">Todos os barbeiros</option>@for (b of dados()?.barbeiros || []; track b.id) { <option [value]="b.id">{{b.nome}}{{b.ativo ? '' : ' (Inativo)'}}</option> }</select></label>
+    <label>Data inicial<input name="inicio" type="date" [(ngModel)]="inicio" required></label>
+    <label>Data final<input name="fim" type="date" [(ngModel)]="fim" [min]="inicio" required></label>
+    <button class="gold" type="submit" [disabled]="loading()">Filtrar</button>
+  </form>
+  @if (loading()) { <p role="status">Carregando comissões...</p> }
+  @if (error()) { <p class="error" role="alert">{{error()}} <button (click)="load(!dados())">Tentar novamente</button></p> }
+  @if (!loading() && !error()) { @if (dados(); as d) {
+    <section class="metrics" aria-label="Totais das comissões">
+      <article class="panel"><span class="icon" aria-hidden="true">◷</span><p>Horas trabalhadas no período</p><strong>{{horas(d.minutosTrabalhados)}}</strong><small>Atendimentos concluídos</small></article>
+      <article class="panel"><span class="icon" aria-hidden="true">▱</span><p>Pontos do plano</p><strong>{{d.pontosPlano}} pts</strong><small>Pontos dos serviços incluídos nos planos</small></article>
+      <article class="panel"><span class="icon" aria-hidden="true">$</span><p>Valor de comissões</p><strong>{{d.valorComissoes | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Atendimentos e extras no período</small></article>
+    </section>
+    <aside class="today panel"><span>Comissões de hoje <small>{{d.hoje | date:'dd/MM/yyyy'}}</small></span><strong>{{d.comissoesHoje | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>{{d.barbeiroId === null ? 'Todos os barbeiros' : 'Barbeiro selecionado'}}</small></aside>
+    <section class="panel summary"><header><h2>Resumo por barbeiro</h2><p>Compare os resultados no período de {{d.inicio | date:'dd/MM/yyyy'}} a {{d.fim | date:'dd/MM/yyyy'}}. Selecione um barbeiro para ver seus totais.</p></header>
+      @if (!d.barbeiros.length) { <p class="empty">Nenhum barbeiro cadastrado.</p> }
+      @else { <div class="table-scroll"><table><thead><tr><th scope="col">Barbeiro</th><th scope="col">Horas trabalhadas</th><th scope="col">Pontos do plano</th><th scope="col">Comissões</th></tr></thead><tbody>
+        @for (b of d.barbeiros; track b.id) { <tr [class.selected]="b.id === d.barbeiroId"><th scope="row"><button class="barber-name" (click)="selecionar(b.id)">{{b.nome}} @if (!b.ativo) { <small>Inativo</small> }</button></th><td>{{horas(b.minutosTrabalhados)}}</td><td>{{b.pontosPlano}} pts</td><td class="amount">{{b.valorComissoes | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td></tr> }
+      </tbody></table></div> }
+    </section>
+  } }
+</app-admin-layout>

@@ -1,4 +1,5 @@
-import { Component, input } from '@angular/core';
+import { Component, input, inject, OnInit } from '@angular/core';
+import { EmpresaService } from './empresa.service';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
@@ -8,17 +9,17 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   template: `
     <div class="admin-layout">
       <aside>
-        <div class="brand"><span aria-hidden="true">✂</span><div>BARBEARIA<small>ADMINISTRATIVO</small></div></div>
+        <div class="brand"><span aria-hidden="true">✂</span><div>{{empresa.nome()}}<small>ADMINISTRATIVO</small></div></div>
         <nav aria-label="Menu administrativo">
           <a routerLink="/admin/home" routerLinkActive="selected" ariaCurrentWhenActive="page">⌂ <span>Home</span></a>
-          <span class="nav-pending">Ver Agendamentos <small>Em breve</small></span>
-          <span class="nav-pending">Dashboard <small>Em breve</small></span>
+          <a routerLink="/admin/agendamentos" routerLinkActive="selected" ariaCurrentWhenActive="page">▦ <span>Agendamentos</span></a>
+          <a routerLink="/admin/dashboard" routerLinkActive="selected" ariaCurrentWhenActive="page">▥ <span>Dashboard</span></a>
           <a routerLink="/admin/cadastros" routerLinkActive="selected" ariaCurrentWhenActive="page">♙ <span>Cadastros</span></a>
-          <span class="nav-pending">Comissões <small>Em breve</small></span>
+          <a routerLink="/admin/comissao" routerLinkActive="selected" ariaCurrentWhenActive="page">% <span>Comissões</span></a>
           <a routerLink="/admin/gerenciamento-planos" routerLinkActive="selected" ariaCurrentWhenActive="page">▤ <span>Gerenciamento de Planos</span></a>
           <a routerLink="/admin/financeiro" routerLinkActive="selected" ariaCurrentWhenActive="page">$ <span>Financeiro</span></a>
           <a routerLink="/admin/caixa" routerLinkActive="selected" ariaCurrentWhenActive="page">▣ <span>Caixa</span></a>
-          <span class="nav-pending">Configurações <small>Em breve</small></span>
+          <a routerLink="/admin/configuracao" routerLinkActive="selected" ariaCurrentWhenActive="page">⚙ <span>Configurações</span></a>
         </nav>
         <form action="/logout" method="post"><button type="submit">Sair da conta ↗</button></form>
       </aside>
@@ -29,4 +30,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     </div>
   `
 })
-export class AdminLayout {}
+export class AdminLayout implements OnInit {
+  empresa=inject(EmpresaService);
+  ngOnInit(){void this.empresa.carregar();}
+}

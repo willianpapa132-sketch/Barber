@@ -120,14 +120,13 @@ public class DataInitializer {
             if (hours == null) {
                 hours = new HorarioFuncionamento();
                 hours.setDiaSemana(diaSemana);
+                hours.setHoraAbertura(LocalTime.of(9, 0));
+                hours.setHoraFechamento(day == 6 ? LocalTime.of(14, 0) : LocalTime.of(18, 0));
+                hours.setFechado(day == 7);
+                hours.setPermiteAgendamentoPlano(day <= 6);
+                hours.setIntervaloMinimoEntreAgendamentos(15);
+                horariosFuncionamento.save(hours);
             }
-
-            hours.setHoraAbertura(LocalTime.of(9, 0));
-            hours.setHoraFechamento(day == 6 ? LocalTime.of(14, 0) : LocalTime.of(18, 0));
-            hours.setFechado(day == 7);
-            hours.setPermiteAgendamentoPlano(day <= 6);
-            hours.setIntervaloMinimoEntreAgendamentos(15);
-            horariosFuncionamento.save(hours);
         }
     }
 

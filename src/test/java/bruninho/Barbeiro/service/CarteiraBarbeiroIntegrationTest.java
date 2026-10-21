@@ -84,6 +84,44 @@ class CarteiraBarbeiroIntegrationTest {
     }
 
     @Test
+    void adminSomaTodosFiltraBarbeiroEMantemComparacaoETotalDeHoje() throws Exception {
+        var a = agendamento(barbeiro, "2026-01-01", 60, StatusAgendamento.CONCLUIDO);
+        comissao(a, "20"); pontos(a, 30);
+        var outro = barbeiro("outro-admin-comissao");
+        var b = agendamento(outro, "2026-01-31", 45, StatusAgendamento.CONCLUIDO);
+        comissao(b, "15"); pontos(b, 10);
+        comissao(agendamento(barbeiro, "2026-01-15", 100, StatusAgendamento.CANCELADO), "999");
+        comissao(agendamento(barbeiro, LocalDate.now().toString(), 15, StatusAgendamento.CONCLUIDO), "7");
+        mvc.perform(get("/api/admin/comissao").with(user("admin").roles("ADMIN"))
+                        .param("inicio", "2026-01-01").param("fim", "2026-01-31"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.minutosTrabalhados").value(105))
+                .andExpect(jsonPath("$.pontosPlano").value(40)).andExpect(jsonPath("$.valorComissoes").value(35))
+                .andExpect(jsonPath("$.comissoesHoje").value(7)).andExpect(jsonPath("$.barbeiros.length()").value(2));
+        mvc.perform(get("/api/admin/comissao").with(user("admin").roles("ADMIN"))
+                        .param("inicio", "2026-01-01").param("fim", "2026-01-31").param("barbeiroId", outro.getId().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.minutosTrabalhados").value(45))
+                .andExpect(jsonPath("$.pontosPlano").value(10)).andExpect(jsonPath("$.valorComissoes").value(15))
+                .andExpect(jsonPath("$.comissoesHoje").value(0)).andExpect(jsonPath("$.barbeiros.length()").value(2));
+    }
+
+    @Test
+    void adminValidaPeriodoPermissoesEConsultaSemMovimento() throws Exception {
+        mvc.perform(get("/api/admin/comissao").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.valorComissoes").value(0))
+                .andExpect(jsonPath("$.pontosPlano").value(0)).andExpect(jsonPath("$.comissoesHoje").value(0));
+        for (String fim : new String[]{"2025-12-31", "2026-04-01", "invalido"}) {
+            mvc.perform(get("/api/admin/comissao").with(user("admin").roles("ADMIN"))
+                            .param("inicio", "2026-01-01").param("fim", fim)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(get("/api/admin/comissao").with(user("admin").roles("ADMIN")).param("barbeiroId", "999999"))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/comissao").with(user("outro").roles("BARBEIRO")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/admin/comissao").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(forwardedUrl("/client/index.html"));
+    }
+
+    @Test
     void periodoSemAtendimentoRetornaZeros() throws Exception {
         consulta("2026-01-01", "2026-01-01").andExpect(status().isOk())
                 .andExpect(jsonPath("$.minutosTrabalhados").value(0)).andExpect(jsonPath("$.pontos").value(0))

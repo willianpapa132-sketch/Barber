@@ -16,6 +16,14 @@ public class CaixaAdminController {
  @GetMapping public CaixaResponse atual(){
    return CaixaResponse.de(service.atual());
  }
+ @GetMapping("/historico")
+ public java.util.List<CaixaResponse> listar(){
+   return service.listar().stream().map(CaixaResponse::de).toList();
+ }
+ @GetMapping("/{id}/movimentacoes")
+ public java.util.List<MovimentoCaixaResponse> movimentos(@PathVariable Long id){
+   return service.movimentos(id);
+ }
  @PostMapping("/sangrias")
  public CaixaResponse sangria(@Valid @RequestBody SangriaRequest r){
    return CaixaResponse.de(service.sangria(r));

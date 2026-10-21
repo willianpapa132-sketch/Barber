@@ -15,6 +15,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Agendamento a where a.status = bruninho.Barbeiro.domain.StatusAgendamento.AGENDADO and a.data >= :hoje order by a.id")
+    List<Agendamento> pendentesParaConfiguracao(@Param("hoje") LocalDate hoje);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"barbeiro"})
+    List<Agendamento> findByDataBetweenOrderByDataAsc(LocalDate inicio, LocalDate fim);
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"cliente", "servico"})
     @Query("""
             select a from Agendamento a where a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO

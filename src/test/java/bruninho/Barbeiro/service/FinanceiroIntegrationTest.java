@@ -82,6 +82,67 @@ class FinanceiroIntegrationTest {
                 .andExpect(status().isOk()).andExpect(forwardedUrl("/client/index.html"));
     }
 
+    @Test
+    void dashboardAgrupaSemanaMesEAnoESomaFinanceiroSemIncluirCancelados() throws Exception {
+        var usuario = new Usuario(); usuario.setLogin("dashboard-barbeiro"); usuario.setSenha("hash");
+        usuario.setRole(ROLE.BARBEIRO); usuario.setAtivo(true); usuario = usuarios.save(usuario);
+        var barbeiro = new Barbeiro(); barbeiro.setNome("Barbeiro Dashboard"); barbeiro.setTelefone("11999999999");
+        barbeiro.setUsuario(usuario); barbeiro = barbeiros.save(barbeiro);
+        var primeiro = criar(barbeiro,"2026-01-01T10:00:00",StatusAgendamento.CONCLUIDO,true,"100","40");
+        primeiro.setData(LocalDate.of(2026,1,1)); primeiro.setDuracaoServicoMinutos(30);
+        var cancelado = criar(barbeiro,"2026-01-31T10:00:00",StatusAgendamento.CANCELADO,true,"999","999");
+        cancelado.setData(LocalDate.of(2026,1,31));
+        var naoPago = criar(barbeiro,"2026-02-03T10:00:00",StatusAgendamento.CONCLUIDO,false,"50","20");
+        naoPago.setData(LocalDate.of(2026,2,3));
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","ano").param("referencia","2026-10-20"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.grafico.length()").value(12))
+                .andExpect(jsonPath("$.grafico[0].quantidade").value(2)).andExpect(jsonPath("$.grafico[1].quantidade").value(1))
+                .andExpect(jsonPath("$.grafico[2].quantidade").value(0)).andExpect(jsonPath("$.agendamentos").value(3))
+                .andExpect(jsonPath("$.concluidos").value(2)).andExpect(jsonPath("$.cancelados").value(1))
+                .andExpect(jsonPath("$.valorBruto").value(100)).andExpect(jsonPath("$.despesas").value(40))
+                .andExpect(jsonPath("$.valorLiquido").value(60)).andExpect(jsonPath("$.caixa").isEmpty())
+                .andExpect(jsonPath("$.destaques[0].nome").value("Barbeiro Dashboard"));
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","mes").param("referencia","2026-01-20"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.agrupamento").value("semana"))
+                .andExpect(jsonPath("$.grafico.length()").value(5))
+                .andExpect(jsonPath("$.grafico[0].data").value("2026-01-01"))
+                .andExpect(jsonPath("$.grafico[1].data").value("2026-01-08"))
+                .andExpect(jsonPath("$.grafico[0].quantidade").value(1))
+                .andExpect(jsonPath("$.grafico[1].quantidade").value(0))
+                .andExpect(jsonPath("$.grafico[4].data").value("2026-01-29"))
+                .andExpect(jsonPath("$.grafico[4].quantidade").value(1))
+                .andExpect(jsonPath("$.agendamentos").value(2));
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","mes").param("referencia","2026-02-10"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.grafico.length()").value(4))
+                .andExpect(jsonPath("$.grafico[0].quantidade").value(1));
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","semana").param("referencia","2026-01-01"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.grafico.length()").value(7))
+                .andExpect(jsonPath("$.inicio").value("2025-12-29")).andExpect(jsonPath("$.fim").value("2026-01-04"))
+                .andExpect(jsonPath("$.agendamentos").value(1));
+    }
+
+    @Test
+    void dashboardVazioValidaPeriodosEAcesso() throws Exception {
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.agendamentos").value(0))
+                .andExpect(jsonPath("$.valorLiquido").value(0)).andExpect(jsonPath("$.destaques[0].barbeiroId").isEmpty());
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN")).param("periodo","invalido"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","personalizado").param("inicio","2026-01-01").param("fim","2027-01-01"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/admin/deshboard").with(user("admin").roles("ADMIN"))
+                        .param("periodo","personalizado").param("inicio","2026-01-01").param("fim","2026-01-03"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.grafico.length()").value(3));
+        mvc.perform(get("/api/admin/deshboard").with(user("outro").roles("BARBEIRO"))).andExpect(status().isForbidden());
+        mvc.perform(get("/admin/dashboard").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(forwardedUrl("/client/index.html"));
+    }
+
     private Agendamento criar(Barbeiro barbeiro, String quando, StatusAgendamento status, boolean pago,
                              String valor, String comissao) {
         var a = new Agendamento(); a.setBarbeiro(barbeiro); a.setNomeCliente("Cliente avulso");

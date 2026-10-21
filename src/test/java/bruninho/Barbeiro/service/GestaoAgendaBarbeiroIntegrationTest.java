@@ -219,6 +219,44 @@ class GestaoAgendaBarbeiroIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].duracaoMinutos").value(15));
     }
 
+    @Test
+    void adminConsultaTodasAsAgendasECriaNoBarbeiroEscolhidoComAuditoria() throws Exception {
+        var admin = usuario("admin-agenda@demo.com", ROLE.ADMIN);
+        var outro = new Barbeiro(); outro.setNome("Outro barbeiro"); outro.setTelefone("11999990003");
+        outro.setUsuario(usuario("outro-admin-agenda@demo.com", ROLE.BARBEIRO)); outro = barbeiros.save(outro);
+        mvc.perform(get("/api/admin/agendamentos/barbeiros").with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].usuario").doesNotExist());
+        String base = "/api/admin/agendamentos/" + barbeiro.getId();
+        mvc.perform(get(base + "/grade").param("data", dia.toString()).with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.horarios[0]").value("08:10:00"));
+        mvc.perform(post(base + "/agendamentos").with(user(admin.getLogin()).roles("ADMIN"))
+                        .contentType("application/json").content(atendimento("09:10", true)))
+                .andExpect(status().isCreated());
+        var salvo = agendamentos.findAll().getFirst();
+        assertThat(salvo.getBarbeiro().getId()).isEqualTo(barbeiro.getId());
+        assertThat(salvo.getCriadoPorUsuario().getId()).isEqualTo(admin.getId());
+        mvc.perform(post(base + "/bloqueios").with(user(admin.getLogin()).roles("ADMIN"))
+                        .contentType("application/json").content(bloqueio("09:10", "09:40")))
+                .andExpect(status().isConflict());
+        mvc.perform(post(base + "/bloqueios").with(user(admin.getLogin()).roles("ADMIN"))
+                        .contentType("application/json").content(bloqueio("10:10", "10:40")))
+                .andExpect(status().isCreated());
+        var id = bloqueios.findAll().getFirst().getId();
+        mvc.perform(delete("/api/admin/agendamentos/" + outro.getId() + "/bloqueios/" + id)
+                        .with(user(admin.getLogin()).roles("ADMIN"))).andExpect(status().isNotFound());
+        mvc.perform(delete(base + "/bloqueios/" + id).with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/admin/agendamentos/" + outro.getId() + "/grade").param("data", dia.toString())
+                        .with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.agendamentos.length()").value(0));
+        mvc.perform(get(base + "/grade").with(user(LOGIN).roles("BARBEIRO"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/agendamentos/999999/grade").with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/admin/agendamentos").with(user(admin.getLogin()).roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(forwardedUrl("/client/index.html"));
+    }
+
     private ResultActions postJson(String path, String json) throws Exception {
         return mvc.perform(post("/api/barbeiro/agenda" + path).with(user(LOGIN).roles("BARBEIRO"))
                 .contentType("application/json").content(json));

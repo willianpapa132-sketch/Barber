@@ -1,0 +1,32 @@
+<app-admin-layout>
+  @if(loading()){<p role="status">Carregando configurações...</p>}
+  @if(error()){<p class="error" role="alert">{{error()}} @if(!dados){<button (click)="load()">Tentar novamente</button>}</p>}
+  @if(success()){<p class="success" role="status">{{success()}}</p>}
+  @if(!loading()&&dados;as d){
+    <form #form="ngForm" (ngSubmit)="form.valid&&salvar()">
+      <header class="hero"><div><h1>Configurações da Barbearia</h1><p>Personalize as informações e os horários de funcionamento</p></div><button class="gold" type="submit" [disabled]="saving()||form.invalid">{{saving()?'Salvando...':'Salvar alterações'}}</button></header>
+      <fieldset class="settings-grid" [disabled]="saving()">
+        <section class="panel company"><header><span class="icon">▤</span><div><h2>Dados da Barbearia</h2><p>Informações principais da sua barbearia</p></div></header>
+          <label>Nome da barbearia <span>*</span><input name="nome" [(ngModel)]="d.nome" required maxlength="150" placeholder="Nome da empresa"></label>
+          <label>Telefone<input name="telefone" [(ngModel)]="d.telefone" type="tel" maxlength="30" placeholder="(00) 00000-0000"></label>
+          <label>Endereço<input name="endereco" [(ngModel)]="d.endereco" maxlength="250" placeholder="Rua, número, bairro e cidade"></label>
+          <label>Dias máximos de antecedência <span>*</span><input name="antecedencia" [(ngModel)]="d.diasMaximoAntecedencia" type="number" min="0" max="30" step="1" required></label>
+          <small>Limite de dias da agenda, incluindo hoje, até o máximo de 30. Zero desabilita novos agendamentos. Planos respeitam este limite e o prazo do contrato, valendo o menor.</small>
+          <aside class="info"><h3>ⓘ Importante</h3><p>As configurações são utilizadas na disponibilidade e na criação de agendamentos para todos os clientes.</p></aside>
+        </section>
+        <section class="panel hours"><header><span class="icon">◷</span><div><h2>Horário de Funcionamento</h2><p>Configure os dias e horários de atendimento</p></div></header>
+          <div class="table-scroll"><table><thead><tr><th scope="col">Dia da semana</th><th scope="col">Funcionamento</th><th scope="col">Horário de atendimento</th><th scope="col">Grade (min)</th><th scope="col">Permite plano</th></tr></thead><tbody>
+            @for(h of d.horarios;track h.diaSemana){<tr [class.closed]="h.fechado">
+              <th scope="row">{{dias[h.diaSemana]}}</th>
+              <td><label class="toggle"><input type="checkbox" [name]="'aberto-'+h.diaSemana" [ngModel]="!h.fechado" (ngModelChange)="h.fechado=!$event" [attr.aria-label]="'Abrir ' + dias[h.diaSemana]"><span>{{h.fechado?'Fechado':'Aberto'}}</span></label></td>
+              <td><div class="time-range"><input type="time" [name]="'inicio-'+h.diaSemana" [(ngModel)]="h.horarioInicio" [required]="!h.fechado" [disabled]="h.fechado" [attr.aria-label]="'Abertura de ' + dias[h.diaSemana]"><span>→</span><input type="time" [name]="'fim-'+h.diaSemana" [(ngModel)]="h.horarioFim" [required]="!h.fechado" [disabled]="h.fechado" [attr.aria-label]="'Fechamento de ' + dias[h.diaSemana]"></div></td>
+              <td><input class="interval" type="number" [name]="'intervalo-'+h.diaSemana" [(ngModel)]="h.intervaloMinimoEntreAgendamentos" required min="1" max="1440" step="1" [attr.aria-label]="'Intervalo da grade de ' + dias[h.diaSemana]"></td>
+              <td><label class="toggle"><input type="checkbox" [name]="'plano-'+h.diaSemana" [(ngModel)]="h.permiteAgendamentoPlano" [disabled]="h.fechado" [attr.aria-label]="'Permitir plano em ' + dias[h.diaSemana]"></label></td>
+            </tr>}
+          </tbody></table></div>
+          <aside class="info"><h3>ⓘ Sobre os horários</h3><ul><li>Fechar um dia coloca os barbeiros de folga e cancela os atendimentos ainda agendados a partir de hoje, incluindo os de plano.</li><li>Ao reduzir o horário, as jornadas são ajustadas e os agendamentos fora do novo funcionamento são cancelados.</li><li>Desativar “Permite plano” cancela os agendamentos futuros vinculados a planos nesse dia.</li><li>Atendimentos concluídos e o histórico financeiro são preservados.</li><li>Ao reabrir um dia, revise as folgas no cadastro dos barbeiros.</li><li>A grade define o espaçamento entre os horários de início disponíveis.</li></ul></aside>
+        </section>
+      </fieldset>
+    </form>
+  }
+</app-admin-layout>

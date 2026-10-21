@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
-@RestControllerAdvice(assignableTypes = GestaoAgendaBarbeiroController.class)
+@RestControllerAdvice(assignableTypes = {GestaoAgendaBarbeiroController.class,
+        bruninho.Barbeiro.Controller.Admin.agendamentos.AgendamentosAdminController.class})
 public class GestaoAgendaExceptionHandler {
     public record Erro(String mensagem) {}
     @ExceptionHandler(ResponseStatusException.class)

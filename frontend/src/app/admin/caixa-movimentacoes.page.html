@@ -1,0 +1,27 @@
+<app-admin-layout>
+  <header class="hero">
+    <div><h1>Movimentações do caixa #{{id}}</h1><p>Entradas e sangrias, da mais recente para a mais antiga</p></div>
+    <div class="actions"><a class="movements-link" routerLink="/admin/caixa">Voltar aos caixas</a><button (click)="load()" [disabled]="loading()">Atualizar</button></div>
+  </header>
+  @if (loading()) {
+    <section class="panel empty" role="status">Carregando movimentações...</section>
+  } @else if (error()) {
+    <p class="error" role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p>
+  } @else if (!movimentos().length) {
+    <section class="panel empty"><h2>Nenhuma movimentação</h2><p>Este caixa ainda não possui entradas ou sangrias registradas.</p></section>
+  } @else {
+    <section class="panel history" aria-label="Movimentações do caixa">
+      <table>
+        <thead><tr><th scope="col">Número</th><th scope="col">Data e hora</th><th scope="col">Tipo</th><th scope="col">Valor</th><th scope="col">Atendimento</th><th scope="col">Observação</th></tr></thead>
+        <tbody>
+          @for (m of movimentos(); track m.id) {
+            <tr><th scope="row">#{{m.id}}</th><td>{{m.criadoEm | date:'dd/MM/yyyy HH:mm'}}</td>
+              <td><span class="badge" [class.closed]="m.tipo === 'SANGRIA'">{{m.tipo === 'ENTRADA' ? 'Entrada' : 'Sangria'}}</span></td>
+              <td [class.positive]="m.tipo === 'ENTRADA'" [class.negative]="m.tipo === 'SANGRIA'">{{m.tipo === 'ENTRADA' ? '+' : '−'}} {{m.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td>
+              <td>{{m.agendamentoId ? '#' + m.agendamentoId : '—'}}</td><td class="movement-note">{{m.observacao || '—'}}</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</app-admin-layout>

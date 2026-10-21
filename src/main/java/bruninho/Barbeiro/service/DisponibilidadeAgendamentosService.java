@@ -55,7 +55,7 @@ public class DisponibilidadeAgendamentosService {
         if (antecedencia == 0) return dias;
         LocalDate limite = hoje.plusDays(antecedencia - 1L);
         for (LocalDate dia = hoje; !dia.isAfter(limite); dia = dia.plusDays(1)) {
-            if (!calcularHorarios(barbeiroId, dia, servicos).isEmpty()) dias.add(dia);
+            if (permiteDia(cliente.getUsuario(), dia) && !calcularHorarios(barbeiroId, dia, servicos).isEmpty()) dias.add(dia);
         }
         return dias;
     }
@@ -64,7 +64,14 @@ public class DisponibilidadeAgendamentosService {
         LocalDate hoje = LocalDate.now();
         int antecedencia = antecedencia(usuario);
         if (antecedencia == 0 || dia.isBefore(hoje) || dia.isAfter(hoje.plusDays(antecedencia - 1L))) return List.of();
+        if (!permiteDia(usuario, dia)) return List.of();
         return calcularHorarios(barbeiroId, dia, servicos);
+    }
+
+    private boolean permiteDia(Usuario usuario, LocalDate dia) {
+        if (!Boolean.TRUE.equals(planos.existsByUsuarioAndAtivoTrue(usuario))) return true;
+        var horario = funcionamento.findByDiaSemana(dia.getDayOfWeek());
+        return horario != null && Boolean.TRUE.equals(horario.getPermiteAgendamentoPlano());
     }
 
     private int antecedencia(Usuario usuario) {
@@ -74,7 +81,9 @@ public class DisponibilidadeAgendamentosService {
         if (Boolean.TRUE.equals(planos.existsByUsuarioAndAtivoTrue(usuario))) {
             var contrato = planos.findByUsuarioAndAtivoTrue(usuario);
             validacao.validarPagamentoPlano(contrato);
-            dias = contrato.getDiasMaximoAntecedencia();
+            if (contrato.getDiasMaximoAntecedencia() == null || contrato.getDiasMaximoAntecedencia() < 0)
+                throw new BusinessException("Antecedencia do plano nao configurada corretamente");
+            dias = dias == null ? null : Math.min(dias, contrato.getDiasMaximoAntecedencia());
         }
         if (dias == null || dias < 0) throw new BusinessException("Antecedência não configurada corretamente");
         return Math.min(dias, 30);

@@ -1,5 +1,5 @@
 <app-admin-layout>
-  <header class="hero"><div><h1>Caixa</h1><p>Controle de abertura, fechamento e saldo do caixa</p></div>
+  <header class="hero"><div><h1>Caixas</h1><p>Histórico de abertura, fechamento e valores dos caixas</p></div>
     <div class="actions"><button (click)="load()" [disabled]="loading() || saving()">Atualizar</button>
     @if (!loading() && !error()) {
       @if (caixa()?.status === 'ABERTO') { <button class="gold" (click)="abrir('fechar')">Fechar caixa</button> }
@@ -10,7 +10,30 @@
   @if (error()) { <p class="error" role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p> }
   @if (loading()) { <section class="panel empty" role="status">Carregando caixa...</section> }
   @else if (!error()) {
-    @if (caixa(); as c) {
+    @if (caixas().length) {
+      <section class="panel history" aria-label="Histórico dos caixas">
+        <table>
+          <thead><tr><th scope="col">Número</th><th scope="col">Status</th><th scope="col">Aberto em</th><th scope="col">Fechado em</th><th scope="col">Saldo inicial</th><th scope="col">Entradas</th><th scope="col">Saldo final</th><th scope="col">Detalhes</th></tr></thead>
+          <tbody>
+            @for (c of caixas(); track c.id) {
+              <tr>
+                <th scope="row">Caixa #{{c.id}}</th>
+                <td><span class="badge" [class.closed]="c.status === 'FECHADO'">{{c.status === 'ABERTO' ? 'Aberto' : 'Fechado'}}</span></td>
+                <td>{{c.abertoEm | date:'dd/MM/yyyy HH:mm'}}</td>
+                <td>{{c.fechadoEm ? (c.fechadoEm | date:'dd/MM/yyyy HH:mm') : 'Em operação'}}</td>
+                <td>{{c.saldoInicial | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td>
+                <td class="positive">{{c.totalEntradas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td>
+                <td>{{c.status === 'FECHADO' ? (c.saldoFinal | currency:'BRL':'symbol':'1.2-2':'pt-BR') : 'A definir'}}</td>
+                <td><button (click)="selecionado.set(selecionado()?.id === c.id ? null : c)" [attr.aria-expanded]="selecionado()?.id === c.id" [attr.aria-label]="'Ver detalhes do caixa #' + c.id">{{selecionado()?.id === c.id ? 'Ocultar' : 'Ver detalhes'}}</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    } @else {
+      <section class="panel empty"><h2>Nenhum caixa cadastrado</h2><p>Abra o primeiro caixa para receber entradas e registrar sangrias.</p><button class="gold" (click)="abrir('abrir')">+ Abrir caixa</button></section>
+    }
+    @if (selecionado(); as c) {
       <section class="metrics" aria-label="Resumo financeiro">
         <article><span class="icon" aria-hidden="true">▣</span><div><p>{{c.status === 'ABERTO' ? 'Caixa atual' : 'Caixa encerrado'}} <span class="badge" [class.closed]="c.status === 'FECHADO'">{{c.status === 'ABERTO' ? 'Aberto' : 'Fechado'}}</span></p><strong>{{(c.status === 'ABERTO' ? c.saldoAtual : c.saldoFinal) | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Caixa #{{c.id}}</small></div></article>
         <article><span class="icon green" aria-hidden="true">↑</span><div><p>Total de entradas</p><strong>{{c.totalEntradas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Atendimentos finalizados</small></div></article>
@@ -19,10 +42,8 @@
       </section>
       <section class="panel summary"><header><div><h2>Resumo do caixa</h2><p>Informações do caixa #{{c.id}}</p></div>@if (c.status === 'ABERTO') { <button class="gold" (click)="abrir('sangria')" [disabled]="c.saldoAtual <= 0">− Registrar sangria</button> }</header>
         <dl><div><dt>Aberto em</dt><dd>{{c.abertoEm | date:'dd/MM/yyyy HH:mm'}}</dd></div><div><dt>Fechado em</dt><dd>{{c.fechadoEm ? (c.fechadoEm | date:'dd/MM/yyyy HH:mm') : 'Em operação'}}</dd></div><div><dt>Saldo inicial</dt><dd>{{c.saldoInicial | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Entradas</dt><dd class="positive">+ {{c.totalEntradas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Sangrias</dt><dd class="negative">− {{c.totalSangrias | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div class="total"><dt>{{c.status === 'ABERTO' ? 'Saldo atual' : 'Saldo final'}}</dt><dd>{{(c.status === 'ABERTO' ? c.saldoAtual : c.saldoFinal) | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div></dl>
-        <p class="info">As entradas são registradas automaticamente ao finalizar atendimentos com valor.</p>
+        <a class="gold movements-link" [routerLink]="['/admin/caixa', c.id, 'movimentacoes']">Ver movimentações</a>
       </section>
-    } @else {
-      <section class="panel empty"><span class="icon" aria-hidden="true">▣</span><h2>Nenhum caixa aberto</h2><p>Não existe um caixa aberto no momento.<br>Abra o caixa para receber entradas e registrar sangrias.</p><button class="gold" (click)="abrir('abrir')">+ Abrir caixa</button></section>
     }
   }
   <dialog #dialog (cancel)="saving() ? $event.preventDefault() : null" aria-labelledby="caixa-title">

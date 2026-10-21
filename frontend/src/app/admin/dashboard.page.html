@@ -1,0 +1,40 @@
+<app-admin-layout>
+  <header class="hero"><div><h1>Dashboard</h1><p>Visão geral da barbearia</p></div>
+    <div class="periods" aria-label="Período do dashboard">@for(p of periodos;track p.id){<button [class.active]="periodo===p.id" (click)="trocar(p.id)">{{p.nome}}</button>}</div>
+  </header>
+  <form class="date-filters" (ngSubmit)="load()">
+    @if(periodo==='personalizado'){
+      <label>Data inicial<input type="date" name="inicio" [(ngModel)]="inicio" required></label><label>Data final<input type="date" name="fim" [(ngModel)]="fim" [min]="inicio" required></label>
+    }@else{<label>Data de referência<input type="date" name="referencia" [(ngModel)]="referencia" required></label>}
+    <button type="submit" [disabled]="loading()">Atualizar</button>
+    @if(dados();as d){<small>{{d.inicio | date:'dd/MM/yyyy'}} a {{d.fim | date:'dd/MM/yyyy'}}</small>}
+  </form>
+  @if(loading()){<p role="status">Carregando dashboard...</p>}
+  @if(error()){<p class="error" role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p>}
+  @if(!loading()&&!error()){@if(dados();as d){
+    <section class="metrics" aria-label="Indicadores do período">
+      <article class="panel metric"><span class="icon gold">▦</span><div><p>Agendamentos</p><strong>{{d.agendamentos}}</strong><small>No período selecionado</small></div></article>
+      <article class="panel metric"><span class="icon green">✓</span><div><p>Concluídos</p><strong>{{d.concluidos}}</strong><small>{{percentual(d.concluidos,d.agendamentos)}}% de conclusão</small><progress [value]="d.concluidos" [max]="d.agendamentos || 1"></progress></div></article>
+      <article class="panel metric"><span class="icon red">×</span><div><p>Cancelados / Não compareceu</p><strong>{{d.cancelados}}</strong><small>{{percentual(d.cancelados,d.agendamentos)}}% do total</small><progress class="danger" [value]="d.cancelados" [max]="d.agendamentos || 1"></progress></div></article>
+      <article class="panel metric"><span class="icon gold">$</span><div><p>Valor bruto</p><strong>{{d.valorBruto | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Atendimentos e planos recebidos</small></div></article>
+      <article class="panel metric"><span class="icon red">↓</span><div><p>Despesas</p><strong>{{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Comissões de atendimentos pagos</small></div></article>
+      <article class="panel metric"><span class="icon green">↗</span><div><p>Valor líquido</p><strong>{{d.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Recebimentos menos comissões</small></div></article>
+    </section>
+    <div class="dashboard-grid">
+      <section class="panel chart-panel"><header class="section-heading"><div><h2><span class="gold">▥</span> Agendamentos por {{d.agrupamento==='mes'?'mês':d.agrupamento==='semana'?'semana':'dia'}}</h2><p>Quantidade de agendamentos no período</p></div><select aria-label="Período do gráfico" [ngModel]="periodo" (ngModelChange)="trocar($event)"><option value="hoje">Hoje</option><option value="semana">Semana</option><option value="mes">Mês</option><option value="ano">Ano</option><option value="personalizado">Personalizado</option></select></header>
+        <div class="chart-scroll"><div class="chart" role="img" [attr.aria-label]="'Gráfico com ' + d.agendamentos + ' agendamentos entre ' + d.inicio + ' e ' + d.fim">
+          <div class="axis"><span>{{maximo()}}</span><span>{{maximo()/2 | number:'1.0-0'}}</span><span>0</span></div>
+          <div class="plot">@for(p of d.grafico;track p.data){<div class="bar-column" [attr.title]="rotulo(p.data) + ': ' + p.quantidade + ' agendamentos'"><div class="bar-space"><div class="bar" [style.height.%]="p.quantidade/maximo()*100"><b>{{p.quantidade}}</b></div></div><small>{{rotulo(p.data)}}</small></div>}</div>
+        </div></div>
+        @if(!d.agendamentos){<p class="empty-chart">Nenhum agendamento no período selecionado.</p>}
+      </section>
+      <section class="panel financial"><header class="section-heading"><h2><span class="gold">$</span> Resumo financeiro</h2><a routerLink="/admin/financeiro">Ver detalhes →</a></header>
+        <div class="financial-content"><dl><div><dt>Entradas de agendamentos</dt><dd>{{d.entradasAgendamentos | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Planos mensais</dt><dd>{{d.entradasPlanos | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div class="expense"><dt>Comissões</dt><dd>− {{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Valor líquido</dt><dd class="green-text">{{d.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div></dl>
+          <aside class="cash"><h3>▣ Caixa <span class="badge" [class.closed]="!d.caixa">{{d.caixa?'Aberto':'Fechado'}}</span></h3>@if(d.caixa;as c){<p>Saldo atual</p><strong>{{c.saldoAtual | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Caixa #{{c.id}} · Saldo de agora</small><a class="cash-link" [routerLink]="['/admin/caixa',c.id,'movimentacoes']">Ver movimentações →</a>}@else{<p>Nenhum caixa aberto</p><a class="cash-link" routerLink="/admin/caixa">Acessar caixas →</a>}</aside>
+        </div><p class="footnote">Valores recebidos pela data de pagamento ou finalização.</p>
+      </section>
+      <section class="panel performance"><header class="section-heading"><h2><span class="gold">▥</span> Desempenho dos barbeiros</h2><a routerLink="/admin/comissao">Ver comissões →</a></header><div class="leaders">@for(item of d.destaques;track item.tipo){<article><p class="leader-label">{{nome(item.tipo)}}</p>@if(item.barbeiroId){<span class="rank">1º</span><span class="avatar">{{item.nome?.slice(0,1)}}</span><strong>{{item.nome}}</strong><b>@switch(item.tipo){@case('comissao'){{{item.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}}@case('horas'){{{horas(item.valor)}}}@case('pontos'){{{item.valor}} pontos}@default{{{item.valor}} atendimentos}}</b><small>{{item.atendimentos}} atendimento(s) concluído(s)</small>}@else{<span class="avatar">—</span><strong>Sem dados</strong><small>Nenhum resultado no período</small>}</article>}</div></section>
+      <section class="panel plans"><header class="section-heading"><h2><span class="gold">▰</span> Planos mensais</h2><a routerLink="/admin/gerenciamento-planos">Ver todos →</a></header><div class="plan-metrics"><article><span class="icon blue">♟</span><div><p>Clientes com plano ativo</p><strong>{{d.planos.ativos}}</strong><small>Situação atual</small></div></article><article><span class="icon green">✓</span><div><p>Contratos pagos no período</p><strong>{{d.planos.pagosPeriodo}}</strong><small>Com pagamento registrado</small></div></article><article><span class="icon red">!</span><div><p>Pendentes</p><strong>{{d.planos.pendentes}}</strong><small>Contratos ativos em atraso agora</small></div></article><article><span class="icon gold">▦</span><div><p>Vencendo hoje</p><strong>{{d.planos.vencendoHoje}}</strong><small>Situação atual</small></div></article></div></section>
+    </div>
+  }}
+</app-admin-layout>

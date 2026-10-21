@@ -15,10 +15,18 @@
     <div class="section-title"><h2 id="acessos-title">Acessos rápidos</h2></div>
     <div class="cards">
       @for (card of cards; track card; let i = $index) {
-        @if (i === 2) {
+        @if (i === 0) {
+          <a class="shortcut-link" routerLink="/admin/agendamentos"><span class="icon" aria-hidden="true">▦</span><div><h3>Agendamentos</h3><p>Gerencie as agendas e bloqueios de todos os barbeiros.</p><small>Acessar agendamentos ›</small></div></a>
+        } @else if (i === 1) {
+          <a class="shortcut-link" routerLink="/admin/dashboard"><span class="icon" aria-hidden="true">▥</span><div><h3>Dashboard</h3><p>Acompanhe os indicadores e resultados da barbearia.</p><small>Acessar dashboard ›</small></div></a>
+        } @else if (i === 3) {
+          <a class="shortcut-link" routerLink="/admin/comissao"><span class="icon" aria-hidden="true">%</span><div><h3>Comissões</h3><p>Consulte os totais e as comissões de todos os barbeiros.</p><small>Acessar comissões ›</small></div></a>
+        } @else if (i === 2) {
           <a class="shortcut-link" routerLink="/admin/cadastros"><span class="icon" aria-hidden="true">♙</span><div><h3>{{ card }}</h3><p>Gerencie barbeiros, serviços e planos mensais.</p><small>Acessar cadastros ›</small></div></a>
         } @else if (i === 4) {
           <a class="shortcut-link" routerLink="/admin/financeiro"><span class="icon" aria-hidden="true">$</span><div><h3>{{ card }}</h3><p>Consulte entradas, comissões e resultado do período.</p><small>Acessar financeiro ›</small></div></a>
+        } @else if (i === 5) {
+          <a class="shortcut-link" routerLink="/admin/caixa"><span class="icon" aria-hidden="true">▤</span><div><h3>{{ card }}</h3><p>Consulte os caixas, saldos e movimentações.</p><small>Acessar caixa ›</small></div></a>
         } @else {
           <article><span class="icon" aria-hidden="true">{{ ['▦', '▥', '♙', '%', '$', '▤'][i] }}</span><div><h3>{{ card }}</h3><p>Acesso rápido a definir</p><small>Em breve</small></div></article>
         }

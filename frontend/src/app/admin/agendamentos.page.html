@@ -1,0 +1,24 @@
+<app-admin-layout>
+  <header class="agenda-heading"><div><h1>Agendamentos</h1><p>Visualize e gerencie as agendas de todos os barbeiros.</p></div></header>
+  <form class="admin-filters" (ngSubmit)="load()">
+    <button type="button" (click)="changeDay(-1)" aria-label="Dia anterior" [disabled]="loading()">‹</button>
+    <label>Data<input type="date" name="data" [(ngModel)]="date" required></label>
+    <button type="button" (click)="changeDay(1)" aria-label="Próximo dia" [disabled]="loading()">›</button>
+    <button type="button" (click)="goToday()" [disabled]="loading()">Hoje</button>
+    <label>Barbeiro<select name="barbeiro" [(ngModel)]="barbeiroId"><option value="">Todos os barbeiros</option>@for (b of barbeiros(); track b.id) { <option [value]="b.id">{{b.nome}}{{b.ativo ? '' : ' (Inativo)'}}</option> }</select></label>
+    <label>Status<select name="status" [(ngModel)]="status"><option value="">Todos</option><option value="AGENDADO">Agendados</option><option value="CONCLUIDO">Concluídos</option><option value="CANCELADO">Cancelados</option><option value="NAO_COMPARECEU">Não compareceu</option></select></label>
+    <button class="gold" type="submit" [disabled]="loading()">Filtrar / Atualizar</button>
+  </form>
+  @if (loading()) { <p role="status">Carregando agendas...</p> }
+  @else if (error()) { <p role="alert">{{error()}} <button (click)="load()">Tentar novamente</button></p> }
+  @else if (!colunas().length) { <section class="empty"><h2>Nenhum barbeiro encontrado</h2><p>Cadastre um barbeiro para começar a gerenciar sua agenda.</p></section> }
+  @else {
+    <div class="agendas-scroll"><div class="agendas-columns barber-area">
+      @for (coluna of colunas(); track coluna.barbeiro.id) {
+        <section class="barber-column" [attr.aria-label]="'Agenda de ' + coluna.barbeiro.nome">
+          <app-barber-agenda [adminBarbeiroId]="coluna.barbeiro.id" [adminNome]="coluna.barbeiro.nome + (coluna.barbeiro.ativo ? '' : ' (Inativo)')" [adminStatus]="status" [initialGrade]="coluna.grade" [timelineRange]="range()" />
+        </section>
+      }
+    </div></div>
+  }
+</app-admin-layout>

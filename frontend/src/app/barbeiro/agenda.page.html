@@ -1,15 +1,20 @@
 <main class="barber-shell agenda-shell">
+  @if (adminBarbeiroId === null) {
   <header class="page-header"><div><p class="eyebrow">SUA ROTINA · BARBEARIA</p><h1>Seus atendimentos do dia</h1><p class="subtitle">Gerencie sua agenda de forma prática</p></div><span class="pole" aria-hidden="true">💈</span></header>
   <form class="filters" (ngSubmit)="load()">
     <label>Data do atendimento<input type="date" name="data" [(ngModel)]="date" required></label>
     <label>Status<select name="status" [(ngModel)]="status"><option value="">Todos</option><option value="AGENDADO">Agendados</option><option value="CONCLUIDO">Concluídos</option><option value="CANCELADO">Cancelados</option><option value="NAO_COMPARECEU">Não compareceu</option></select></label>
     <button class="primary-button" type="submit" [disabled]="loading() || saving()">Filtrar</button>
   </form>
+  }
+  @if (adminBarbeiroId !== null) {
+    <header class="admin-barber-heading"><div><h2>{{adminNome}}</h2><small>{{grade()?.agendamentos?.length || 0}} atendimento(s)</small></div><button class="primary-button" (click)="open()" [disabled]="loading() || saving() || !grade()?.podeCriar">+ Novo</button></header>
+  }
   @if (loading()) { <p class="finish-notice" role="status">Carregando a grade de horários...</p> }
   @if (error()) { <p class="finish-notice notice-error" role="alert">{{ error() }}</p><button id="agenda-retry" class="outline-button" (click)="load()">Tentar novamente</button> }
   @if (notice()) { <p class="finish-notice" role="status">{{ notice() }}</p> }
   @if (grade(); as grade) {
-    <div class="section-heading"><h2>{{ dateLabel(grade.data) }}</h2><span class="subtitle">{{ grade.agendamentos.length }} atendimento(s)</span></div>
+    @if (adminBarbeiroId === null) { <div class="section-heading"><h2>{{ dateLabel(grade.data) }}</h2><span class="subtitle">{{ grade.agendamentos.length }} atendimento(s)</span></div> }
     <p class="subtitle grid-label">@if (grade.intervaloGrade) { ◷ Grade configurada: {{ grade.intervaloGrade }} min · Jornada {{ hhmm(grade.inicio) }} – {{ hhmm(grade.fim) }} } @else { {{ grade.aviso }} }</p>
     <section aria-label="Horários da jornada" [attr.aria-busy]="loading()">
       @if (rows.length) {
@@ -32,15 +37,15 @@
           <article [class]="'timeline-event outside-event ' + item.status">
             <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
             <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
-            @if (item.status === 'AGENDADO') { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+            @if (item.status === 'AGENDADO' && adminBarbeiroId === null) { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
           </article>
         }
       </section>
     }
-    <button class="agenda-add" type="button" aria-label="Novo bloqueio ou agendamento" [disabled]="loading() || saving() || !grade.podeCriar" (click)="open()">+</button>
+    @if (adminBarbeiroId === null) { <button class="agenda-add" type="button" aria-label="Novo bloqueio ou agendamento" [disabled]="loading() || saving() || !grade.podeCriar" (click)="open()">+</button> }
   }
-  <dialog #dialog class="agenda-dialog" aria-labelledby="agenda-dialog-title" (cancel)="saving() ? $event.preventDefault() : null">
-    <header class="dialog-heading"><div><h2 id="agenda-dialog-title">{{ mode === 'menu' ? 'Novo' : mode === 'block' ? 'Criar bloqueio' : 'Criar agendamento' }}</h2><p>{{ mode === 'menu' ? 'Escolha uma ação' : 'Reserve um horário na sua agenda' }}</p></div><button type="button" class="dialog-close" aria-label="Fechar" (click)="close()" [disabled]="saving()">×</button></header>
+  <dialog #dialog class="agenda-dialog" [attr.aria-labelledby]="'agenda-dialog-title-' + (adminBarbeiroId ?? 'barbeiro')" (cancel)="saving() ? $event.preventDefault() : null">
+    <header class="dialog-heading"><div><h2 [id]="'agenda-dialog-title-' + (adminBarbeiroId ?? 'barbeiro')">{{ mode === 'menu' ? 'Novo' : mode === 'block' ? 'Criar bloqueio' : 'Criar agendamento' }}</h2><p>{{ adminBarbeiroId !== null ? 'Agenda de ' + adminNome : mode === 'menu' ? 'Escolha uma ação' : 'Reserve um horário na sua agenda' }}</p></div><button type="button" class="dialog-close" aria-label="Fechar" (click)="close()" [disabled]="saving()">×</button></header>
     @if (dialogError()) { <p class="finish-notice notice-error" role="alert">{{ dialogError() }}</p> }
     @if (mode === 'menu') {
       <div class="action-menu">
@@ -86,14 +91,14 @@
       </form>
     }
   </dialog>
-  <app-barber-nav />
+  @if (adminBarbeiroId === null) { <app-barber-nav /> }
 </main>
 <ng-template #eventTemplate let-event="event">
   <article [class]="'timeline-event ' + (event.item?.status || 'is-period ' + event.period.tipo)" [class.compact]="event.end - event.start <= 15" [style.top.px]="event.top" [style.height.px]="event.height" [style.left]="event.left" [style.width]="event.width">
     @if (event.item; as item) {
       <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente || 'Cliente' }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
       <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
-      @if (item.status === 'AGENDADO') { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+      @if (item.status === 'AGENDADO' && adminBarbeiroId === null) { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
     } @else {
       <div class="event-description"><time>{{ hhmm(event.period.inicio || grade()?.inicio || '') }} – {{ hhmm(event.period.fim || grade()?.fim || '') }}</time><strong>{{ event.period.descricao }}</strong></div>
       @if (event.period.tipo === 'BLOQUEIO' && event.period.id) { <button class="remove-block" [disabled]="saving()" (click)="removeBlock(event.period.id)" [attr.aria-label]="'Remover bloqueio das ' + hhmm(event.period.inicio)">Remover</button> }

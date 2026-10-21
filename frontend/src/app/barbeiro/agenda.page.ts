@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,20 @@ interface TimelineEvent {
   top: number; height: number; left: string; width: string;
 }
 @Component({ selector: 'app-barber-agenda', imports: [FormsModule, RouterLink, BarberNav, NgTemplateOutlet], templateUrl: './agenda.page.html' })
-export class BarberAgendaPage implements OnInit, OnDestroy {
+export class BarberAgendaPage implements OnInit, OnDestroy, OnChanges {
+  @Input() adminBarbeiroId: number | null = null;
+  @Input() adminNome = '';
+  @Input() adminStatus = '';
+  @Input() initialGrade: Grade | null = null;
+  @Input() timelineRange: { inicio: string; fim: string } | null = null;
+  get apiBase() { return this.adminBarbeiroId === null ? '/api/barbeiro/agenda' : `/api/admin/agendamentos/${this.adminBarbeiroId}`; }
+  ngOnChanges() {
+    if (this.initialGrade) {
+      this.grade.set(this.initialGrade); this.date = this.initialGrade.data;
+      this.status = this.adminStatus;
+      this.buildTimeline(this.initialGrade);
+    }
+  }
   private api = inject(BarberApi);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -34,7 +47,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
   events: TimelineEvent[] = []; outside: Appointment[] = [];
   rows: { time: string; top: number; height: number }[] = [];
   timelineHeight = 0;
-  ngOnInit() { void this.load(); }
+  ngOnInit() { if (!this.initialGrade) void this.load(); }
   ngOnDestroy() {
     this.gradeController?.abort(); this.servicesController?.abort(); this.searchController?.abort();
     this.lifetime.abort(); clearTimeout(this.searchTimer); this.dialog.nativeElement.close();
@@ -46,17 +59,17 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
     this.loading.set(true); this.error.set(''); this.notice.set('');
     const query = new URLSearchParams(); if (this.date) query.set('data', this.date); if (this.status) query.set('status', this.status);
     try {
-      const grade = await this.api.request<Grade>(`/api/barbeiro/agenda/grade?${query}`, { signal: controller.signal });
+      const grade = await this.api.request<Grade>(`${this.apiBase}/grade?${query}`, { signal: controller.signal });
       if (controller.signal.aborted) return;
       this.grade.set(grade); this.date = grade.data; this.buildTimeline(grade);
       this.notice.set(grade.aviso || (!grade.agendamentos.length ? 'Nenhum agendamento encontrado para este filtro. Os horários da jornada continuam visíveis.' : ''));
-      await this.router.navigate([], { relativeTo: this.route, queryParams: { data: this.date, status: this.status || null }, replaceUrl: true });
+      if (this.adminBarbeiroId === null) await this.router.navigate([], { relativeTo: this.route, queryParams: { data: this.date, status: this.status || null }, replaceUrl: true });
     } catch (e) { if (!controller.signal.aborted) this.error.set((e as Error).message); }
     finally { if (!controller.signal.aborted) this.loading.set(false); }
   }
   private buildTimeline(grade: Grade) {
     this.events = []; this.outside = []; this.rows = []; this.timelineHeight = 0;
-    const start = minutes(grade.inicio), end = minutes(grade.fim);
+    const start = minutes(this.timelineRange?.inicio || grade.inicio), end = minutes(this.timelineRange?.fim || grade.fim);
     if (!grade.horarios.length) { this.outside = grade.agendamentos; return; }
     const events: TimelineEvent[] = [];
     const add = (s: number, e: number, item?: Appointment, period?: Period) => events.push({ start: s, end: e, item, period, top: 0, height: 0, left: '', width: '' });
@@ -70,10 +83,10 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
       const e = Math.min(end, Number.isFinite(minutes(p.fim)) ? minutes(p.fim) : end);
       if (e > s) add(s, e, undefined, p);
     });
-    const scale = Math.max(5, 58 / Math.max(Math.min(15, ...events.map(e => e.end - e.start)), 1));
+    const scale = this.adminBarbeiroId === null ? Math.max(5, 58 / Math.max(Math.min(15, ...events.map(e => e.end - e.start)), 1)) : 5;
     this.timelineHeight = (end - start) * scale;
     this.rows = grade.horarios.map((time, index) => ({ time, top: (minutes(time) - start) * scale,
-      height: ((index + 1 < grade.horarios.length ? minutes(grade.horarios[index + 1]) : end) - minutes(time)) * scale }));
+      height: ((index + 1 < grade.horarios.length ? minutes(grade.horarios[index + 1]) : minutes(grade.fim)) - minutes(time)) * scale }));
     events.sort((a, b) => a.start - b.start || b.end - a.end);
     let group: TimelineEvent[] = [], groupEnd = -1;
     const position = () => {
@@ -120,10 +133,10 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
     if (this.customerMode === 'registered' && !this.clientId) { this.servicesLoading.set(false); this.updateTimes(); return; }
     try {
       if (this.customerMode === 'registered') {
-        const data = await this.api.request<CustomerServices>(`/api/barbeiro/agenda/clientes/${encodeURIComponent(this.clientId)}/servicos`, { signal: controller.signal });
+        const data = await this.api.request<CustomerServices>(`${this.apiBase}/clientes/${encodeURIComponent(this.clientId)}/servicos`, { signal: controller.signal });
         if (controller.signal.aborted) return; this.services.set(data.servicos); this.activePlan.set(data.possuiPlano ? data.nomePlano || 'Plano mensal' : '');
       } else {
-        const data = await this.api.request<Service[]>('/api/barbeiro/agenda/servicos', { signal: controller.signal });
+        const data = await this.api.request<Service[]>(`${this.apiBase}/servicos`, { signal: controller.signal });
         if (controller.signal.aborted) return; this.services.set(data);
       }
       this.updateTimes();
@@ -137,7 +150,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
   async searchClients() {
     this.searchController?.abort(); const controller = this.searchController = new AbortController();
     try {
-      const customers = await this.api.request<Customer[]>(`/api/barbeiro/agenda/clientes?busca=${encodeURIComponent(this.search)}`, { signal: controller.signal });
+      const customers = await this.api.request<Customer[]>(`${this.apiBase}/clientes?busca=${encodeURIComponent(this.search)}`, { signal: controller.signal });
       if (controller.signal.aborted) return; this.customers.set(customers);
       if (this.clientId && !customers.some(c => String(c.id) === this.clientId)) { this.clientId = ''; await this.loadServices(); }
     } catch (e) { if (!controller.signal.aborted) this.dialogError.set((e as Error).message); }
@@ -155,7 +168,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
     }
     this.saving.set(true); this.dialogError.set('');
     try {
-      await this.api.request(`/api/barbeiro/agenda/${kind === 'block' ? 'bloqueios' : 'agendamentos'}`, { method: 'POST', body: JSON.stringify(payload), signal: this.lifetime.signal });
+      await this.api.request(`${this.apiBase}/${kind === 'block' ? 'bloqueios' : 'agendamentos'}`, { method: 'POST', body: JSON.stringify(payload), signal: this.lifetime.signal });
       this.dialog.nativeElement.close(); this.saving.set(false); await this.load();
       this.notice.set(kind === 'block' ? 'Bloqueio criado com sucesso.' : 'Agendamento criado com sucesso. Confira a data e o filtro selecionados.');
     } catch (e) { if (!this.lifetime.signal.aborted) this.dialogError.set((e as Error).message); }
@@ -164,7 +177,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy {
   async removeBlock(id: number) {
     if (this.saving() || !window.confirm('Remover este bloqueio e liberar o período?')) return;
     this.saving.set(true);
-    try { await this.api.request(`/api/barbeiro/agenda/bloqueios/${id}`, { method: 'DELETE', signal: this.lifetime.signal }); this.saving.set(false); await this.load(); this.notice.set('Bloqueio removido.'); }
+    try { await this.api.request(`${this.apiBase}/bloqueios/${id}`, { method: 'DELETE', signal: this.lifetime.signal }); this.saving.set(false); await this.load(); this.notice.set('Bloqueio removido.'); }
     catch (e) { if (!this.lifetime.signal.aborted) this.error.set((e as Error).message); }
     finally { this.saving.set(false); }
   }

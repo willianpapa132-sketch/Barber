@@ -9,6 +9,11 @@ import { PlanoPage } from './pages/plano.page';
 import { BarberLayout } from './barbeiro/layout';
 
 export const routes: Routes = [
+  { path: 'admin/configuracao', loadComponent: () => import('./admin/configuracao.page').then(m => m.AdminConfiguracaoPage), title: 'Configurações' },
+  { path: 'admin/dashboard', loadComponent: () => import('./admin/dashboard.page').then(m => m.AdminDashboardPage), title: 'Dashboard' },
+  { path: 'admin/comissao', loadComponent: () => import('./admin/comissao.page').then(m => m.AdminComissaoPage), title: 'Comissões' },
+  { path: 'admin/agendamentos', loadComponent: () => import('./admin/agendamentos.page').then(m => m.AdminAgendamentosPage), title: 'Agendamentos' },
+  { path: 'admin/caixa/:id/movimentacoes', loadComponent: () => import('./admin/caixa-movimentacoes.page').then(m => m.CaixaMovimentacoesPage), title: 'Movimentações do caixa' },
   { path: 'admin/gerenciamento-planos', loadComponent: () => import('./admin/gerenciamento-planos.page').then(m => m.GerenciamentoPlanosPage), title: 'Gerenciamento de Planos' },
   { path: 'admin/financeiro', loadComponent: () => import('./admin/financeiro.page').then(m => m.AdminFinanceiroPage), title: 'Financeiro' },
   { path: 'admin/caixa', loadComponent: () => import('./admin/caixa.page').then(m => m.AdminCaixaPage), title: 'Caixa' },
