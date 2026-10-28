@@ -7,6 +7,23 @@ public class AppProperties {
     private String zone = "America/Sao_Paulo";
     private boolean demoData;
     private final InitialAdmin initialAdmin = new InitialAdmin();
+    private final MultiTenancy multiTenancy = new MultiTenancy();
+    public MultiTenancy getMultiTenancy() { return multiTenancy; }
+
+    public static class MultiTenancy {
+        private boolean enabled;
+        private String platformHost = "localhost";
+        private String baseDomain = "localhost";
+        private String encryptionKey = "";
+        private String ownerLogin = "";
+        private String ownerPassword = "";
+        public boolean isEnabled(){return enabled;} public void setEnabled(boolean v){enabled=v;}
+        public String getPlatformHost(){return platformHost;} public void setPlatformHost(String v){platformHost=v;}
+        public String getBaseDomain(){return baseDomain;} public void setBaseDomain(String v){baseDomain=v;}
+        public String getEncryptionKey(){return encryptionKey;} public void setEncryptionKey(String v){encryptionKey=v;}
+        public String getOwnerLogin(){return ownerLogin;} public void setOwnerLogin(String v){ownerLogin=v;}
+        public String getOwnerPassword(){return ownerPassword;} public void setOwnerPassword(String v){ownerPassword=v;}
+    }
 
     public String getZone() { return zone; }
     public void setZone(String zone) { this.zone = zone; }

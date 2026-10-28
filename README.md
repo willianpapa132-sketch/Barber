@@ -1,5 +1,11 @@
 # Sistema de Barbearia
 
+Para cadastrar empresas com bancos separados e usar o painel do proprietário,
+consulte [Plataforma multiempresa](docs/MULTIEMPRESA.md).
+
+O PostgreSQL agora usa migrations com Flyway. Para iniciar com um banco vazio e
+entender como versionar o esquema, consulte [Migrations](docs/MIGRATIONS.md).
+
 Aplicação Spring Boot para uma barbearia, com agendamento público, painel administrativo, agenda do barbeiro, controle de caixa e planos mensais.
 
 A documentação técnica fica em [docs/DOCUMENTACAO_TECNICA.md](docs/DOCUMENTACAO_TECNICA.md).
@@ -13,7 +19,7 @@ A documentação técnica fica em [docs/DOCUMENTACAO_TECNICA.md](docs/DOCUMENTAC
 
 ## Subir para teste local sem PostgreSQL
 
-Use o perfil `dev`. Ele cria um banco H2 local em `./data/barbearia-dev` e dados demonstrativos automaticamente.
+O perfil `dev` cria apenas o esquema H2 local em `./data/barbearia-dev`, sem dados ou usuários automáticos. Para criar empresas pelo painel da plataforma, use PostgreSQL conforme o guia multiempresa.
 
 ```powershell
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
@@ -23,18 +29,6 @@ Depois acesse:
 
 ```text
 http://localhost:8080
-```
-
-Credenciais locais:
-
-```text
-Administrador
-usuario: admin
-senha: admin12345
-
-Barbeiro demo
-usuario: barbeiro
-senha: barbeiro123
 ```
 
 Esse modo é apenas para desenvolvimento. Para uso real, use PostgreSQL com Flyway.
@@ -61,10 +55,6 @@ Em seguida execute:
 $env:DB_URL="jdbc:postgresql://localhost:5432/barber"
 $env:DB_USERNAME="barber"
 $env:DB_PASSWORD="barber_dev"
-$env:APP_INITIAL_ADMIN_USERNAME="admin"
-$env:APP_INITIAL_ADMIN_PASSWORD="admin12345"
-$env:APP_INITIAL_ADMIN_NAME="Administrador"
-$env:APP_DEMO_DATA="true"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -87,12 +77,12 @@ Depois configure as variáveis de ambiente conforme `.env.example` e execute `.\
 - `DB_URL`: URL JDBC do PostgreSQL.
 - `DB_USERNAME`: usuário do banco.
 - `DB_PASSWORD`: senha do banco.
-- `APP_INITIAL_ADMIN_USERNAME`: login do primeiro administrador.
-- `APP_INITIAL_ADMIN_PASSWORD`: senha do primeiro administrador.
-- `APP_INITIAL_ADMIN_NAME`: nome exibido para o administrador.
-- `APP_DEMO_DATA`: use `true` para criar dados demonstrativos.
+- `APP_MULTITENANCY_ENABLED`: habilita a plataforma de empresas.
+- `APP_PLATFORM_ADMIN_LOGIN` e `APP_PLATFORM_ADMIN_PASSWORD`: acesso inicial do proprietário da plataforma.
+- `APP_PLATFORM_HOST` e `APP_TENANT_BASE_DOMAIN`: domínios da plataforma e das empresas.
+- `APP_TENANT_ENCRYPTION_KEY`: chave de criptografia das credenciais dos bancos.
 
-O administrador inicial só é criado se o login ainda não existir. A senha não é redefinida em reinicializações.
+O cadastro de uma empresa cria apenas os dados informados, seus horários de funcionamento e um usuário administrador. Não há criação automática de clientes, barbeiros, serviços, planos, caixa ou agendamentos.
 
 ## Executar no IntelliJ
 

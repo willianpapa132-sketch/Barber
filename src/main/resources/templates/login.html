@@ -33,7 +33,8 @@
             <button class="auth-primary" type="submit">Entrar</button>
         </form>
 
-        <p class="auth-switch">Ainda nao tem uma conta? <button type="button" data-auth-view="register">Cadastre-se</button></p>
+        <p th:if="${!platformLogin}" class="auth-switch">Ainda nao tem uma conta? <button type="button" data-auth-view="register">Cadastre-se</button></p>
+        <p th:if="${platformLogin}" class="auth-switch">Acesso exclusivo do administrador da plataforma.</p>
     </section>
 
     <section class="auth-card register-card" id="register-view" hidden>

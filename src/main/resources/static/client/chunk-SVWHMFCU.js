@@ -1,0 +1,1 @@
+import{a}from"./chunk-QGTVJCDX.js";import"./chunk-KJHQFIIK.js";import"./chunk-AWWM2PZW.js";import"./chunk-H75M5QBT.js";import"./chunk-TTEZAIYL.js";import"./chunk-SX5TUAQJ.js";export{a as BarberAgendaPage};

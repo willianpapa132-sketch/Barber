@@ -1,0 +1,38 @@
+<main>
+  <header><div><p class="eyebrow">ADMINISTRAÇÃO DA PLATAFORMA</p><h1>Suas empresas</h1><p>Cadastre barbearias e gerencie o acesso de cada empresa.</p></div><form action="/logout" method="post"><button>Sair da conta</button></form></header>
+  @if(error()){<p class="error" role="alert">{{error()}}</p>}
+  @if(success()){<p class="success" role="status">{{success()}}</p>}
+  <div class="grid">
+    <section class="panel"><h2>Nova empresa</h2><p>Defina o endereço e o acesso inicial do responsável.</p>
+      <form #form="ngForm" (ngSubmit)="form.valid&&criar()"><fieldset [disabled]="loading()||saving()">
+        <label>Nome da empresa<input name="nome" [(ngModel)]="nome" required maxlength="150" placeholder="Barbearia Carlos"></label>
+        <label>Responsável<input name="responsavel" [(ngModel)]="responsavel" required maxlength="150" autocomplete="name"></label>
+        <label>Telefone da empresa<input name="telefone" [(ngModel)]="telefone" type="tel" maxlength="30" autocomplete="tel"></label>
+        <label>Endereço físico<input name="enderecoEmpresa" [(ngModel)]="enderecoEmpresa" maxlength="250" placeholder="Rua, número, bairro e cidade"></label>
+        <label>Identificador do endereço de acesso<input name="slug" [(ngModel)]="slug" required pattern="[a-z][a-z0-9-]{2,39}" minlength="3" maxlength="40" placeholder="carlos" autocomplete="off"></label><small>Use letras minúsculas, números e hífen. Exemplo: carlos.</small>
+        <label>E-mail do administrador<input name="email" [(ngModel)]="adminLogin" required email type="email" maxlength="120" autocomplete="off"></label>
+        <label>Senha inicial<input name="senha" [(ngModel)]="adminPassword" required type="password" minlength="8" maxlength="72" autocomplete="new-password"></label>
+        <h3 class="hours-title">Funcionamento inicial</h3>
+        <div class="hours-scroll"><table><thead><tr><th>Dia</th><th>Aberto</th><th>Abertura</th><th>Fechamento</th><th>Grade (min)</th><th>Permite plano</th></tr></thead><tbody>
+          @for(h of horarios;track h.diaSemana){<tr><th scope="row">{{dias[h.diaSemana]}}</th>
+            <td><input type="checkbox" [name]="'aberto-'+h.diaSemana" [ngModel]="!h.fechado" (ngModelChange)="h.fechado=!$event" [attr.aria-label]="'Abrir '+dias[h.diaSemana]"></td>
+            <td><input type="time" [name]="'inicio-'+h.diaSemana" [(ngModel)]="h.horarioInicio" [disabled]="h.fechado" [required]="!h.fechado" [attr.aria-label]="'Abertura de '+dias[h.diaSemana]"></td>
+            <td><input type="time" [name]="'fim-'+h.diaSemana" [(ngModel)]="h.horarioFim" [disabled]="h.fechado" [required]="!h.fechado" [attr.aria-label]="'Fechamento de '+dias[h.diaSemana]"></td>
+            <td><input type="number" [name]="'grade-'+h.diaSemana" [(ngModel)]="h.intervaloMinimoEntreAgendamentos" required min="1" max="1440" step="1" [attr.aria-label]="'Grade de '+dias[h.diaSemana]"></td>
+            <td><input type="checkbox" [name]="'plano-'+h.diaSemana" [(ngModel)]="h.permiteAgendamentoPlano" [disabled]="h.fechado" [attr.aria-label]="'Permitir plano em '+dias[h.diaSemana]"></td>
+          </tr>}
+        </tbody></table></div>
+        <p>Serão criados apenas os dados da empresa, os horários acima e o administrador informado.</p>
+        <button class="gold" type="submit" [disabled]="form.invalid||saving()||loading()">{{saving()?'Preparando empresa...':'Criar empresa'}}</button>
+      </fieldset></form>
+    </section>
+    <section class="panel companies"><div class="title"><h2>Empresas cadastradas</h2><button (click)="load()" [disabled]="loading()||saving()">Atualizar</button></div>
+      @if(loading()){<p role="status">Carregando empresas...</p>}
+      @else{@for(c of empresas();track c.id){<article><div class="title"><h3>{{c.nome}}</h3><span class="badge" [class.off]="c.estado!=='ATIVA'">{{c.estado}}</span></div><p>{{c.responsavel}}</p>
+          @if(c.estado==='ATIVA'){<a [href]="endereco(c)" target="_blank" rel="noopener noreferrer">{{c.host}} ↗</a>}@else{<small>{{c.host}}</small>}
+          @if(c.estado==='ATIVA'||c.estado==='SUSPENSA'){<button (click)="alterar(c)" [disabled]="saving()">{{c.estado==='ATIVA'?'Suspender acesso':'Reativar acesso'}}</button>}
+          @if(c.estado==='FALHOU'){<p class="error">A preparação não foi concluída. Verifique o PostgreSQL antes de cadastrar novamente com outro endereço.</p>}
+        </article>}@empty{<div class="empty"><h3>Nenhuma empresa cadastrada</h3><p>Crie a primeira empresa pelo formulário ao lado.</p></div>}}
+    </section>
+  </div>
+</main>
