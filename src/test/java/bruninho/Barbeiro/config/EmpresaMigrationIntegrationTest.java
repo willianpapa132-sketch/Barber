@@ -52,6 +52,39 @@ class EmpresaMigrationIntegrationTest {
         }
         assertThat(flyway.migrate().migrationsExecuted).isZero();
     }
+    @Test void v3PreservaDetalhamentoEValidaRegrasDosAntigosScripts() throws Exception {
+        var schema=schema();migration(schema,"","2").migrate();
+        long agendamento;
+        try(var c=connection(schema);var s=c.createStatement()) {
+            var empresa=UUID.randomUUID();empresa(s,empresa,"teste");
+            long usuario=id(s,"insert into usuario(empresa_id,login,senha) values ('"+empresa+"','teste','hash')");
+            long barbeiro=id(s,"insert into barbeiro(empresa_id,usuario_id,nome,telefone,ativo) values ('"+empresa+"',"+usuario+",'Teste','119999999',true)");
+            long servico=id(s,"insert into servico(empresa_id,nome,ativo,duracao_minutos,preco) values ('"+empresa+"','Corte',true,30,10)");
+            agendamento=id(s,"insert into agendamento(empresa_id,barbeiro_id) values ('"+empresa+"',"+barbeiro+")");
+            s.executeUpdate("insert into agendamento_servicos_plano(agendamento_id,ordem,servico_id,nome,duracao_minutos,incluso_no_plano,preco_original,porcentagem_desconto,preco_liquido) values ("+agendamento+",0,"+servico+",'Corte',30,false,10,20,8)");
+        }
+        var flyway=migration(schema,"",null);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+        try(var c=connection(schema);var s=c.createStatement()) {
+            try(var rs=s.executeQuery("select duracao_minutos,preco_original,porcentagem_desconto,preco_liquido from agendamento_servicos_plano where agendamento_id="+agendamento)) {
+                assertThat(rs.next()).isTrue();assertThat(rs.getInt(1)).isEqualTo(30);
+                assertThat(rs.getBigDecimal(2)).isEqualByComparingTo("10");assertThat(rs.getInt(3)).isEqualTo(20);
+                assertThat(rs.getBigDecimal(4)).isEqualByComparingTo("8");
+            }
+            for(var valor:List.of("duracao_minutos=0","preco_original=-1","porcentagem_desconto=101","preco_liquido=-1")) {
+                assertThatThrownBy(()->s.executeUpdate("update agendamento_servicos_plano set "+valor+" where agendamento_id="+agendamento))
+                        .isInstanceOf(SQLException.class).extracting(e->((SQLException)e).getSQLState()).isEqualTo("23514");
+            }
+            assertThatThrownBy(()->s.executeUpdate("update agendamento_servicos_plano set servico_id=9223372036854775807 where agendamento_id="+agendamento))
+                    .isInstanceOf(SQLException.class).extracting(e->((SQLException)e).getSQLState()).isEqualTo("23503");
+            try(var rs=s.executeQuery("select to_regclass('ix_comissao_plano_periodo')")) {
+                rs.next();assertThat(rs.getString(1)).isNotNull();
+            }
+        }
+        assertThat(flyway.migrate().migrationsExecuted).isZero();
+        assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
+    }
+
     @Test void legadoExigeEmpresaExplicitaEPreservaDadosEUuid() throws Exception {
         var schema=schema();migration(schema,"","1").migrate();
         try(var c=connection(schema);var s=c.createStatement()) {

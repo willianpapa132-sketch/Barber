@@ -3,6 +3,8 @@
 O Flyway controla o banco unico a partir de `src/main/resources/db/migration`.
 A V1 cria o esquema operacional original; a V2 adiciona o cadastro central,
 `empresa_id`, indices, unicidade por empresa e validacoes de relacionamentos.
+A V3 consolida as validacoes do detalhamento de servicos dos planos e o indice
+de comissoes que faltavam dos antigos scripts manuais de `docs/sql`, agora removidos.
 As migrations sao aplicadas antes de o Hibernate validar as entidades.
 
 ## Banco novo
@@ -37,7 +39,7 @@ permanece como referencia historica e nao e executada pela aplicacao atual.
 
 ## Proximas alteracoes
 
-Crie V3 e versoes seguintes, atualizando entidades e migrations em conjunto.
+Crie V4 e versoes seguintes, atualizando entidades e migrations em conjunto.
 Nao edite migrations ja aplicadas: o Flyway valida seus checksums.
 
 ## Testes PostgreSQL
