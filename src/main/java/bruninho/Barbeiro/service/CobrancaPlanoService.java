@@ -20,7 +20,7 @@ public class CobrancaPlanoService {
     public LocalDate hoje() { return LocalDate.now(clock); }
     public LocalDateTime agora() { return LocalDateTime.now(clock); }
     public int tolerancia() {
-        return configuracoes.findById(1L).map(c -> c.getDiasToleranciaPagamentoPlano() == null
+        return configuracoes.atual().map(c -> c.getDiasToleranciaPagamentoPlano() == null
                 ? 0 : c.getDiasToleranciaPagamentoPlano()).orElse(0);
     }
     public LocalDate vencimento(PlanoMensalCliente p) {

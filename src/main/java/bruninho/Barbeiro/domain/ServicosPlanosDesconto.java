@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@jakarta.persistence.EntityListeners(bruninho.Barbeiro.platform.EmpresaEntityListener.class)
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.plano_mensal_id in (select p.id from plano_mensal p where p.empresa_id = :empresaId)", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "servicos_planos_desconto"))
 @Table(name = "servicos_planos_desconto")
 @Getter
 @Setter

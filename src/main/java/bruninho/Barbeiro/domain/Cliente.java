@@ -18,12 +18,13 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "cliente"))
 @Table(name = "cliente")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cliente {
+public class Cliente extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

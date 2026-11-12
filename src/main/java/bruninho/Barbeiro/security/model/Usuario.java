@@ -24,12 +24,14 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-public class Usuario implements UserDetails {
+@jakarta.persistence.Table(uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = {"empresa_id", "login"}))
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "usuario"))
+public class Usuario extends bruninho.Barbeiro.platform.EmpresaScopedEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String login;
     @Column(nullable = false)
     private String senha;

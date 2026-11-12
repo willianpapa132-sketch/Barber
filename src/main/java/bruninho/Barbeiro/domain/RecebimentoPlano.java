@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@jakarta.persistence.EntityListeners(bruninho.Barbeiro.platform.EmpresaEntityListener.class)
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.contrato_id in (select p.id from plano_mensal_cliente p where p.empresa_id = :empresaId)", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "recebimento_plano"))
 @Getter @Setter
 @Table(name = "recebimento_plano", uniqueConstraints = @UniqueConstraint(columnNames = {"contrato_id", "vencimento"}))
 public class RecebimentoPlano {

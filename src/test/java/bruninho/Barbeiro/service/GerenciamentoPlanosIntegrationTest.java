@@ -34,7 +34,7 @@ class GerenciamentoPlanosIntegrationTest {
     private final LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
     private String base;
     @BeforeEach void preparar() {
-        var config = configs.findById(1L).orElseThrow(); config.setDiasToleranciaPagamentoPlano(3);
+        var config = configs.atual().orElseThrow(); config.setDiasToleranciaPagamentoPlano(3);
         var usuario = new Usuario(); usuario.setLogin("gestao-cliente"); usuario.setSenha("hash");
         usuario.setRole(ROLE.CLIENTE); usuario.setAtivo(true); usuario = usuarios.save(usuario);
         var cliente = new Cliente(); cliente.setNome("Cliente Plano"); cliente.setTelefone("11999999999");
@@ -86,7 +86,7 @@ class GerenciamentoPlanosIntegrationTest {
         gestao.atualizarBloqueios(); assertTrue(contrato.getPagamentoAtrasado());
         mvc.perform(put("/api/admin/gerenciamento-planos/tolerancia").with(user("admin").roles("ADMIN"))
                 .contentType("application/json").content("{\"dias\":5}")).andExpect(status().isOk());
-        assertEquals(5, configs.findById(1L).orElseThrow().getDiasToleranciaPagamentoPlano());
+        assertEquals(5, configs.atual().orElseThrow().getDiasToleranciaPagamentoPlano());
         assertFalse(contrato.getPagamentoAtrasado());
         assertDoesNotThrow(() -> validacao.validarPagamentoPlano(contrato));
         for (int dias : new int[]{-1, 31}) {

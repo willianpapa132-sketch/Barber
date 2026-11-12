@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
+@jakarta.persistence.EntityListeners(bruninho.Barbeiro.platform.EmpresaEntityListener.class)
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.barbeiro_id in (select p.id from barbeiro p where p.empresa_id = :empresaId)", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "bloqueio_barbeiro"))
 @Table(name = "bloqueio_barbeiro")
 @Getter
 @Setter

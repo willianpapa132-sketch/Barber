@@ -57,7 +57,7 @@ public class AgendaBarbeiroService {
     }
 
     private int antecedenciaConfigurada() {
-        Integer dias = configuracoes.findById(1L)
+        Integer dias = configuracoes.atual()
                 .map(config -> config.getDiasMaximoAntecedentia())
                 .orElse(MAXIMO_ANTECEDENCIA_DIAS);
 

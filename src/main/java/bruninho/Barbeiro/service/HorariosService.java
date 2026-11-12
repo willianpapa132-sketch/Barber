@@ -26,7 +26,7 @@ public class HorariosService {
         this.agendamentos=agendamentos; this.comissoes=comissoes; this.pontos=pontos;
     }
     @Transactional(readOnly=true)
-    public ConfiguracaoResponse consultar() { return resposta(configuracoes.findById(1L).orElseThrow(),0,0); }
+    public ConfiguracaoResponse consultar() { return resposta(configuracoes.atual().orElseThrow(),0,0); }
 
     @Transactional
     public ConfiguracaoResponse salvar(SalvarConfiguracaoRequest r) {

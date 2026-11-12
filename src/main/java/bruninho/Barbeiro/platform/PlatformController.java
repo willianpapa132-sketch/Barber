@@ -6,7 +6,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 @RestController @RequestMapping("/api/plataforma")
-@ConditionalOnProperty(name="app.multi-tenancy.enabled",havingValue="true")
+@ConditionalOnProperty(name="app.multi-tenancy.enabled",havingValue="true",matchIfMissing=true)
 public class PlatformController {
 
     private final PlatformCompanyService service;

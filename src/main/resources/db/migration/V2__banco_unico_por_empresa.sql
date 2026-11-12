@@ -1,0 +1,176 @@
+-- Banco unico. Reaproveita os UUIDs e o cadastro central ja existentes.
+create table if not exists platform_admin (
+    login varchar(120) primary key,
+    senha varchar(255) not null
+);
+create table if not exists platform_empresa (
+    id uuid primary key,
+    nome varchar(150) not null,
+    responsavel varchar(150) not null,
+    slug varchar(40) not null unique,
+    estado varchar(20) not null check (estado in ('CRIANDO','ATIVA','SUSPENSA','FALHOU')),
+    criado_em timestamp with time zone not null default current_timestamp
+);
+
+-- Nao adivinhar a propriedade de dados de uma instalacao antiga.
+-- Para importar um banco legado de UMA empresa, cadastre seu UUID em platform_empresa
+-- e configure LEGACY_EMPRESA_ID explicitamente. Outros bancos exigem ETL com remapeamento de IDs.
+alter table usuario add column empresa_id uuid;
+alter table cliente add column empresa_id uuid;
+alter table barbeiro add column empresa_id uuid;
+alter table servico add column empresa_id uuid;
+alter table agendamento add column empresa_id uuid;
+alter table plano_mensal add column empresa_id uuid;
+alter table plano_mensal_cliente add column empresa_id uuid;
+alter table caixa add column empresa_id uuid;
+alter table horario_funcionamento add column empresa_id uuid;
+alter table configuracao_barbearia add column empresa_id uuid;
+do $$
+declare
+    legacy_id uuid := nullif('${legacyEmpresaId}', '')::uuid;
+    tabela text;
+    tem_dados boolean;
+begin
+    foreach tabela in array array['usuario','cliente','barbeiro','servico','agendamento','plano_mensal','plano_mensal_cliente','caixa','horario_funcionamento','configuracao_barbearia'] loop
+        execute format('select exists(select 1 from %I)', tabela) into tem_dados;
+        if tem_dados then
+            if legacy_id is null or not exists(select 1 from platform_empresa where id=legacy_id) then
+                raise exception 'Dados legados sem empresa em %. Cadastre a empresa e informe LEGACY_EMPRESA_ID; consulte docs/MULTIEMPRESA.md', tabela;
+            end if;
+            execute format('update %I set empresa_id=$1', tabela) using legacy_id;
+        end if;
+    end loop;
+end $$;
+
+alter table platform_empresa drop column if exists db_name;
+alter table platform_empresa drop column if exists db_user;
+alter table platform_empresa drop column if exists db_password;
+alter table usuario alter column empresa_id set not null;
+alter table usuario add constraint fk_usuario_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_usuario_empresa on usuario(empresa_id);
+alter table cliente alter column empresa_id set not null;
+alter table cliente add constraint fk_cliente_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_cliente_empresa on cliente(empresa_id);
+alter table barbeiro alter column empresa_id set not null;
+alter table barbeiro add constraint fk_barbeiro_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_barbeiro_empresa on barbeiro(empresa_id);
+alter table servico alter column empresa_id set not null;
+alter table servico add constraint fk_servico_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_servico_empresa on servico(empresa_id);
+alter table agendamento alter column empresa_id set not null;
+alter table agendamento add constraint fk_agendamento_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_agendamento_empresa on agendamento(empresa_id);
+alter table plano_mensal alter column empresa_id set not null;
+alter table plano_mensal add constraint fk_plano_mensal_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_plano_mensal_empresa on plano_mensal(empresa_id);
+alter table plano_mensal_cliente alter column empresa_id set not null;
+alter table plano_mensal_cliente add constraint fk_plano_mensal_cliente_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_plano_mensal_cliente_empresa on plano_mensal_cliente(empresa_id);
+alter table caixa alter column empresa_id set not null;
+alter table caixa add constraint fk_caixa_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_caixa_empresa on caixa(empresa_id);
+alter table horario_funcionamento alter column empresa_id set not null;
+alter table horario_funcionamento add constraint fk_horario_funcionamento_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_horario_funcionamento_empresa on horario_funcionamento(empresa_id);
+alter table configuracao_barbearia alter column empresa_id set not null;
+alter table configuracao_barbearia add constraint fk_configuracao_barbearia_empresa foreign key (empresa_id) references platform_empresa(id);
+create index ix_configuracao_barbearia_empresa on configuracao_barbearia(empresa_id);
+
+-- Substitui a identidade singleton por IDs globais e unicidade por empresa.
+alter table configuracao_barbearia alter column id add generated by default as identity;
+select setval(pg_get_serial_sequence('configuracao_barbearia','id'), greatest(coalesce((select max(id) from configuracao_barbearia),0)+1,1), false);
+alter table configuracao_barbearia add constraint uk_configuracao_empresa unique(empresa_id);
+-- Os nomes das constraints antigas podem variar em instalacoes criadas pelo Hibernate.
+do $$
+declare c record;
+begin
+    for c in select conname, conrelid::regclass as tabela from pg_constraint
+        where contype='u' and conrelid in ('usuario'::regclass,'horario_funcionamento'::regclass)
+        and array_length(conkey,1)=1
+        and pg_get_constraintdef(oid) in ('UNIQUE (login)','UNIQUE (dia_semana)')
+    loop execute format('alter table %s drop constraint %I',c.tabela,c.conname); end loop;
+end $$;
+alter table usuario add constraint uk_usuario_empresa_login unique(empresa_id,login);
+create unique index uk_usuario_empresa_login_normalizado on usuario(empresa_id,lower(login));
+alter table horario_funcionamento add constraint uk_horario_empresa_dia unique(empresa_id,dia_semana);
+create index ix_agendamento_empresa_data on agendamento(empresa_id,data);
+create index ix_agendamento_empresa_finalizado on agendamento(empresa_id,finalizado_em);
+
+-- A empresa de uma entidade filha deriva de seu pai obrigatorio.
+create function barber_empresa_registro(tabela text, registro bigint) returns uuid
+language plpgsql stable as $$
+declare empresa uuid; pai bigint;
+begin
+    if registro is null then return null; end if;
+    case tabela
+        when 'bloqueio_barbeiro', 'jornada_barbeiro' then
+            execute format('select barbeiro_id from %I where id=$1',tabela) into pai using registro;
+            return barber_empresa_registro('barbeiro',pai);
+        when 'movimento_caixa' then
+            select caixa_id into pai from movimento_caixa where id=registro;
+            return barber_empresa_registro('caixa',pai);
+        when 'recebimento_plano' then
+            select contrato_id into pai from recebimento_plano where id=registro;
+            return barber_empresa_registro('plano_mensal_cliente',pai);
+        when 'servicos_planos_desconto' then
+            select plano_mensal_id into pai from servicos_planos_desconto where id=registro;
+            return barber_empresa_registro('plano_mensal',pai);
+        when 'comissao_plano', 'comissao_barbeiro' then
+            execute format('select agendamento_id from %I where id=$1',tabela) into pai using registro;
+            return barber_empresa_registro('agendamento',pai);
+        else
+            execute format('select empresa_id from %I where id=$1',tabela) into empresa using registro;
+            return empresa;
+    end case;
+end $$;
+
+-- Valida tambem alteracoes apenas nas tabelas de ligacao, fora de callbacks JPA.
+create function barber_validar_vinculos_empresa() returns trigger language plpgsql as $$
+declare
+    dados jsonb := to_jsonb(new);
+    empresa uuid := (dados->>'empresa_id')::uuid;
+    relacionada uuid;
+    indice integer := 0;
+begin
+    if TG_OP='UPDATE' then
+        if dados ? 'empresa_id' and (to_jsonb(old)->>'empresa_id') is distinct from (dados->>'empresa_id') then
+            raise exception 'Nao e permitido transferir registros entre empresas' using errcode='23514';
+        end if;
+        if not (dados ? 'empresa_id') and dados ? 'id' then
+            empresa := barber_empresa_registro(TG_TABLE_NAME,(dados->>'id')::bigint);
+        end if;
+    end if;
+    while indice < TG_NARGS loop
+        relacionada := barber_empresa_registro(TG_ARGV[indice],(dados->>TG_ARGV[indice+1])::bigint);
+        if relacionada is not null then
+            if empresa is null then empresa := relacionada;
+            elsif empresa <> relacionada then
+                raise exception 'Vinculo entre empresas diferentes em %',TG_TABLE_NAME using errcode='23514';
+            end if;
+        end if;
+        indice := indice+2;
+    end loop;
+    return new;
+end $$;
+create trigger trg_usuario_empresa before insert or update on usuario for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_cliente_empresa before insert or update on cliente for each row execute function barber_validar_vinculos_empresa('usuario','usuario_id');
+create trigger trg_barbeiro_empresa before insert or update on barbeiro for each row execute function barber_validar_vinculos_empresa('usuario','usuario_id');
+create trigger trg_servico_empresa before insert or update on servico for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_agendamento_empresa before insert or update on agendamento for each row execute function barber_validar_vinculos_empresa('barbeiro','barbeiro_id','cliente','cliente_id','usuario','criado_por_usuario_id','plano_mensal_cliente','plano_mensal_cliente_id');
+create trigger trg_plano_mensal_empresa before insert or update on plano_mensal for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_plano_mensal_cliente_empresa before insert or update on plano_mensal_cliente for each row execute function barber_validar_vinculos_empresa('cliente','cliente_id','usuario','usuario_id','plano_mensal','plano_mensal_id');
+create trigger trg_caixa_empresa before insert or update on caixa for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_horario_funcionamento_empresa before insert or update on horario_funcionamento for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_configuracao_barbearia_empresa before insert or update on configuracao_barbearia for each row execute function barber_validar_vinculos_empresa();
+create trigger trg_bloqueio_barbeiro_empresa before insert or update on bloqueio_barbeiro for each row execute function barber_validar_vinculos_empresa('barbeiro','barbeiro_id');
+create trigger trg_jornada_barbeiro_empresa before insert or update on jornada_barbeiro for each row execute function barber_validar_vinculos_empresa('barbeiro','barbeiro_id');
+create trigger trg_movimento_caixa_empresa before insert or update on movimento_caixa for each row execute function barber_validar_vinculos_empresa('caixa','caixa_id','agendamento','agendamento_id');
+create trigger trg_recebimento_plano_empresa before insert or update on recebimento_plano for each row execute function barber_validar_vinculos_empresa('plano_mensal_cliente','contrato_id');
+create trigger trg_servicos_planos_desconto_empresa before insert or update on servicos_planos_desconto for each row execute function barber_validar_vinculos_empresa('plano_mensal','plano_mensal_id');
+create trigger trg_comissao_plano_empresa before insert or update on comissao_plano for each row execute function barber_validar_vinculos_empresa('agendamento','agendamento_id','barbeiro','barbeiro_id','plano_mensal','plano_mensal_id','plano_mensal_cliente','plano_mensal_cliente_id');
+create trigger trg_comissao_barbeiro_empresa before insert or update on comissao_barbeiro for each row execute function barber_validar_vinculos_empresa('agendamento','agendamento_id','barbeiro','barbeiro_id');
+create trigger trg_agendamento_servicos_empresa before insert or update on agendamento_servicos for each row execute function barber_validar_vinculos_empresa('agendamento','agendamento_id','servico','servico_id');
+create trigger trg_agendamento_servicos_plano_empresa before insert or update on agendamento_servicos_plano for each row execute function barber_validar_vinculos_empresa('agendamento','agendamento_id','servico','servico_id');
+create trigger trg_plano_servicos_empresa before insert or update on plano_servicos for each row execute function barber_validar_vinculos_empresa('plano_mensal','plano_mensal_id','servico','servico_id');
+create trigger trg_servicos_planos_desconto_servicos_empresa before insert or update on servicos_planos_desconto_servicos for each row execute function barber_validar_vinculos_empresa('servicos_planos_desconto','desconto_id','servico','servico_id');
+alter table comissao_barbeiro alter column agendamento_id set not null;

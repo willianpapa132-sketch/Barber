@@ -14,12 +14,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "agendamento"))
 @Table(name = "agendamento")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Agendamento {
+public class Agendamento extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -50,11 +50,19 @@ public class DataInitializer {
             HorarioFuncionamentoRepository horariosFuncionamento,
             PlanoMensalRepository planosMensais,
             PasswordEncoder passwordEncoder,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            javax.sql.DataSource dataSource
     ) {
         return args -> {
             if (props.getMultiTenancy().isEnabled()) return;
-            transactionTemplate.executeWithoutResult(status -> run(
+            var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+            var empresaId = EmpresaTestExecutionListener.EMPRESA;
+            if (jdbc.queryForObject("select count(*) from platform_empresa where id=?", Long.class, empresaId) == 0)
+                jdbc.update("insert into platform_empresa(id,nome,responsavel,slug,estado,criado_em) values (?, 'Empresa teste', 'Teste', 'teste', 'ATIVA', CURRENT_TIMESTAMP)", empresaId);
+            var anterior = bruninho.Barbeiro.platform.TenantContext.getEmpresaId();
+            try {
+                bruninho.Barbeiro.platform.TenantContext.setEmpresaId(empresaId);
+                transactionTemplate.executeWithoutResult(status -> run(
                         props,
                         usuarios,
                         clientes,
@@ -66,6 +74,10 @@ public class DataInitializer {
                         planosMensais,
                         passwordEncoder
                 ));
+            } finally {
+                bruninho.Barbeiro.platform.TenantContext.clear();
+                if (anterior != null) bruninho.Barbeiro.platform.TenantContext.setEmpresaId(anterior);
+            }
         };
     }
 
@@ -100,7 +112,7 @@ public class DataInitializer {
     }
 
     private void ensureConfig(ConfiguracaoBarbeariaRepository configuracoes) {
-        ConfiguracaoBarbearia config = configuracoes.findById(1L).orElseGet(() -> {
+        ConfiguracaoBarbearia config = configuracoes.atual().orElseGet(() -> {
             ConfiguracaoBarbearia novaConfig = new ConfiguracaoBarbearia();
             novaConfig.setNome("Barber Shop Demo");
             novaConfig.setTelefone("(11) 99999-0000");

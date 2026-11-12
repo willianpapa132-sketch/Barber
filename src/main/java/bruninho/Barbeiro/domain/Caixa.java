@@ -6,9 +6,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "caixa"))
 @Table(name = "caixa")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
-public class Caixa {
+public class Caixa extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false, precision = 12, scale = 2)

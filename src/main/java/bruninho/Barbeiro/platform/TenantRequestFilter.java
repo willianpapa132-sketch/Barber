@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 @Component
-@ConditionalOnProperty(name="app.multi-tenancy.enabled",havingValue="true")
+@ConditionalOnProperty(name="app.multi-tenancy.enabled",havingValue="true",matchIfMissing=true)
 public class TenantRequestFilter extends OncePerRequestFilter {
     private final TenantRegistry registry;private final AppProperties props;
     public TenantRequestFilter(TenantRegistry registry,AppProperties props){this.registry=registry;this.props=props;}
@@ -19,7 +19,7 @@ public class TenantRequestFilter extends OncePerRequestFilter {
         try{
             var p=props.getMultiTenancy();String host=request.getServerName().toLowerCase(Locale.ROOT);String scope;
             boolean platform=host.equals(p.getPlatformHost().toLowerCase(Locale.ROOT));
-            if(platform)scope=TenantContext.PLATFORM;
+            if(platform){TenantContext.setPlatform();scope=TenantContext.PLATFORM;}
             else{
                 String suffix="."+p.getBaseDomain().toLowerCase(Locale.ROOT);
                 if(!host.endsWith(suffix)){reject(response,404,"Empresa nao encontrada");return;}
@@ -28,9 +28,9 @@ public class TenantRequestFilter extends OncePerRequestFilter {
                 var c=registry.find(slug);
                 if(c.isEmpty()){reject(response,404,"Empresa nao encontrada");return;}
                 if(!"ATIVA".equals(c.get().estado())){reject(response,403,"Empresa indisponivel");return;}
+                TenantContext.setEmpresaId(c.get().id());
                 scope=c.get().id().toString();
             }
-            TenantContext.set(scope);
             var session=request.getSession(false);
             if(session!=null){
                 Object bound=session.getAttribute(TenantContext.SESSION_SCOPE);
@@ -40,10 +40,10 @@ public class TenantRequestFilter extends OncePerRequestFilter {
             String path=request.getRequestURI().substring(request.getContextPath().length());
             if(platform){
                 if(path.equals("/")){response.sendRedirect("/plataforma");return;}
-                boolean allowed=path.equals("/login")||path.equals("/logout")||path.equals("/plataforma")||path.startsWith("/api/plataforma/")
+                boolean allowed=path.equals("/login")||path.equals("/logout")||path.equals("/plataforma")||(path.equals("/api/plataforma")||path.startsWith("/api/plataforma/"))
                         ||path.startsWith("/client/")||path.startsWith("/css/")||path.startsWith("/js/")||path.startsWith("/images/")||path.equals("/favicon.ico")||path.equals("/error");
                 if(!allowed){reject(response,404,"Acesse o endereco da sua empresa");return;}
-            }else if(path.equals("/plataforma")||path.startsWith("/api/plataforma/")){reject(response,403,"Acesso exclusivo da plataforma");return;}
+            }else if(path.equals("/plataforma")||(path.equals("/api/plataforma")||path.startsWith("/api/plataforma/"))){reject(response,403,"Acesso exclusivo da plataforma");return;}
             chain.doFilter(request,response);
         }finally{TenantContext.clear();}
     }

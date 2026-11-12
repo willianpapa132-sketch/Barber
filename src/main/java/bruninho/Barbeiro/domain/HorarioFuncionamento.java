@@ -11,19 +11,20 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "horario_funcionamento")
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "horario_funcionamento"))
+@Table(name = "horario_funcionamento", uniqueConstraints = @UniqueConstraint(columnNames = {"empresa_id", "dia_semana"}))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class HorarioFuncionamento {
+public class HorarioFuncionamento extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id ;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private DayOfWeek diaSemana;
 
     @Column(name = "hora_abertura")

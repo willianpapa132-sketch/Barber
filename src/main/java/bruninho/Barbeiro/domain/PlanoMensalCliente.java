@@ -18,12 +18,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "plano_mensal_cliente"))
 @Table(name = "plano_mensal_cliente")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PlanoMensalCliente {
+public class PlanoMensalCliente extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

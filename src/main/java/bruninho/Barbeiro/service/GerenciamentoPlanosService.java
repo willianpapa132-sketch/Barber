@@ -43,7 +43,7 @@ public class GerenciamentoPlanosService {
     @Transactional
     public void tolerancia(int dias) {
         if (dias < 0 || dias > 30) throw erro("A tolerância deve estar entre 0 e 30 dias.");
-        var config = configuracoes.findById(1L).orElseThrow(() -> erro("Configuração da barbearia não encontrada."));
+        var config = configuracoes.atual().orElseThrow(() -> erro("Configuração da barbearia não encontrada."));
         config.setDiasToleranciaPagamentoPlano(dias);
         for (Long id : contratos.idsAtivos()) {
             var p = contratos.bloquearPorId(id).orElseThrow();

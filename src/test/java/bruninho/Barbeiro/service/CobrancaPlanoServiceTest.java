@@ -12,7 +12,7 @@ class CobrancaPlanoServiceTest {
     private CobrancaPlanoService service(String hoje, int dias) {
         var configs = mock(ConfiguracaoBarbeariaRepository.class);
         var config = new ConfiguracaoBarbearia(); config.setDiasToleranciaPagamentoPlano(dias);
-        when(configs.findById(1L)).thenReturn(Optional.of(config));
+        when(configs.atual()).thenReturn(Optional.of(config));
         return new CobrancaPlanoService(configs, Clock.fixed(Instant.parse(hoje + "T12:00:00Z"), ZoneId.of("America/Sao_Paulo")));
     }
     private PlanoMensalCliente contrato(String inicio, String vencimento) {

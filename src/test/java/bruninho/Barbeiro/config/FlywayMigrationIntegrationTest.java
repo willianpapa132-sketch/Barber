@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // Requer PostgreSQL vazio e exclusivo para este teste. Nunca use o banco da aplicacao.
 @EnabledIfEnvironmentVariable(named="MIGRATION_TEST_DB_URL",matches="jdbc:postgresql:.*")
 @SpringBootTest(properties={"spring.flyway.enabled=true","spring.jpa.hibernate.ddl-auto=validate",
-        "app.demo-data=false","app.initial-admin.login=","app.initial-admin.password="})
+        "app.demo-data=false","app.initial-admin.login=","app.initial-admin.password=","app.multi-tenancy.enabled=false"})
 class FlywayMigrationIntegrationTest {
     @DynamicPropertySource
     static void banco(DynamicPropertyRegistry r) {
@@ -37,9 +37,11 @@ class FlywayMigrationIntegrationTest {
         try(var connection=dataSource.getConnection();var statement=connection.createStatement();var result=statement.executeQuery("select count(*) from usuario")){
             assertThat(result.next()).isTrue();assertThat(result.getInt(1)).isZero();
         }
+        var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        jdbc.update("insert into platform_empresa(id,nome,responsavel,slug,estado) values (?, 'Teste', 'Teste', 'teste', 'ATIVA')", EmpresaTestExecutionListener.EMPRESA);
         var c=new bruninho.Barbeiro.domain.ConfiguracaoBarbearia();c.setNome("Empresa teste de migration");configuracoes.saveAndFlush(c);
         assertThat(flyway.migrate().migrationsExecuted).isZero();
-        assertThat(configuracoes.findById(1L).orElseThrow().getNome()).isEqualTo("Empresa teste de migration");
+        assertThat(configuracoes.atual().orElseThrow().getNome()).isEqualTo("Empresa teste de migration");
         try(var connection=dataSource.getConnection();var statement=connection.createStatement();
             var result=statement.executeQuery("select count(*) from flyway_schema_history where success=true")) {
             assertThat(result.next()).isTrue();assertThat(result.getInt(1)).isGreaterThan(0);

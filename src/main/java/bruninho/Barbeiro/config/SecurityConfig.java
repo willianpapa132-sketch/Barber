@@ -58,12 +58,12 @@ public class SecurityConfig {
     UserDetailsService userDetailsService(UsuarioRepository usuarios, AppProperties props, ObjectProvider<TenantRegistry> registry) {
         return login -> {
             if(props.getMultiTenancy().isEnabled()) {
-                if(TenantContext.PLATFORM.equals(TenantContext.get())) {
+                if(TenantContext.isPlatform()) {
                     var passwords=registry.getObject().central().query("select senha from platform_admin where login=?",(rs,n)->rs.getString(1),login.trim().toLowerCase(java.util.Locale.ROOT));
                     if(passwords.isEmpty())throw new UsernameNotFoundException("Usuario nao encontrado");
                     return org.springframework.security.core.userdetails.User.withUsername(login).password(passwords.getFirst()).roles("PLATFORM_ADMIN").build();
                 }
-                if(TenantContext.get()==null)throw new UsernameNotFoundException("Empresa nao identificada");
+                if(TenantContext.getEmpresaId()==null)throw new UsernameNotFoundException("Empresa nao identificada");
             }
             return usuarios.findByLogin(login).orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
         };
@@ -80,7 +80,7 @@ public class SecurityConfig {
             boolean barbeiro = authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + ROLE.BARBEIRO.name()));
             boolean platform=authentication.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
-            if(props.getMultiTenancy().isEnabled())request.getSession().setAttribute(TenantContext.SESSION_SCOPE,TenantContext.get());
+            if(props.getMultiTenancy().isEnabled())request.getSession().setAttribute(TenantContext.SESSION_SCOPE,TenantContext.sessionScope());
             String redirectUrl = platform ? "/plataforma" : barbeiro ? "/barbeiro/home" : "/";
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/json");

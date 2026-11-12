@@ -69,7 +69,7 @@ class AgendamentoIntegrationTest {
         servicos.deleteAll();
         usuarios.deleteAll();
         usuarios.flush();
-        var config = configuracoes.findById(1L).orElseThrow();
+        var config = configuracoes.atual().orElseThrow();
         config.setDiasMaximoAntecedentia(10);
         configuracoes.save(config);
         usuario = novoUsuario("cliente", ROLE.CLIENTE);
@@ -300,7 +300,7 @@ class AgendamentoIntegrationTest {
         assertThat(disponibilidade.horariosDiaDisponivel(usuario.getId(), cliente.getId(), barbeiro.getId(),
                 LocalDate.now().plusDays(11), ids())).isEmpty();
         assertThatThrownBy(() -> service.agendar(request(LocalTime.of(10, 1)))).hasMessageContaining("indisponível");
-        var config = configuracoes.findById(1L).orElseThrow();
+        var config = configuracoes.atual().orElseThrow();
         config.setDiasMaximoAntecedentia(0);
         configuracoes.save(config);
         assertThat(horas()).isEmpty();
@@ -321,11 +321,12 @@ class AgendamentoIntegrationTest {
             Callable<Integer> criar = () -> {
                 inicio.await(5, TimeUnit.SECONDS);
                 try {
+                    bruninho.Barbeiro.platform.TenantContext.setEmpresaId(bruninho.Barbeiro.config.EmpresaTestExecutionListener.EMPRESA);
                     service.agendar(request(LocalTime.of(10, 0)));
                     return 201;
                 } catch (HorarioIndisponivelException e) {
                     return 409;
-                }
+                } finally { bruninho.Barbeiro.platform.TenantContext.clear(); }
             };
             var primeira = executor.submit(criar);
             var segunda = executor.submit(criar);

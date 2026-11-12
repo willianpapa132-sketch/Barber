@@ -10,12 +10,13 @@ import lombok.Setter;
 
 
 @Entity
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "barbeiro"))
 @Table(name = "barbeiro")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Barbeiro {
+public class Barbeiro extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

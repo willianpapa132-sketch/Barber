@@ -10,6 +10,8 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
+@jakarta.persistence.EntityListeners(bruninho.Barbeiro.platform.EmpresaEntityListener.class)
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.barbeiro_id in (select p.id from barbeiro p where p.empresa_id = :empresaId)", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "jornada_barbeiro"))
 @Table(name = "jornada_barbeiro", uniqueConstraints = @UniqueConstraint(name = "uk_jornada_barbeiro_dia", columnNames = {"barbeiro_id", "dia_semana"}))
 @Getter
 @Setter

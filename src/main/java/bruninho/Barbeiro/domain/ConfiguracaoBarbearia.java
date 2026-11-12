@@ -12,13 +12,15 @@ import lombok.Setter;
 
 
 @Entity
-@Table(name = "configuracao_barbearia")
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.empresa_id = :empresaId", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "configuracao_barbearia"))
+@Table(name = "configuracao_barbearia", uniqueConstraints = @jakarta.persistence.UniqueConstraint(columnNames = "empresa_id"))
 @Getter
 @Setter
-public class ConfiguracaoBarbearia {
+public class ConfiguracaoBarbearia extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
 
     @Id
-    private Long id = 1L;
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    private Long id;
     @Column(nullable = false)
     private String nome = "Barbearia Bruninho";
     private String telefone;

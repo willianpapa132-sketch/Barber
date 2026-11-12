@@ -95,10 +95,10 @@ class ConfiguracaoIntegrationTest {
         service.salvar(request(false,"10:00","16:00",false)); bootstrap.run();
         var h=horarios.findByDiaSemana(dia.getDayOfWeek());
         assertThat(h.getHoraAbertura()).isEqualTo(LocalTime.of(10,0)); assertThat(h.getHoraFechamento()).isEqualTo(LocalTime.of(16,0));
-        assertThat(h.getPermiteAgendamentoPlano()).isFalse(); assertThat(configuracoes.findById(1L).orElseThrow().getNome()).isEqualTo("Minha Barbearia");
+        assertThat(h.getPermiteAgendamentoPlano()).isFalse(); assertThat(configuracoes.atual().orElseThrow().getNome()).isEqualTo("Minha Barbearia");
     }
     @Test void antecedenciaGlobalLimitaClientesComPlano() {
-        var config=configuracoes.findById(1L).orElseThrow();config.setDiasMaximoAntecedentia(2);
+        var config=configuracoes.atual().orElseThrow();config.setDiasMaximoAntecedentia(2);
         var s=new Servico();s.setNome("Corte");s.setDuracaoMinutos(30);s.setPreco(new BigDecimal("50"));s=servicos.save(s);
         assertThat(disponibilidade.horariosDisponiveis(contrato.getUsuario(),barbeiro.getId(),LocalDate.now().plusDays(2),Set.of(s))).isEmpty();
         config.setDiasMaximoAntecedentia(0);
@@ -118,9 +118,9 @@ class ConfiguracaoIntegrationTest {
     @Test @Transactional(propagation=Propagation.NOT_SUPPORTED) @DirtiesContext(methodMode=DirtiesContext.MethodMode.AFTER_METHOD)
     void pagamentoImpedeCancelamentoERollbackPreservaTodaConfiguracao() {
         var a=agendamento(barbeiro,dia,10,StatusAgendamento.AGENDADO);a.setPagamentoRecebido(true);agendamentos.saveAndFlush(a);
-        var nome=configuracoes.findById(1L).orElseThrow().getNome();
+        var nome=configuracoes.atual().orElseThrow().getNome();
         assertThatThrownBy(()->service.salvar(request(true,"09:00","18:00",false))).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
-        assertThat(configuracoes.findById(1L).orElseThrow().getNome()).isEqualTo(nome);
+        assertThat(configuracoes.atual().orElseThrow().getNome()).isEqualTo(nome);
         assertThat(horarios.findByDiaSemana(dia.getDayOfWeek()).getFechado()).isFalse();
         assertThat(jornadas.findByDiaSemanaAndBarbeiro_id(dia.getDayOfWeek(),barbeiro.getId()).orElseThrow().getFolga()).isFalse();
         assertThat(agendamentos.findById(a.getId()).orElseThrow().getStatus()).isEqualTo(StatusAgendamento.AGENDADO);

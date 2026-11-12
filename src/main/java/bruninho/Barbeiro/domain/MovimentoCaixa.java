@@ -5,7 +5,9 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity @Table(name = "movimento_caixa")
+@Entity
+@jakarta.persistence.EntityListeners(bruninho.Barbeiro.platform.EmpresaEntityListener.class)
+@org.hibernate.annotations.Filter(name = "empresa", condition = "{e}.caixa_id in (select p.id from caixa p where p.empresa_id = :empresaId)", deduceAliasInjectionPoints = false, aliases = @org.hibernate.annotations.SqlFragmentAlias(alias = "e", table = "movimento_caixa")) @Table(name = "movimento_caixa")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class MovimentoCaixa {
 

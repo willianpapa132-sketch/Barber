@@ -1,6 +1,6 @@
 # Sistema de Barbearia
 
-Para cadastrar empresas com bancos separados e usar o painel do proprietário,
+Para cadastrar empresas no banco compartilhado e usar o painel do proprietário,
 consulte [Plataforma multiempresa](docs/MULTIEMPRESA.md).
 
 O PostgreSQL agora usa migrations com Flyway. Para iniciar com um banco vazio e
@@ -19,19 +19,19 @@ A documentação técnica fica em [docs/DOCUMENTACAO_TECNICA.md](docs/DOCUMENTAC
 
 ## Subir para teste local sem PostgreSQL
 
-O perfil `dev` cria apenas o esquema H2 local em `./data/barbearia-dev`, sem dados ou usuários automáticos. Para criar empresas pelo painel da plataforma, use PostgreSQL conforme o guia multiempresa.
+O perfil `dev` usa H2 em `./data/barbearia-dev`, com o mesmo isolamento por
+empresa. Informe as credenciais iniciais da plataforma antes de iniciar:
 
 ```powershell
+$env:APP_PLATFORM_ADMIN_LOGIN='dono@plataforma.local'
+$env:APP_PLATFORM_ADMIN_PASSWORD='Senha-local-de-teste-12345'
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-Depois acesse:
-
-```text
-http://localhost:8080
-```
-
-Esse modo é apenas para desenvolvimento. Para uso real, use PostgreSQL com Flyway.
+Acesse `http://localhost:8080/plataforma`, cadastre uma empresa e abra seu
+subdominio, por exemplo `http://bruninho.localhost:8080`.
+Para uso real, use PostgreSQL com Flyway. Bancos H2 antigos sem `empresa_id`
+nao sao consolidados pelo perfil de desenvolvimento.
 
 ## Subir com PostgreSQL via Docker
 
@@ -77,10 +77,9 @@ Depois configure as variáveis de ambiente conforme `.env.example` e execute `.\
 - `DB_URL`: URL JDBC do PostgreSQL.
 - `DB_USERNAME`: usuário do banco.
 - `DB_PASSWORD`: senha do banco.
-- `APP_MULTITENANCY_ENABLED`: habilita a plataforma de empresas.
+- `APP_MULTITENANCY_ENABLED`: habilita a resolucao por host (padrao `true`; desativar nao concede acesso a dados sem contexto).
 - `APP_PLATFORM_ADMIN_LOGIN` e `APP_PLATFORM_ADMIN_PASSWORD`: acesso inicial do proprietário da plataforma.
 - `APP_PLATFORM_HOST` e `APP_TENANT_BASE_DOMAIN`: domínios da plataforma e das empresas.
-- `APP_TENANT_ENCRYPTION_KEY`: chave de criptografia das credenciais dos bancos.
 
 O cadastro de uma empresa cria apenas os dados informados, seus horários de funcionamento e um usuário administrador. Não há criação automática de clientes, barbeiros, serviços, planos, caixa ou agendamentos.
 
@@ -92,7 +91,7 @@ Abra o projeto como Maven, configure Java 21 e use a classe principal:
 bruninho.Barbeiro.BarbeiroApplication
 ```
 
-Para teste local, adicione o profile `dev`. Para PostgreSQL, use as mesmas variáveis de ambiente da seção anterior.
+Para testar cadastro e acesso por subdominio local, siga o guia multiempresa. Para PostgreSQL, use as mesmas variáveis de ambiente da seção anterior.
 
 ## Rotas principais
 

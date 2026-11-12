@@ -48,7 +48,7 @@ public class HomeController {
 
     @org.springframework.web.bind.annotation.ModelAttribute("platformLogin")
     public boolean platformLogin(){
-        return bruninho.Barbeiro.platform.TenantContext.PLATFORM.equals(bruninho.Barbeiro.platform.TenantContext.get());
+        return bruninho.Barbeiro.platform.TenantContext.isPlatform();
     }
 
     private boolean usuarioAutenticado(Authentication authentication) {
