@@ -12,6 +12,7 @@ import java.util.UUID;
 @FilterDef(name = "empresa", autoEnabled = true, applyToLoadByKey = true,
         parameters = @ParamDef(name = "empresaId", type = UUID.class, resolver = EmpresaIdSupplier.class))
 public abstract class EmpresaScopedEntity {
+
     @Column(name = "empresa_id", nullable = false, updatable = false)
     private UUID empresaId;
 

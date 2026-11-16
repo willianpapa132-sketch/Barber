@@ -19,6 +19,7 @@ export const routes: Routes = [
   { path: 'admin/financeiro', loadComponent: () => import('./admin/financeiro.page').then(m => m.AdminFinanceiroPage), title: 'Financeiro' },
   { path: 'admin/caixa', loadComponent: () => import('./admin/caixa.page').then(m => m.AdminCaixaPage), title: 'Caixa' },
   { path: 'admin/cadastros/planos-mensais', loadComponent: () => import('./admin/planos-mensais.page').then(m => m.AdminPlanosMensaisPage), title: 'Planos Mensais' },
+  { path: 'admin/cadastros/produtos', loadComponent: () => import('./admin/produtos.page').then(m => m.AdminProdutosPage), title: 'Produtos' },
   { path: 'admin/cadastros/servicos', loadComponent: () => import('./admin/servicos.page').then(m => m.AdminServicosPage), title: 'Servi\u00e7os' },
   { path: 'admin/cadastros/barbeiros', loadComponent: () => import('./admin/barbeiros.page').then(m => m.AdminBarbeirosPage), title: 'Cadastro de Barbeiros' },
   { path: 'admin/cadastros', loadComponent: () => import('./admin/cadastros.page').then(m => m.AdminCadastrosPage), title: 'Cadastros' },

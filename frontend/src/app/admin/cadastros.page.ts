@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
 })
 export class AdminCadastrosPage {
   readonly cadastros = [
+    { icon: 'produto', titulo: 'Produtos', descricao: 'Cadastre produtos com preço, periodicidade em meses e quantidade em estoque.' },
     { icon: 'barbeiro', titulo: 'Barbeiro e Jornada da Semana', descricao: 'Cadastre os barbeiros, defina suas jornadas de trabalho na semana e configure o horário de almoço.' },
     { icon: 'servico', titulo: 'Serviços', descricao: 'Cadastre e gerencie os serviços disponíveis na barbearia, com preços, duração e informações.' },
     { icon: 'plano', titulo: 'Planos Mensais', descricao: 'Cadastre e gerencie os planos mensais da barbearia, com valores, benefícios e regras de utilização.' }
