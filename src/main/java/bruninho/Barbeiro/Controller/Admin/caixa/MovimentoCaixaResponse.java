@@ -5,9 +5,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record MovimentoCaixaResponse(Long id, String tipo, BigDecimal valor,
-                                    LocalDateTime criadoEm, String observacao, Long agendamentoId) {
+                                    LocalDateTime criadoEm, String observacao, Long agendamentoId, Long comandaId, java.util.List<bruninho.Barbeiro.domain.PagamentoComanda> pagamentos) {
     public static MovimentoCaixaResponse de(MovimentoCaixa m) {
         return new MovimentoCaixaResponse(m.getId(), m.getTipo().name(), m.getValor(), m.getCriadoEm(),
-                m.getObservacao(), m.getAgendamento() == null ? null : m.getAgendamento().getId());
+                m.getObservacao(), m.getAgendamento() == null ? null : m.getAgendamento().getId(), m.getComanda()==null?null:m.getComanda().getId(),m.getComanda()==null?java.util.List.of():java.util.List.copyOf(m.getComanda().getPagamentos()));
     }
 }

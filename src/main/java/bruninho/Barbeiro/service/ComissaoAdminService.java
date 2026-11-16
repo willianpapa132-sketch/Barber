@@ -12,10 +12,10 @@ import java.time.LocalDate;
 @Service
 public class ComissaoAdminService {
     private final BarbeiroRepository barbeiros;
-    private final AgendamentoRepository agendamentos;
+    private final ComandaRepository agendamentos;
     private final ComissaoPlanoRepository pontos;
     private final ComissaoBarbeiroRepository comissoes;
-    public ComissaoAdminService(BarbeiroRepository barbeiros, AgendamentoRepository agendamentos,
+    public ComissaoAdminService(BarbeiroRepository barbeiros, ComandaRepository agendamentos,
             ComissaoPlanoRepository pontos, ComissaoBarbeiroRepository comissoes) {
         this.barbeiros = barbeiros; this.agendamentos = agendamentos; this.pontos = pontos; this.comissoes = comissoes;
     }

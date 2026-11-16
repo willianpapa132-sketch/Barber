@@ -65,7 +65,7 @@ public class GerenciamentoPlanosService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A cobrança já foi alterada. Atualize a tela.");
         if (data == null || data.isAfter(cobranca.hoje()) || data.isBefore(p.getCriadoEm().toLocalDate()))
             throw erro("Informe uma data de pagamento entre a contratação e hoje.");
-        if (forma == null || forma == FormaPagamento.MENSAL) throw erro("Informe a forma de pagamento da mensalidade.");
+        if (forma == null || forma == FormaPagamento.MENSAL || forma == FormaPagamento.LEGADO) throw erro("Informe a forma de pagamento da mensalidade.");
         if (p.getValorMensal() == null || p.getValorMensal().signum() <= 0) throw erro("Contrato sem valor mensal válido.");
         var r = new RecebimentoPlano(); r.setContrato(p); r.setVencimento(vencimento); r.setDataPagamento(data);
         r.setFormaPagamento(forma); r.setValor(p.getValorMensal()); r.setReferencia(referencia);

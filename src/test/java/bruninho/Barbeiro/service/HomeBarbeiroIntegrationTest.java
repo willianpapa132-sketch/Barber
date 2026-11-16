@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class HomeBarbeiroIntegrationTest {
+    @Autowired bruninho.Barbeiro.repository.ComandaRepository comandas;
     @Autowired MockMvc mvc;
     @Autowired UsuarioRepository usuarios;
     @Autowired BarbeiroRepository barbeiros;
@@ -120,6 +121,8 @@ class HomeBarbeiroIntegrationTest {
         novo.setNomeCliente("Cliente avulso");
         novo.setNomeServicoPlano("Corte");
         novo.setStatus(status);
-        return agendamentos.save(novo);
+        var salvo=agendamentos.save(novo);
+        if(status==StatusAgendamento.CONCLUIDO)bruninho.Barbeiro.config.ComandaTestFixtures.criar(salvo,java.math.BigDecimal.ZERO,java.math.BigDecimal.ZERO,0,comandas);
+        return salvo;
     }
 }

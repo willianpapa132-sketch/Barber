@@ -12,13 +12,13 @@
   } @else {
     <section class="panel history" aria-label="Movimentações do caixa">
       <table>
-        <thead><tr><th scope="col">Número</th><th scope="col">Data e hora</th><th scope="col">Tipo</th><th scope="col">Valor</th><th scope="col">Atendimento</th><th scope="col">Observação</th></tr></thead>
+        <thead><tr><th scope="col">Número</th><th scope="col">Data e hora</th><th scope="col">Tipo</th><th scope="col">Valor</th><th scope="col">Comanda / pagamentos</th><th scope="col">Observação</th></tr></thead>
         <tbody>
           @for (m of movimentos(); track m.id) {
             <tr><th scope="row">#{{m.id}}</th><td>{{m.criadoEm | date:'dd/MM/yyyy HH:mm'}}</td>
               <td><span class="badge" [class.closed]="m.tipo === 'SANGRIA'">{{m.tipo === 'ENTRADA' ? 'Entrada' : 'Sangria'}}</span></td>
               <td [class.positive]="m.tipo === 'ENTRADA'" [class.negative]="m.tipo === 'SANGRIA'">{{m.tipo === 'ENTRADA' ? '+' : '−'}} {{m.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</td>
-              <td>{{m.agendamentoId ? '#' + m.agendamentoId : '—'}}</td><td class="movement-note">{{m.observacao || '—'}}</td></tr>
+              <td>@if(m.comandaId){<a [routerLink]="['/admin/agendamentos',m.agendamentoId,'comanda']">Comanda #{{m.comandaId}}</a>@for(p of m.pagamentos;track $index){<small>{{p.forma}} · {{p.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</small>}}@else{—}</td><td class="movement-note">{{m.observacao || '—'}}</td></tr>
           }
         </tbody>
       </table>

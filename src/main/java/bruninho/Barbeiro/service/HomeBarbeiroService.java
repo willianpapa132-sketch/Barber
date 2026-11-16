@@ -17,8 +17,11 @@ import java.time.LocalDateTime;
 public class HomeBarbeiroService {
     private final BarbeiroRepository barbeiros;
     private final AgendamentoRepository agendamentos;
+    private final bruninho.Barbeiro.repository.ComandaRepository comandas;
+    private final java.time.Clock clock;
 
-    public HomeBarbeiroService(BarbeiroRepository barbeiros, AgendamentoRepository agendamentos) {
+    public HomeBarbeiroService(BarbeiroRepository barbeiros, AgendamentoRepository agendamentos, bruninho.Barbeiro.repository.ComandaRepository comandas,bruninho.Barbeiro.config.AppProperties props) {
+        this.comandas=comandas;this.clock=java.time.Clock.system(java.time.ZoneId.of(props.getZone()));
         this.barbeiros = barbeiros;
         this.agendamentos = agendamentos;
     }
@@ -27,7 +30,7 @@ public class HomeBarbeiroService {
     public BarbeiroHomeResponse homeDoBarbeiro(String login) {
         var barbeiro = barbeiros.findByUsuario_Login(login)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barbeiro nao encontrado"));
-        var agora = LocalDateTime.now();
+        var agora = LocalDateTime.now(clock);
         var hoje = agora.toLocalDate();
         var proximos = agendamentos.findProximosDoBarbeiroNoDia(
                         barbeiro.getId(), hoje, agora.toLocalTime(), StatusAgendamento.AGENDADO,
@@ -38,7 +41,7 @@ public class HomeBarbeiroService {
                 new BarbeiroHomeResponse.BarbeiroResumo(barbeiro.getId(), barbeiro.getNome(), barbeiro.getImgurl()),
                 hoje,
                 agendamentos.countByBarbeiro_IdAndData(barbeiro.getId(), hoje),
-                agendamentos.countByBarbeiro_IdAndDataAndStatus(barbeiro.getId(), hoje, StatusAgendamento.CONCLUIDO),
+                comandas.contarFechadas(barbeiro.getId(),hoje),
                 agendamentos.countByBarbeiro_IdAndDataAndStatus(barbeiro.getId(), hoje, StatusAgendamento.CANCELADO),
                 proximos
         );

@@ -63,7 +63,7 @@ class EmpresaMigrationIntegrationTest {
             agendamento=id(s,"insert into agendamento(empresa_id,barbeiro_id) values ('"+empresa+"',"+barbeiro+")");
             s.executeUpdate("insert into agendamento_servicos_plano(agendamento_id,ordem,servico_id,nome,duracao_minutos,incluso_no_plano,preco_original,porcentagem_desconto,preco_liquido) values ("+agendamento+",0,"+servico+",'Corte',30,false,10,20,8)");
         }
-        var flyway=migration(schema,"",null);
+        var flyway=migration(schema,"","3");
         assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
         try(var c=connection(schema);var s=c.createStatement()) {
             try(var rs=s.executeQuery("select duracao_minutos,preco_original,porcentagem_desconto,preco_liquido from agendamento_servicos_plano where agendamento_id="+agendamento)) {
@@ -82,6 +82,31 @@ class EmpresaMigrationIntegrationTest {
             }
         }
         assertThat(flyway.migrate().migrationsExecuted).isZero();
+        assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
+    }
+
+    @Test void v5ImportaFechamentosAntigosSemRecalcularReceitaOuDuplicarCaixa() throws Exception {
+        var schema=schema();migration(schema,"","4").migrate();
+        try(var c=connection(schema);var s=c.createStatement()) {
+            var empresa=UUID.randomUUID();empresa(s,empresa,"historico");
+            long usuario=id(s,"insert into usuario(empresa_id,login,senha) values ('"+empresa+"','barbeiro','hash')");
+            long barbeiro=id(s,"insert into barbeiro(empresa_id,usuario_id,nome,telefone,ativo) values ('"+empresa+"',"+usuario+",'Bruno','119999999',true)");
+            long a=id(s,"insert into agendamento(empresa_id,barbeiro_id,nome_cliente,data,finalizado_em,status,pagamento_recebido,preco_total,forma_pagamento,duracao_servico_minutos) values ('"+empresa+"',"+barbeiro+",'Carlos','2026-01-09','2026-01-10 12:00','CONCLUIDO',true,80,'PIX',30)");
+            s.executeUpdate("insert into comissao_barbeiro(agendamento_id,barbeiro_id,valor_comissao,tipo) values ("+a+","+barbeiro+",32,'PADRAO_BARBEIRO')");
+            long caixa=id(s,"insert into caixa(empresa_id,saldo_inicial,total_entradas,total_sangrias,saldo_final,aberto_em,status) values ('"+empresa+"',0,80,0,0,'2026-01-10','ABERTO')");
+            s.executeUpdate("insert into movimento_caixa(caixa_id,agendamento_id,tipo,valor,criado_em) values ("+caixa+","+a+",'ENTRADA',80,'2026-01-10 12:00')");
+        }
+        var flyway=migration(schema,"",null);assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+        try(var c=connection(schema);var s=c.createStatement()) {
+            try(var rs=s.executeQuery("select c.total,c.total_comissao,c.fechado_em,c.legado,cb.comanda_id,m.comanda_id from comanda c join comissao_barbeiro cb on cb.comanda_id=c.id join movimento_caixa m on m.comanda_id=c.id")) {
+                assertThat(rs.next()).isTrue();assertThat(rs.getBigDecimal(1)).isEqualByComparingTo("80");assertThat(rs.getBigDecimal(2)).isEqualByComparingTo("32");
+                assertThat(rs.getTimestamp(3).toLocalDateTime()).isEqualTo(java.time.LocalDateTime.of(2026,1,10,12,0));assertThat(rs.getBoolean(4)).isTrue();
+            }
+            try(var rs=s.executeQuery("select count(*),sum(valor) from movimento_caixa")){rs.next();assertThat(rs.getInt(1)).isEqualTo(1);assertThat(rs.getBigDecimal(2)).isEqualByComparingTo("80");}
+            try(var rs=s.executeQuery("select sum(valor) from comanda_pagamento")){rs.next();assertThat(rs.getBigDecimal(1)).isEqualByComparingTo("80");}
+            assertThatThrownBy(()->s.executeUpdate("update comanda set total=81,subtotal=81"))
+                .isInstanceOf(SQLException.class).extracting(e->((SQLException)e).getSQLState()).isEqualTo("23514");
+        }
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
     }
 

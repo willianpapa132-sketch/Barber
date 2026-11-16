@@ -37,7 +37,8 @@
           <article [class]="'timeline-event outside-event ' + item.status">
             <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
             <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
-            @if (item.status === 'AGENDADO' && adminBarbeiroId === null) { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+      @if(item.status==='AGENDADO'&&adminBarbeiroId===null){<div class="appointment-status-actions"><button type="button" [disabled]="saving()" (click)="alterarStatus(item.id,'cancelar')">Cancelar</button><button type="button" [disabled]="saving()" (click)="alterarStatus(item.id,'nao-compareceu')">Não compareceu</button></div>}
+            @if ((item.status === 'AGENDADO' || item.status === 'CONCLUIDO') && adminBarbeiroId !== null) { <a class="appointment-open" [routerLink]="['/admin/agendamentos', item.id, 'comanda']" [attr.aria-label]="'Abrir comanda de ' + item.nomeCliente">›</a> }
           </article>
         }
       </section>
@@ -98,7 +99,8 @@
     @if (event.item; as item) {
       <div class="event-description"><time>{{ hhmm(item.horaInicio) }} – {{ hhmm(item.horaFinalizacao) }} ({{ item.duracaoMinutos }} min)</time><strong>{{ item.nomeCliente || 'Cliente' }}</strong><small>{{ item.servicos.join(' + ') }}</small></div>
       <span [class]="'status ' + item.status">{{ statusNames[item.status] }}</span>
-      @if (item.status === 'AGENDADO' && adminBarbeiroId === null) { <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente">›</a> }
+      @if(item.status==='AGENDADO'&&adminBarbeiroId===null){<div class="appointment-status-actions"><button type="button" [disabled]="saving()" (click)="alterarStatus(item.id,'cancelar')">Cancelar</button><button type="button" [disabled]="saving()" (click)="alterarStatus(item.id,'nao-compareceu')">Não compareceu</button></div>}
+      @if ((item.status === 'AGENDADO' || item.status === 'CONCLUIDO') && adminBarbeiroId !== null) { <a class="appointment-open" [routerLink]="['/admin/agendamentos', item.id, 'comanda']" [attr.aria-label]="'Abrir comanda de ' + item.nomeCliente">›</a> }
     } @else {
       <div class="event-description"><time>{{ hhmm(event.period.inicio || grade()?.inicio || '') }} – {{ hhmm(event.period.fim || grade()?.fim || '') }}</time><strong>{{ event.period.descricao }}</strong></div>
       @if (event.period.tipo === 'BLOQUEIO' && event.period.id) { <button class="remove-block" [disabled]="saving()" (click)="removeBlock(event.period.id)" [attr.aria-label]="'Remover bloqueio das ' + hhmm(event.period.inicio)">Remover</button> }

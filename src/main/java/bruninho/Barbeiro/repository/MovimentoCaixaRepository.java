@@ -4,6 +4,7 @@ import bruninho.Barbeiro.domain.MovimentoCaixa;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MovimentoCaixaRepository extends JpaRepository<MovimentoCaixa, Long> {
+    boolean existsByComanda_Id(Long comandaId);
     boolean existsByAgendamento_Id(Long agendamentoId);
     java.util.List<MovimentoCaixa> findByCaixa_IdOrderByCriadoEmDescIdDesc(Long caixaId);
 }

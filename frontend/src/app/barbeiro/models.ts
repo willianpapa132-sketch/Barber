@@ -15,11 +15,3 @@ export interface Grade {
 export interface Service { id: number; nome: string; preco: number; duracaoMinutos: number; inclusoNoPlano: boolean; porcentagemDesconto: number; precoLiquido: number }
 export interface Customer { id: number; nome: string; telefone: string }
 export interface CustomerServices { possuiPlano: boolean; nomePlano: string; servicos: Service[] }
-export interface Finish {
-  id: number; nomeCliente: string; data: string; horaInicio: string; horaTermino: string;
-  duracaoMinutos: number; status: string; atendimentoMensal: boolean; servicos: Service[];
-  valorTotalServicos: number; valorCobrar: number; formaPagamento: string | null;
-  formasPagamentoDisponiveis: string[]; podeFinalizar: boolean; motivoBloqueio: string;
-  comissao: { percentualAplicado: number; valorBase: number; valorComissao: number } | null;
-  comissaoPlano: { nomePlano: string; pontos: number } | null;
-}

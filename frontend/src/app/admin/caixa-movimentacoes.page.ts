@@ -7,7 +7,7 @@ import { AdminLayout } from './layout';
 registerLocaleData(pt);
 interface Movimento {
   id: number; tipo: 'ENTRADA' | 'SANGRIA'; valor: number;
-  criadoEm: string; observacao: string | null; agendamentoId: number | null;
+  criadoEm: string; observacao: string | null; comandaId: number | null; pagamentos: {forma: string;valor:number}[]; agendamentoId: number | null;
 }
 @Component({
   selector: 'app-caixa-movimentacoes',

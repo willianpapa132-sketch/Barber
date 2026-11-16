@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 @Service
 public class ProdutoService {
+    @org.springframework.beans.factory.annotation.Autowired private bruninho.Barbeiro.repository.ComandaRepository comandas;
     private final ProdutoRepository repository;
     public ProdutoService(ProdutoRepository repository) { this.repository = repository; }
     @Transactional(readOnly=true)
@@ -19,7 +20,7 @@ public class ProdutoService {
     public void cadastrar(SalvarProdutoRequest request) { salvar(new Produto(), request); }
     @Transactional
     public void atualizar(Long id, SalvarProdutoRequest request) {
-        var produto = localizarPorId(id);
+        var produto = repository.bloquear(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Produto nao encontrado"));
         salvar(produto, request);
     }
     private void salvar(Produto produto, SalvarProdutoRequest r) {
@@ -32,8 +33,13 @@ public class ProdutoService {
         }
         produto.setNome(r.nome().trim()); produto.setPreco(r.preco());
         produto.setPeriodicidadeMeses(r.periodicidadeMeses()); produto.setQuantidadeEstoque(r.quantidadeEstoque());
+        if(r.percentualComissao()!=null){
+            if(r.percentualComissao().signum()<0||r.percentualComissao().compareTo(java.math.BigDecimal.valueOf(100))>0||r.percentualComissao().scale()>2)
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Percentual de comissao deve estar entre 0 e 100");
+            produto.setPercentualComissao(r.percentualComissao());
+        }
         produto.setAtualizadoEm(LocalDateTime.now()); repository.save(produto);
     }
     @Transactional
-    public void excluir(Long id) { repository.delete(localizarPorId(id)); }
+    public void excluir(Long id) { var produto=localizarPorId(id); if(comandas.existsByItens_ProdutoId(id))throw new ResponseStatusException(HttpStatus.CONFLICT,"Produto vinculado a comandas; preserve o historico"); repository.delete(produto); }
 }

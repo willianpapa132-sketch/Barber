@@ -14,6 +14,7 @@ import java.util.List;
 
 @Service
 public class ServicoService {
+    @org.springframework.beans.factory.annotation.Autowired private bruninho.Barbeiro.repository.ComandaRepository comandas;
 
     private ServicoRepository servicoRepository;
     private AgendamentoRepository agendamentoRepository;
@@ -84,7 +85,7 @@ public class ServicoService {
 
 
     public boolean possuiVinculos(Long id) {
-        return agendamentoRepository.existsByServico_Id(id)
+        return comandas.existsByItens_ServicoId(id) || agendamentoRepository.existsByServico_Id(id)
                 || agendamentoRepository.existsByServicosPlano_ServicoId(id)
                 || planoMensalRepository.existsByServicosIncluidos_Id(id)
                 || descontos.existsByServicos_Id(id);

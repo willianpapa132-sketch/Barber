@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
@@ -34,6 +35,8 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/favicon.ico", "/api/auth/**").permitAll()
                         .requestMatchers("/plataforma", "/api/plataforma/**").hasRole("PLATFORM_ADMIN")
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole(ROLE.ADMIN.name())
+                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/barbeiro/agendamentos/*/finalizacao", "/barbeiro/agendamentos/*/finalizacao").denyAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/barbeiro/agendamentos/*/finalizacao").denyAll()
                         .requestMatchers("/barbeiro/**", "/api/barbeiro/**").hasRole(ROLE.BARBEIRO.name())
                         .anyRequest().authenticated()
                 )

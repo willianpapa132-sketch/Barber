@@ -8,4 +8,4 @@ import java.util.List;
 public record AtendimentoFormuladoResponse(Long agendamentoId, LocalDate data,
         LocalTime horaInicio, LocalTime horaFim, int duracaoMinutos, String nomeCliente,
         List<String> servicos, String nomePlano, Integer pontos,
-        BigDecimal valorBase, BigDecimal percentualAplicado, BigDecimal valorComissao) {}
+        BigDecimal valorBase, BigDecimal percentualAplicado, BigDecimal valorComissao, Long comandaId, java.time.LocalDateTime fechadoEm, List<bruninho.Barbeiro.domain.ItemComanda> itens) {}

@@ -6,6 +6,7 @@ import { BarberNav } from './layout';
 import { fimMaximoCarteira, hojeCarteira, inicioMesCarteira, validarPeriodoCarteira } from './periodo-carteira';
 
 interface StatementItem {
+  comandaId: number; fechadoEm: string; itens: {nome:string;quantidade:number;total:number;percentualComissao:number;comissao:number;incluidoNoPlano:boolean}[];
   agendamentoId: number; data: string; horaInicio: string; horaFim: string; duracaoMinutos: number;
   nomeCliente: string; servicos: string[]; nomePlano: string | null; pontos: number | null;
   valorBase: number | null; percentualAplicado: number | null; valorComissao: number | null;

@@ -46,6 +46,10 @@ class GerenciamentoPlanosIntegrationTest {
         contrato.setProximoVencimento(hoje.minusDays(4)); contrato = contratos.save(contrato);
         base = "/api/admin/gerenciamento-planos/" + contrato.getId();
     }
+    @Test void marcadorLegadoNaoPodeSerUsadoEmNovosRecebimentos(){
+        var erro=assertThrows(org.springframework.web.server.ResponseStatusException.class,()->gestao.receber(contrato.getId(),contrato.getProximoVencimento(),hoje,FormaPagamento.LEGADO,null,"admin"));
+        assertEquals(400,erro.getStatusCode().value());assertTrue(erro.getReason().contains("forma de pagamento"));
+    }
     @Test void bloqueioAutomaticoEDesbloqueioSemRegistrarPagamento() throws Exception {
         assertThrows(bruninho.Barbeiro.exception.BusinessException.class, () -> validacao.validarPagamentoPlano(contrato));
         gestao.atualizarBloqueios(); assertTrue(contrato.getPagamentoAtrasado());

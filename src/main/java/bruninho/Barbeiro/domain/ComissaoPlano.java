@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class ComissaoPlano {
+    @OneToOne @JoinColumn(name="comanda_id",unique=true)
+    private Comanda comanda;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

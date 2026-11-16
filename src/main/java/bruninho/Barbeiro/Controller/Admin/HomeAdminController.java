@@ -13,9 +13,11 @@ import java.time.*;
 public class HomeAdminController {
     private final AgendamentoRepository agendamentos;
     private final ComissaoBarbeiroRepository comissoes;
+    private final bruninho.Barbeiro.repository.ComandaRepository comandas;
     private final ZoneId zona;
 
-    public HomeAdminController(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes, AppProperties properties) {
+    public HomeAdminController(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes, bruninho.Barbeiro.repository.ComandaRepository comandas, AppProperties properties) {
+        this.comandas = comandas;
         this.agendamentos = agendamentos;
         this.comissoes = comissoes;
         this.zona = ZoneId.of(properties.getZone());
@@ -26,7 +28,7 @@ public class HomeAdminController {
     public Resumo home() {
         var hoje = LocalDate.now(zona);
         return new Resumo(hoje, agendamentos.countByData(hoje),
-                agendamentos.somarValoresConcluidos(hoje).subtract(comissoes.somarComissoesConcluidasNoDia(hoje)));
+                comandas.somarValoresConcluidos(hoje).subtract(comissoes.somarComissoesConcluidasNoDia(hoje)));
     }
 
     public record Resumo(LocalDate data, long agendamentosHoje, BigDecimal valorLiquidoHoje) {}

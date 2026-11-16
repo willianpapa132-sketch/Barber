@@ -11,7 +11,7 @@
     </header>
     <section class="stats" aria-label="Resumo dos atendimentos de hoje">
       <article class="stat gold"><span class="stat-icon" aria-hidden="true">▦</span><strong>{{ home.agendamentosHoje }}</strong><p>Agendamentos<small>hoje</small></p></article>
-      <article class="stat blue"><span class="stat-icon" aria-hidden="true">✓</span><strong>{{ home.concluidosHoje }}</strong><p>Concluídos<small>hoje</small></p></article>
+      <article class="stat blue"><span class="stat-icon" aria-hidden="true">✓</span><strong>{{ home.concluidosHoje }}</strong><p>Comandas fechadas<small>hoje</small></p></article>
       <article class="stat red"><span class="stat-icon" aria-hidden="true">×</span><strong>{{ home.canceladosHoje }}</strong><p>Cancelados<small>hoje</small></p></article>
     </section>
     <section class="appointments-section" aria-labelledby="appointments-title">
@@ -23,7 +23,7 @@
               <div class="appointment-time"><strong>{{ hhmm(item.horaInicio) }}</strong><small>{{ item.duracaoMinutos }} min</small></div>
               <div class="appointment-client"><h3>{{ item.nomeCliente }}</h3><p>{{ item.servicos.join(' + ') }}</p></div>
               <span class="status AGENDADO">Agendado</span>
-              <a class="appointment-open" [routerLink]="['/barbeiro/agendamentos', item.id, 'finalizacao']" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente"><span aria-hidden="true">›</span></a>
+              <a class="appointment-open" routerLink="/barbeiro/agenda" [attr.aria-label]="'Abrir atendimento de ' + item.nomeCliente"><span aria-hidden="true">›</span></a>
             </article>
           }
         </div>

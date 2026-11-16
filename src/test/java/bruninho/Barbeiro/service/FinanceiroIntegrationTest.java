@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class FinanceiroIntegrationTest {
+    @Autowired bruninho.Barbeiro.repository.ComandaRepository comandas;
     @Autowired MockMvc mvc;
     @Autowired UsuarioRepository usuarios;
     @Autowired BarbeiroRepository barbeiros;
@@ -54,7 +55,7 @@ class FinanceiroIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.valorBruto").value(150))
                 .andExpect(jsonPath("$.despesas").value(60)).andExpect(jsonPath("$.valorLiquido").value(90))
                 .andExpect(jsonPath("$.entradas.length()").value(2)).andExpect(jsonPath("$.saidas.length()").value(2))
-                .andExpect(jsonPath("$.entradas[1].descricao").value("Barba + Corte"))
+                .andExpect(jsonPath("$.entradas[1].descricao").value(org.hamcrest.Matchers.startsWith("Comanda #")))
                 .andExpect(jsonPath("$.saidas[0].barbeiro").value("Barbeiro Teste"));
     }
 
@@ -99,7 +100,7 @@ class FinanceiroIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.grafico.length()").value(12))
                 .andExpect(jsonPath("$.grafico[0].quantidade").value(2)).andExpect(jsonPath("$.grafico[1].quantidade").value(1))
                 .andExpect(jsonPath("$.grafico[2].quantidade").value(0)).andExpect(jsonPath("$.agendamentos").value(3))
-                .andExpect(jsonPath("$.concluidos").value(2)).andExpect(jsonPath("$.cancelados").value(1))
+                .andExpect(jsonPath("$.concluidos").value(1)).andExpect(jsonPath("$.cancelados").value(1))
                 .andExpect(jsonPath("$.valorBruto").value(100)).andExpect(jsonPath("$.despesas").value(40))
                 .andExpect(jsonPath("$.valorLiquido").value(60)).andExpect(jsonPath("$.caixa").isEmpty())
                 .andExpect(jsonPath("$.destaques[0].nome").value("Barbeiro Dashboard"));
@@ -152,6 +153,7 @@ class FinanceiroIntegrationTest {
         a.setFormaPagamento(FormaPagamento.PIX); a = agendamentos.save(a);
         var c = new ComissaoBarbeiro(); c.setAgendamento(a); c.setBarbeiro(barbeiro);
         c.setValorComissao(new BigDecimal(comissao)); c.setCriadoEm(a.getFinalizadoEm());
+        if(status==StatusAgendamento.CONCLUIDO&&pago)c.setComanda(bruninho.Barbeiro.config.ComandaTestFixtures.criar(a,new BigDecimal(valor),new BigDecimal(comissao),0,comandas));
         comissoes.save(c); return a;
     }
 }

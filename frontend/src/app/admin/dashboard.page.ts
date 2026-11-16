@@ -10,7 +10,7 @@ interface Destaque { tipo: string; barbeiroId: number | null; nome: string | nul
 interface Dashboard {
   periodo: string; inicio: string; fim: string; agrupamento: string;
   agendamentos: number; concluidos: number; cancelados: number;
-  valorBruto: number; despesas: number; valorLiquido: number; entradasAgendamentos: number; entradasPlanos: number;
+  valorBruto: number; despesas: number; valorLiquido: number; entradasComandas: number; entradasPlanos: number;
   grafico: { data: string; quantidade: number }[];
   caixa: { id: number; saldoAtual: number } | null;
   destaques: Destaque[];

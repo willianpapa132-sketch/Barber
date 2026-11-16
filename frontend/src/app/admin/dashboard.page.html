@@ -14,10 +14,10 @@
   @if(!loading()&&!error()){@if(dados();as d){
     <section class="metrics" aria-label="Indicadores do período">
       <article class="panel metric"><span class="icon gold">▦</span><div><p>Agendamentos</p><strong>{{d.agendamentos}}</strong><small>No período selecionado</small></div></article>
-      <article class="panel metric"><span class="icon green">✓</span><div><p>Concluídos</p><strong>{{d.concluidos}}</strong><small>{{percentual(d.concluidos,d.agendamentos)}}% de conclusão</small><progress [value]="d.concluidos" [max]="d.agendamentos || 1"></progress></div></article>
+      <article class="panel metric"><span class="icon green">✓</span><div><p>Comandas fechadas</p><strong>{{d.concluidos}}</strong><small>Pela data do fechamento</small></div></article>
       <article class="panel metric"><span class="icon red">×</span><div><p>Cancelados / Não compareceu</p><strong>{{d.cancelados}}</strong><small>{{percentual(d.cancelados,d.agendamentos)}}% do total</small><progress class="danger" [value]="d.cancelados" [max]="d.agendamentos || 1"></progress></div></article>
-      <article class="panel metric"><span class="icon gold">$</span><div><p>Valor bruto</p><strong>{{d.valorBruto | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Atendimentos e planos recebidos</small></div></article>
-      <article class="panel metric"><span class="icon red">↓</span><div><p>Despesas</p><strong>{{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Comissões de atendimentos pagos</small></div></article>
+      <article class="panel metric"><span class="icon gold">$</span><div><p>Valor bruto</p><strong>{{d.valorBruto | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Comandas e planos recebidos</small></div></article>
+      <article class="panel metric"><span class="icon red">↓</span><div><p>Despesas</p><strong>{{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Comissões de comandas fechadas</small></div></article>
       <article class="panel metric"><span class="icon green">↗</span><div><p>Valor líquido</p><strong>{{d.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Recebimentos menos comissões</small></div></article>
     </section>
     <div class="dashboard-grid">
@@ -29,7 +29,7 @@
         @if(!d.agendamentos){<p class="empty-chart">Nenhum agendamento no período selecionado.</p>}
       </section>
       <section class="panel financial"><header class="section-heading"><h2><span class="gold">$</span> Resumo financeiro</h2><a routerLink="/admin/financeiro">Ver detalhes →</a></header>
-        <div class="financial-content"><dl><div><dt>Entradas de agendamentos</dt><dd>{{d.entradasAgendamentos | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Planos mensais</dt><dd>{{d.entradasPlanos | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div class="expense"><dt>Comissões</dt><dd>− {{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Valor líquido</dt><dd class="green-text">{{d.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div></dl>
+        <div class="financial-content"><dl><div><dt>Entradas de agendamentos</dt><dd>{{d.entradasComandas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Planos mensais</dt><dd>{{d.entradasPlanos | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div class="expense"><dt>Comissões</dt><dd>− {{d.despesas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div><div><dt>Valor líquido</dt><dd class="green-text">{{d.valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</dd></div></dl>
           <aside class="cash"><h3>▣ Caixa <span class="badge" [class.closed]="!d.caixa">{{d.caixa?'Aberto':'Fechado'}}</span></h3>@if(d.caixa;as c){<p>Saldo atual</p><strong>{{c.saldoAtual | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Caixa #{{c.id}} · Saldo de agora</small><a class="cash-link" [routerLink]="['/admin/caixa',c.id,'movimentacoes']">Ver movimentações →</a>}@else{<p>Nenhum caixa aberto</p><a class="cash-link" routerLink="/admin/caixa">Acessar caixas →</a>}</aside>
         </div><p class="footnote">Valores recebidos pela data de pagamento ou finalização.</p>
       </section>

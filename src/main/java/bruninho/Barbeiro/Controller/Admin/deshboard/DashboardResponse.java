@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 public record DashboardResponse(String periodo, LocalDate inicio, LocalDate fim, String agrupamento,
         long agendamentos, long concluidos, long cancelados, BigDecimal valorBruto, BigDecimal despesas,
-        BigDecimal valorLiquido, BigDecimal entradasAgendamentos, BigDecimal entradasPlanos,
+        BigDecimal valorLiquido, BigDecimal entradasComandas, BigDecimal entradasPlanos,
         List<Ponto> grafico, CaixaResponse caixa, List<Destaque> destaques, Planos planos) {
     public record Ponto(LocalDate data, long quantidade) {}
     public record Destaque(String tipo, Long barbeiroId, String nome, String imagem, BigDecimal valor, long atendimentos) {}

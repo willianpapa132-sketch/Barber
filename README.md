@@ -169,3 +169,5 @@ pg_restore -h localhost -U barber -d barber_restore barber.backup
 ## Antes de publicar
 
 Configure HTTPS, cookies seguros, senhas fortes, credenciais fora do repositório, backups automáticos, logs sem dados sensíveis e monitoramento do PostgreSQL. Não use as credenciais de desenvolvimento em produção.
+
+O fechamento financeiro e feito pelo administrador em uma comanda. Consulte [Comandas](docs/COMANDAS.md) para pagamentos divididos, produtos, descontos, estoque e comissoes.

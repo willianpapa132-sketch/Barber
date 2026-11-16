@@ -19,7 +19,7 @@ public class ProdutoAdminController {
     }
     private ProdutoAdminResponse item(Produto s) {
         return new ProdutoAdminResponse(s.getId(), s.getNome(), s.getPreco(),
-                s.getPeriodicidadeMeses(), s.getQuantidadeEstoque(), s.getCriadoEm());
+                s.getPeriodicidadeMeses(), s.getQuantidadeEstoque(), s.getCriadoEm(), s.getPercentualComissao());
     }
 
     @GetMapping

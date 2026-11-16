@@ -2878,3 +2878,10 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.appointment-status-actions{display:flex;gap:6px;flex-wrap:wrap}.appointment-status-actions button{font-size:11px;padding:4px 6px;border:1px solid #394752;border-radius:4px;background:#202b32;color:#ddd;cursor:pointer}
+@media print{app-admin-comanda .admin-layout>aside,app-admin-comanda .workspace>header{display:none!important}app-admin-comanda .admin-layout{display:block!important}app-admin-comanda .workspace{margin:0!important}app-admin-comanda .workspace>main{padding:0!important}}
+
+@media(max-width:760px){app-admin-comanda .admin-layout .brand{padding-right:105px}app-admin-comanda .admin-layout .brand div{font-size:16px}}
+
+@media print{body:has(app-admin-comanda),app-admin-comanda .admin-layout,app-admin-comanda .workspace{background:#fff!important;color:#111!important}}

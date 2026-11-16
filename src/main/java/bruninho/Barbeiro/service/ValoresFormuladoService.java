@@ -32,9 +32,9 @@ public class ValoresFormuladoService {
         validarPagina(registros, pagina);
         var itens = registros.stream().map(c -> {
             var a = c.getAgendamento();
-            return new AtendimentoFormuladoResponse(a.getId(), a.getData(), a.getHoraInicio(), a.getHoraFinalizacao(),
-                    a.getDuracaoServicoMinutos(), nomeCliente(a), servicos(a, true), c.getPlanoMensal().getNomePlano(),
-                    c.getPontos(), null, null, null);
+            return new AtendimentoFormuladoResponse(a.getId(), c.getComanda().getFechadoEm().toLocalDate(), a.getHoraInicio(), a.getHoraFinalizacao(),
+                    c.getComanda().getMinutos(), c.getComanda().getNomeCliente(), itens(c.getComanda(), true), c.getPlanoMensal().getNomePlano(),
+                    c.getPontos(), null, null, null, c.getComanda().getId(), c.getComanda().getFechadoEm(), List.copyOf(c.getComanda().getItens()));
         }).toList();
         return new PontosFormuladoResponse(inicio, fim, pontos.somarPontosConcluidos(id, inicio, fim),
                 registros.getTotalElements(), pagina, registros.getTotalPages(), itens);
@@ -46,10 +46,10 @@ public class ValoresFormuladoService {
         validarPagina(registros, pagina);
         var itens = registros.stream().map(c -> {
             var a = c.getAgendamento();
-            return new AtendimentoFormuladoResponse(a.getId(), a.getData(), a.getHoraInicio(), a.getHoraFinalizacao(),
-                    a.getDuracaoServicoMinutos(), nomeCliente(a), servicos(a, false),
+            return new AtendimentoFormuladoResponse(a.getId(), c.getComanda().getFechadoEm().toLocalDate(), a.getHoraInicio(), a.getHoraFinalizacao(),
+                    c.getComanda().getMinutos(), c.getComanda().getNomeCliente(), itens(c.getComanda(), false),
                     a.getPlanoMensalCliente() == null ? null : a.getPlanoMensalCliente().getPlanoMensal().getNomePlano(),
-                    null, c.getValorBase(), c.getPercentualAplicado(), c.getValorComissao());
+                    null, c.getValorBase(), c.getPercentualAplicado(), c.getValorComissao(), c.getComanda().getId(), c.getComanda().getFechadoEm(), List.copyOf(c.getComanda().getItens()));
         }).toList();
         return new ComissoesFormuladoResponse(inicio, fim, comissoes.somarComissoesConcluidas(id, inicio, fim).setScale(2),
                 registros.getTotalElements(), pagina, registros.getTotalPages(), itens);
@@ -68,18 +68,8 @@ public class ValoresFormuladoService {
         }
     }
 
-    private String nomeCliente(Agendamento a) {
-        if (a.getNomeCliente() != null && !a.getNomeCliente().isBlank()) return a.getNomeCliente();
-        return a.getCliente() != null ? a.getCliente().getNome() : "Cliente avulso";
-    }
-
-    private List<String> servicos(Agendamento a, boolean incluidos) {
-        if (!a.getServicosPlano().isEmpty()) {
-            return a.getServicosPlano().stream().filter(s -> s.isInclusoNoPlano() == incluidos)
-                    .map(ServicoAgendadoPlano::getNome).sorted(String.CASE_INSENSITIVE_ORDER).toList();
-        }
-        // Registros antigos nao possuem detalhamento: os pontos e valores salvos continuam sendo a referencia.
-        return a.getServico().stream().sorted(Comparator.comparing(Servico::getNome, String.CASE_INSENSITIVE_ORDER))
-                .map(Servico::getNome).toList();
+    private List<String> itens(Comanda c,boolean incluidos) {
+        return c.getItens().stream().filter(i->i.isIncluidoNoPlano()==incluidos)
+            .map(i->i.getNome()+(i.getQuantidade()>1?" x"+i.getQuantidade():"")).toList();
     }
 }

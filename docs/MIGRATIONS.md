@@ -39,7 +39,7 @@ permanece como referencia historica e nao e executada pela aplicacao atual.
 
 ## Proximas alteracoes
 
-Crie V4 e versoes seguintes, atualizando entidades e migrations em conjunto.
+Crie V6 e versoes seguintes, atualizando entidades e migrations em conjunto.
 Nao edite migrations ja aplicadas: o Flyway valida seus checksums.
 
 ## Testes PostgreSQL
@@ -58,3 +58,5 @@ rollback de legado sem empresa, preservacao de UUID e triggers contra vinculos
 entre empresas. Eles deixam registros/schemas no banco descartavel e nao executam
 `clean`. Sem essas variaveis, os testes PostgreSQL sao ignorados. Os demais testes
 usam H2. O perfil `dev` tambem usa H2 e nao aplica Flyway.
+
+A V4 cadastra produtos. A V5 move a origem financeira para comandas e importa os fechamentos anteriores preservando seus valores. Consulte [Comandas](COMANDAS.md).

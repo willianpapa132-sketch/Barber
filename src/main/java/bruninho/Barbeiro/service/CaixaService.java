@@ -67,12 +67,13 @@ public class CaixaService {
    return c;
  }
  @Transactional
- public void registrarEntrada(Agendamento a,BigDecimal valor,LocalDateTime quando){
-   if(valor==null||valor.signum()==0)return;
-   var c=caixas.findAberto().orElseThrow(()->erro("Abra o caixa antes de finalizar atendimentos com valor"));
-   if(movimentos.existsByAgendamento_Id(a.getId()))throw erro("Atendimento ja lancado no caixa");
-   c.setTotalEntradas(c.getTotalEntradas().add(valor));
-   movimentos.save(new MovimentoCaixa(null,c,a,TipoMovimentoCaixa.ENTRADA,valor,quando,"Atendimento finalizado"));
+ public void registrarComanda(Comanda comanda){
+   if(comanda.getTotal().signum()==0)return;
+   var c=caixas.findAberto().orElseThrow(()->erro("Abra o caixa antes de fechar comandas com valor"));
+   if(movimentos.existsByComanda_Id(comanda.getId()))throw erro("Comanda ja lancada no caixa");
+   c.setTotalEntradas(c.getTotalEntradas().add(comanda.getTotal()));
+   var m=new MovimentoCaixa(null,c,comanda.getAgendamento(),TipoMovimentoCaixa.ENTRADA,comanda.getTotal(),comanda.getFechadoEm(),"Fechamento da comanda #"+comanda.getId());
+   m.setComanda(comanda);movimentos.save(m);
  }
  private ResponseStatusException erro(String m){return new ResponseStatusException(HttpStatus.CONFLICT,m);}
 }

@@ -43,7 +43,7 @@ class AgendamentoIntegrationTest {
     @Autowired PlanoMensalRepository planosMensais;
     @Autowired PlanoMensalClienteRepository planosClientes;
     @Autowired MockMvc mvc;
-    @Autowired FinalizacaoAgendamentoService finalizacao;
+    @Autowired ComandaService finalizacao;
     @Autowired CaixaService caixa;
     @Autowired ComissaoBarbeiroRepository comissoes;
     @Autowired ComissaoPlanoRepository comissoesPlano;
@@ -501,20 +501,23 @@ class AgendamentoIntegrationTest {
         regra.setPorcentagemDesconto(50);
         salvo.setData(LocalDate.now().minusDays(1)); agendamentos.saveAndFlush(salvo);
         entityManager.clear();
-        var previa = finalizacao.consultar("barbeiro", salvo.getId(), null);
-        assertThat(previa.valorCobrar()).isEqualByComparingTo("50.00");
-        assertThat(previa.comissaoPlano().pontos()).isEqualTo(30);
-        assertThat(previa.formasPagamentoDisponiveis()).doesNotContain(FormaPagamento.MENSAL);
-        assertThatThrownBy(() -> finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.MENSAL))
-                .hasMessageContaining("pagamento dos servicos extras");
-        var resposta = finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.PIX);
-        assertThat(resposta.comissao().valorBase()).isEqualByComparingTo("50.00");
-        assertThat(resposta.comissao().valorComissao()).isEqualByComparingTo("20.00");
-        assertThat(resposta.comissaoPlano().pontos()).isEqualTo(30);
-        assertThat(comissoesPlano.findByAgendamento_Id(salvo.getId()).orElseThrow().getPontos()).isEqualTo(30);
-        assertThat(comissoes.existsByAgendamento_Id(salvo.getId())).isTrue();
-        assertThatThrownBy(() -> finalizacao.finalizar("barbeiro", salvo.getId(), FormaPagamento.PIX))
-                .hasMessageContaining("AGENDADO");
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin","",java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+        try {
+            var previa = finalizacao.consultar(salvo.getId());
+            assertThat(previa.total()).isEqualByComparingTo("50.00");
+            assertThat(previa.pontos()).isEqualTo(30);
+            var itens=java.util.List.of(new bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.Item(bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.TipoItem.SERVICO,corte.getId(),1),
+                new bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.Item(bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.TipoItem.SERVICO,pigmentacao.getId(),1),
+                new bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.Item(bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.TipoItem.SERVICO,bigode.getId(),1));
+            var r=new bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest(itens,bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.TipoDesconto.NENHUM,BigDecimal.ZERO,null,
+                java.util.List.of(new bruninho.Barbeiro.Controller.Admin.comanda.FecharComandaRequest.Pagamento(FormaPagamento.PIX,new BigDecimal("50.00"))));
+            var resposta=finalizacao.fechar(salvo.getId(),r,"admin");
+            assertThat(resposta.totalComissao()).isEqualByComparingTo("20.00");assertThat(resposta.pontos()).isEqualTo(30);
+            assertThat(comissoesPlano.findByAgendamento_Id(salvo.getId()).orElseThrow().getPontos()).isEqualTo(30);
+            assertThatThrownBy(()->finalizacao.fechar(salvo.getId(),r,"admin")).hasMessageContaining("ja fechada");
+        } finally { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
     }
 
     private List<Long> ids() { return List.of(corte.getId(), barba.getId()); }

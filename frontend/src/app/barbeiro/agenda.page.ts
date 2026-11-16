@@ -67,6 +67,14 @@ export class BarberAgendaPage implements OnInit, OnDestroy, OnChanges {
     } catch (e) { if (!controller.signal.aborted) this.error.set((e as Error).message); }
     finally { if (!controller.signal.aborted) this.loading.set(false); }
   }
+  async alterarStatus(id:number,acao:'cancelar'|'nao-compareceu') {
+    if(this.saving()||!window.confirm(acao==='cancelar'?'Cancelar este agendamento?':'Registrar que o cliente não compareceu?'))return;
+    this.saving.set(true);this.error.set('');
+    try{await this.api.request<void>(`/api/barbeiro/agendamentos/${id}/finalizacao/${acao}`,{method:'POST'});}
+    catch(e){this.error.set((e as Error).message);}
+    finally{this.saving.set(false);}
+    if(!this.error())await this.load();
+  }
   private buildTimeline(grade: Grade) {
     this.events = []; this.outside = []; this.rows = []; this.timelineHeight = 0;
     const start = minutes(this.timelineRange?.inicio || grade.inicio), end = minutes(this.timelineRange?.fim || grade.fim);

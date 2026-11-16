@@ -45,6 +45,7 @@ class MultiTenancyIntegrationTest {
     @Autowired org.springframework.context.ApplicationContext context;
     @Autowired TransactionTemplate tx;
     @Autowired ServicoRepository servicos;
+    @Autowired ComandaRepository comandas;
     @Autowired BarbeiroRepository barbeiros;
     @Autowired ClienteRepository clientes;
     @Autowired AgendamentoRepository agendamentos;
@@ -162,7 +163,7 @@ class MultiTenancyIntegrationTest {
             assertThat(horarios.count()).isEqualTo(7);
             assertThat(configuracoes.count()).isEqualTo(1);
             assertThat(usuarios.findByLogin("admin@empresa.test")).isPresent();
-            assertThat(agendamentos.somarValoresConcluidos(LocalDate.now())).isEqualByComparingTo("10");
+            assertThat(comandas.somarValoresConcluidos(LocalDate.now())).isEqualByComparingTo("10");
             assertThat(comissoes.somarComissoesConcluidasNoDia(LocalDate.now())).isEqualByComparingTo("5");
             assertThat(recebimentos.findByDataPagamentoBetweenOrderByDataPagamentoDescIdDesc(LocalDate.now(),LocalDate.now())).hasSize(1);
             return null;
@@ -182,13 +183,14 @@ class MultiTenancyIntegrationTest {
         var p=new PlanosMensal();p.setNomePlano("Plano");p.setDescricao("Plano");p.setValorMensal(BigDecimal.TEN);p.setAtivo(true);p.getServicosIncluidos().add(s);planos.saveAndFlush(p);
         var contrato=new PlanoMensalCliente();contrato.setCliente(c);contrato.setUsuario(usuario);contrato.setPlanoMensal(p);contrato.setValorMensal(BigDecimal.TEN);contrato.setAtivo(true);contratos.saveAndFlush(contrato);
         var a=new Agendamento();a.setCliente(c);a.setBarbeiro(b);a.setPlanoMensalCliente(contrato);a.getServico().add(s);a.setData(LocalDate.now());a.setStatus(StatusAgendamento.CONCLUIDO);a.setPagamentoRecebido(true);a.setPrecoTotal(BigDecimal.TEN);a.setFinalizadoEm(LocalDateTime.now());agendamentos.saveAndFlush(a);
+        var cmd=bruninho.Barbeiro.config.ComandaTestFixtures.criar(a,BigDecimal.TEN,new BigDecimal("5"),30,comandas);
         var caixa=new Caixa();caixa.setSaldoInicial(BigDecimal.ZERO);caixa.setSaldoFinal(BigDecimal.TEN);caixa.setStatus(StatusCaixa.ABERTO);caixa.setAbertoEm(LocalDateTime.now());caixas.saveAndFlush(caixa);
-        var m=new MovimentoCaixa(null,caixa,a,TipoMovimentoCaixa.ENTRADA,BigDecimal.TEN,LocalDateTime.now(),"Teste");movimentos.saveAndFlush(m);
+        var m=new MovimentoCaixa(null,caixa,a,TipoMovimentoCaixa.ENTRADA,BigDecimal.TEN,LocalDateTime.now(),"Teste");m.setComanda(cmd);movimentos.saveAndFlush(m);
         var j=new JornadaBarbeiro();j.setBarbeiro(b);j.setDiaSemana(DayOfWeek.MONDAY);jornadas.saveAndFlush(j);
         var bl=new BloqueioBarbeiro();bl.setBarbeiro(b);bloqueios.saveAndFlush(bl);
         var r=new RecebimentoPlano();r.setContrato(contrato);r.setVencimento(LocalDate.now());r.setDataPagamento(LocalDate.now());r.setValor(BigDecimal.TEN);r.setFormaPagamento(FormaPagamento.PIX);r.setRegistradoEm(LocalDateTime.now());r.setRegistradoPor("admin");recebimentos.saveAndFlush(r);
-        var cp=new ComissaoPlano();cp.setAgendamento(a);cp.setPlanoMensal(p);cp.setPlanoMensalCliente(contrato);cp.setBarbeiro(b);cp.setDataAgendamento(LocalDate.now());cp.setPontos(30);cp.setCriadoEm(LocalDateTime.now());pontos.saveAndFlush(cp);
-        var cb=new ComissaoBarbeiro();cb.setAgendamento(a);cb.setBarbeiro(b);cb.setValorComissao(new BigDecimal("5"));comissoes.saveAndFlush(cb);
+        var cp=new ComissaoPlano();cp.setComanda(cmd);cp.setAgendamento(a);cp.setPlanoMensal(p);cp.setPlanoMensalCliente(contrato);cp.setBarbeiro(b);cp.setDataAgendamento(LocalDate.now());cp.setPontos(30);cp.setCriadoEm(LocalDateTime.now());pontos.saveAndFlush(cp);
+        var cb=new ComissaoBarbeiro();cb.setComanda(cmd);cb.setAgendamento(a);cb.setBarbeiro(b);cb.setValorComissao(new BigDecimal("5"));comissoes.saveAndFlush(cb);
         var d=new ServicosPlanosDesconto();d.setPlanoMensal(p);d.setPorcentagemDesconto(10);d.getServicos().add(s);descontos.saveAndFlush(d);
         return List.of(b.getId(),c.getId(),a.getId(),caixa.getId(),m.getId(),j.getId(),bl.getId(),p.getId(),contrato.getId(),r.getId(),cp.getId(),cb.getId(),d.getId());
     }

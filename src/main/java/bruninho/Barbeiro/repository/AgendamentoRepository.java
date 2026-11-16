@@ -16,23 +16,15 @@ import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Agendamento a where a.id=:id")
+    Optional<Agendamento> bloquearComanda(@Param("id") Long id);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Agendamento a where a.status = bruninho.Barbeiro.domain.StatusAgendamento.AGENDADO and a.data >= :hoje order by a.id")
     List<Agendamento> pendentesParaConfiguracao(@Param("hoje") LocalDate hoje);
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"barbeiro"})
     List<Agendamento> findByDataBetweenOrderByDataAsc(LocalDate inicio, LocalDate fim);
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"cliente", "servico"})
-    @Query("""
-            select a from Agendamento a where a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO
-            and a.pagamentoRecebido = true and a.precoTotal > 0
-            and a.finalizadoEm >= :inicio and a.finalizadoEm < :fim
-            order by a.finalizadoEm desc, a.id desc
-            """)
-    List<Agendamento> entradasFinanceiro(@Param("inicio") java.time.LocalDateTime inicio,
-                                       @Param("fim") java.time.LocalDateTime fim);
     long countByData(LocalDate data);
-
-    @Query("select coalesce(sum(a.precoTotal), 0) from Agendamento a where a.data = :data and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO")
-    java.math.BigDecimal somarValoresConcluidos(@Param("data") LocalDate data);
 
     Optional<Agendamento> findByIdAndBarbeiro_Usuario_Login(Long id, String login);
 
@@ -127,13 +119,5 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
             @Param("dataAtual") LocalDate dataAtual,
             @Param("horaAtual") LocalTime horaAtual
     );
-
-    @Query("""
-            select coalesce(sum(a.duracaoServicoMinutos), 0) from Agendamento a
-            where a.barbeiro.id = :barbeiroId and a.data between :inicio and :fim
-              and a.status = bruninho.Barbeiro.domain.StatusAgendamento.CONCLUIDO
-            """)
-    long somarMinutosConcluidos(@Param("barbeiroId") Long barbeiroId,
-                               @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
 }

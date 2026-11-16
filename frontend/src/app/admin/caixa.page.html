@@ -36,7 +36,7 @@
     @if (selecionado(); as c) {
       <section class="metrics" aria-label="Resumo financeiro">
         <article><span class="icon" aria-hidden="true">▣</span><div><p>{{c.status === 'ABERTO' ? 'Caixa atual' : 'Caixa encerrado'}} <span class="badge" [class.closed]="c.status === 'FECHADO'">{{c.status === 'ABERTO' ? 'Aberto' : 'Fechado'}}</span></p><strong>{{(c.status === 'ABERTO' ? c.saldoAtual : c.saldoFinal) | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Caixa #{{c.id}}</small></div></article>
-        <article><span class="icon green" aria-hidden="true">↑</span><div><p>Total de entradas</p><strong>{{c.totalEntradas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Atendimentos finalizados</small></div></article>
+        <article><span class="icon green" aria-hidden="true">↑</span><div><p>Total de entradas</p><strong>{{c.totalEntradas | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Comandas fechadas</small></div></article>
         <article><span class="icon red" aria-hidden="true">↓</span><div><p>Total de sangrias</p><strong>{{c.totalSangrias | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Retiradas do caixa</small></div></article>
         <article><span class="icon amber" aria-hidden="true">≋</span><div><p>Saldo inicial</p><strong>{{c.saldoInicial | currency:'BRL':'symbol':'1.2-2':'pt-BR'}}</strong><small>Valor informado na abertura</small></div></article>
       </section>

@@ -39,6 +39,9 @@ public class Produto extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
     @Column(nullable = false)
     private Integer quantidadeEstoque;
 
+    @Column(nullable=false,precision=5,scale=2)
+    private BigDecimal percentualComissao = BigDecimal.ZERO;
+
     private LocalDateTime criadoEm = LocalDateTime.now();
 
     private LocalDateTime atualizadoEm = LocalDateTime.now();

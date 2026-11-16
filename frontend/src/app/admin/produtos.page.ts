@@ -5,14 +5,14 @@ import { registerLocaleData } from '@angular/common';
 registerLocaleData(pt);
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { AdminLayout } from './layout';
-interface Produto { id: number; nome: string; preco: number; periodicidadeMeses: number; quantidadeEstoque: number; criadoEm: string }
+interface Produto { id: number; nome: string; preco: number; periodicidadeMeses: number; quantidadeEstoque: number; percentualComissao: number; criadoEm: string }
 interface Lista { itens: Produto[]; total: number; totalPaginas: number; pagina: number }
 @Component({selector:'app-admin-produtos', imports:[AdminLayout, FormsModule, CurrencyPipe, DatePipe], templateUrl:'./produtos.page.html', styleUrl:'./produtos.page.scss'})
 export class AdminProdutosPage implements OnInit {
   @ViewChild('dialog', {static:true}) dialog!: ElementRef<HTMLDialogElement>;
   resultado = signal<Lista | null>(null); loading = signal(true); saving = signal(false); error = signal(''); formError = signal(''); success = signal('');
   busca = ''; selected: Produto | null = null; leitura = false;
-  model = {nome:'', preco:0, periodicidadeMeses:1, quantidadeEstoque:0};
+  model = {nome:'', preco:0, periodicidadeMeses:1, quantidadeEstoque:0, percentualComissao:0};
   private sequence = 0;
   ngOnInit() { void this.load(); }
   async request(path: string, options: RequestInit = {}) {
@@ -34,7 +34,7 @@ export class AdminProdutosPage implements OnInit {
   }
   abrir(produto: Produto | null = null, leitura = false) {
     this.selected = produto; this.leitura = leitura; this.formError.set('');
-    this.model = produto ? {nome:produto.nome, preco:produto.preco, periodicidadeMeses:produto.periodicidadeMeses, quantidadeEstoque:produto.quantidadeEstoque} : {nome:'',preco:0,periodicidadeMeses:1,quantidadeEstoque:0};
+    this.model = produto ? {nome:produto.nome, preco:produto.preco, periodicidadeMeses:produto.periodicidadeMeses, quantidadeEstoque:produto.quantidadeEstoque,percentualComissao:produto.percentualComissao} : {nome:'',preco:0,periodicidadeMeses:1,quantidadeEstoque:0, percentualComissao:0};
     this.dialog.nativeElement.showModal();
   }
   fechar() { if (!this.saving()) this.dialog.nativeElement.close(); }

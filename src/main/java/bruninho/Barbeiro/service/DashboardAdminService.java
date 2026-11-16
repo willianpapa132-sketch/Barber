@@ -16,6 +16,7 @@ import java.util.*;
 @Service
 public class DashboardAdminService {
     private final AgendamentoRepository agendamentos;
+    private final ComandaRepository comandas;
     private final ComissaoBarbeiroRepository comissoes;
     private final ComissaoPlanoRepository pontos;
     private final BarbeiroRepository barbeiros;
@@ -24,9 +25,9 @@ public class DashboardAdminService {
     private final CaixaRepository caixas;
     public DashboardAdminService(AgendamentoRepository agendamentos, ComissaoBarbeiroRepository comissoes,
             ComissaoPlanoRepository pontos, BarbeiroRepository barbeiros, RecebimentoPlanoRepository recebimentos,
-            PlanoMensalClienteRepository contratos, CaixaRepository caixas) {
+            PlanoMensalClienteRepository contratos, CaixaRepository caixas, ComandaRepository comandas) {
         this.agendamentos=agendamentos; this.comissoes=comissoes; this.pontos=pontos; this.barbeiros=barbeiros;
-        this.recebimentos=recebimentos; this.contratos=contratos; this.caixas=caixas;
+        this.recebimentos=recebimentos; this.contratos=contratos; this.caixas=caixas; this.comandas=comandas;
     }
     @Transactional(readOnly=true)
     public DashboardResponse consultar(String periodo, LocalDate referencia, LocalDate inicio, LocalDate fim) {
@@ -55,19 +56,20 @@ public class DashboardAdminService {
         for(var dia=mensal?inicio.withDayOfMonth(1):inicio; !dia.isAfter(fim); dia=mensal?dia.plusMonths(1):dia.plusDays(semanal?7:1))
             grafico.add(new Ponto(dia,contagem.getOrDefault(dia,0L)));
         var de=inicio.atStartOfDay(); var ate=fim.plusDays(1).atStartOfDay();
-        var entradas=agendamentos.entradasFinanceiro(de,ate).stream().map(Agendamento::getPrecoTotal).reduce(BigDecimal.ZERO,BigDecimal::add);
+        var fechadas=comandas.periodo(de,ate);
+        var entradas=fechadas.stream().map(Comanda::getTotal).reduce(BigDecimal.ZERO,BigDecimal::add);
         var pagos=recebimentos.findByDataPagamentoBetweenOrderByDataPagamentoDescIdDesc(inicio,fim);
         var planos=pagos.stream().map(RecebimentoPlano::getValor).reduce(BigDecimal.ZERO,BigDecimal::add);
-        var despesas=comissoes.despesasFinanceiro(de,ate).stream().map(ComissaoBarbeiro::getValorComissao).reduce(BigDecimal.ZERO,BigDecimal::add);
+        var despesas=fechadas.stream().map(Comanda::getTotalComissao).reduce(BigDecimal.ZERO,BigDecimal::add);
         var destaques=new ArrayList<Destaque>();
         for(var tipo:List.of("comissao","atendimentos","pontos","horas")) {
             Destaque melhor=null;
             for(var b:barbeiros.findAll(org.springframework.data.domain.Sort.by("nome","id"))) {
-                long atendidos=itens.stream().filter(a->a.getBarbeiro().getId().equals(b.getId()) && a.getStatus()==StatusAgendamento.CONCLUIDO).count();
+                long atendidos=fechadas.stream().filter(c->c.getBarbeiro().getId().equals(b.getId())).count();
                 BigDecimal valor=switch(tipo) {
                     case "comissao" -> comissoes.somarComissoesConcluidas(b.getId(),inicio,fim);
                     case "pontos" -> BigDecimal.valueOf(pontos.somarPontosConcluidos(b.getId(),inicio,fim));
-                    case "horas" -> BigDecimal.valueOf(itens.stream().filter(a->a.getBarbeiro().getId().equals(b.getId()) && a.getStatus()==StatusAgendamento.CONCLUIDO).mapToLong(Agendamento::getDuracaoServicoMinutos).sum());
+                    case "horas" -> BigDecimal.valueOf(fechadas.stream().filter(c->c.getBarbeiro().getId().equals(b.getId())).mapToLong(Comanda::getMinutos).sum());
                     default -> BigDecimal.valueOf(atendidos);
                 };
                 if(valor.signum()>0 && (melhor==null || valor.compareTo(melhor.valor())>0))
@@ -80,7 +82,7 @@ public class DashboardAdminService {
         long vencendo=ativos.stream().filter(c->hoje.equals(c.getProximoVencimento())).count();
         var caixa=caixas.findFirstByStatusOrderByIdDesc(StatusCaixa.ABERTO).map(CaixaResponse::de).orElse(null);
         return new DashboardResponse(periodo,inicio,fim,mensal?"mes":semanal?"semana":"dia",itens.size(),
-                itens.stream().filter(a->a.getStatus()==StatusAgendamento.CONCLUIDO).count(),
+                fechadas.size(),
                 itens.stream().filter(a->a.getStatus()==StatusAgendamento.CANCELADO || a.getStatus()==StatusAgendamento.NAO_COMPARECEU).count(),
                 entradas.add(planos),despesas,entradas.add(planos).subtract(despesas),entradas,planos,grafico,caixa,destaques,
                 new Planos(ativos.stream().map(c->c.getCliente().getId()).distinct().count(),pagos.stream().map(r->r.getContrato().getId()).distinct().count(),pendentes,vencendo));

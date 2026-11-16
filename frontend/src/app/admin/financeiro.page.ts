@@ -50,7 +50,7 @@ export class AdminFinanceiroPage implements OnInit {
   trocar(aba: 'entradas' | 'saidas') { this.aba.set(aba); this.pagina.set(0); }
   pesquisar(valor: string) { this.busca.set(valor); this.pagina.set(0); }
   pagamento(valor: string | null) {
-    return ({ PIX: 'PIX', DINHEIRO: 'Dinheiro', DEBITO: 'Cartão débito', CREDITO: 'Cartão crédito', MENSAL: 'Plano mensal' } as Record<string, string>)[valor ?? ''] ?? '—';
+    return ({ LEGADO: 'Legado · forma não informada', PIX: 'PIX', DINHEIRO: 'Dinheiro', DEBITO: 'Cartão débito', CREDITO: 'Cartão crédito', MENSAL: 'Plano mensal' } as Record<string, string>)[valor ?? ''] ?? '—';
   }
   exportar() {
     const linhas = [['Data/Hora', 'Tipo', 'Descrição', 'Cliente', 'Barbeiro', 'Forma de pagamento', 'Valor'],

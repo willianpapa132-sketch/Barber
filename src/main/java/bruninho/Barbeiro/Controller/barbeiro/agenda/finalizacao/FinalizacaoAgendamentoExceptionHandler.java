@@ -20,6 +20,6 @@ public class FinalizacaoAgendamentoExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ErroFinalizacao> entrada(Exception exception) {
-        return ResponseEntity.badRequest().body(new ErroFinalizacao("Informe um agendamento e uma forma de pagamento validos"));
+        return ResponseEntity.badRequest().body(new ErroFinalizacao("Informe um agendamento valido para alterar o status"));
     }
 }

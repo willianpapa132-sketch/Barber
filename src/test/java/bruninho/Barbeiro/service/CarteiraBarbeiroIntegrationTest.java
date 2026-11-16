@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class CarteiraBarbeiroIntegrationTest {
+    @Autowired bruninho.Barbeiro.repository.ComandaRepository comandas;
     @Autowired MockMvc mvc;
     @Autowired UsuarioRepository usuarios;
     @Autowired BarbeiroRepository barbeiros;
@@ -244,7 +245,7 @@ class CarteiraBarbeiroIntegrationTest {
         var a = new Agendamento(); a.setBarbeiro(b); a.setData(LocalDate.parse(data));
         a.setHoraInicio(LocalTime.of(9, 0)); a.setHoraFinalizacao(LocalTime.of(9, 0).plusMinutes(minutos));
         a.setDuracaoServicoMinutos(minutos); a.setStatus(status); a.setPrecoTotal(BigDecimal.ZERO);
-        a.setFinalizadoEm(LocalDateTime.of(2026, 4, 2, 10, 0));
+        a.setFinalizadoEm(a.getData().atTime(10,0));
         return agendamentos.save(a);
     }
 
@@ -252,12 +253,15 @@ class CarteiraBarbeiroIntegrationTest {
         var c = new ComissaoBarbeiro(); c.setAgendamento(a); c.setBarbeiro(a.getBarbeiro());
         c.setTipo(TipoComissao.PADRAO_BARBEIRO); c.setValorBase(new BigDecimal("50"));
         c.setPercentualAplicado(new BigDecimal("40")); c.setValorComissao(new BigDecimal(valor));
-        c.setCriadoEm(LocalDateTime.now()); comissoes.save(c);
+        c.setCriadoEm(LocalDateTime.now());
+        if(a.getStatus()==StatusAgendamento.CONCLUIDO)c.setComanda(bruninho.Barbeiro.config.ComandaTestFixtures.criar(a,new BigDecimal("50"),new BigDecimal(valor),0,comandas));
+        comissoes.save(c);
     }
 
     private void pontos(Agendamento a, int valor) {
         var p = new ComissaoPlano(); p.setAgendamento(a); p.setBarbeiro(a.getBarbeiro());
         p.setPlanoMensal(contrato.getPlanoMensal()); p.setPlanoMensalCliente(contrato);
+        if(a.getStatus()==StatusAgendamento.CONCLUIDO)p.setComanda(bruninho.Barbeiro.config.ComandaTestFixtures.criar(a,new BigDecimal("50"),BigDecimal.ZERO,valor,comandas));
         p.setDataAgendamento(a.getData()); p.setPontos(valor); p.setCriadoEm(LocalDateTime.now()); pontos.save(p);
     }
 }

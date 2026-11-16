@@ -22,19 +22,19 @@
     </div>
     <section class="panel">
       <div class="table-header">
-        <div><h2>{{ aba() === 'entradas' ? 'Entradas (Lucros)' : 'Despesas (Gastos)' }}</h2><p>{{ aba() === 'entradas' ? 'Pagamentos de atendimentos e mensalidades recebidas no período' : 'Comissões geradas pelos atendimentos concluídos no período' }}</p></div>
+        <div><h2>{{ aba() === 'entradas' ? 'Entradas (Lucros)' : 'Despesas (Gastos)' }}</h2><p>{{ aba() === 'entradas' ? 'Pagamentos de comandas e mensalidades recebidas no período' : 'Comissões das comandas fechadas no período' }}</p></div>
         <div class="tools"><input type="search" aria-label="Buscar lançamentos" placeholder="Buscar descrição, nome..." [ngModel]="busca()" (ngModelChange)="pesquisar($event)"><button (click)="exportar()" [disabled]="!itens().length">↓ Exportar</button></div>
       </div>
       <div class="scroll"><table>
         <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Descrição</th><th>Cliente</th><th>{{ aba() === 'entradas' ? 'Forma de pagamento' : 'Barbeiro' }}</th><th class="valor">Valor</th></tr></thead>
         <tbody>
-          @for (item of visiveis(); track item.id) {
+          @for (item of visiveis(); track $index) {
             <tr><td>{{ item.dataHora | date:'dd/MM/yyyy HH:mm' }}</td><td><span class="badge" [class.expense]="aba() === 'saidas'">{{ item.tipo }}</span></td><td>{{ item.descricao }}</td><td>{{ item.cliente }}</td><td>{{ aba() === 'entradas' ? pagamento(item.formaPagamento) : item.barbeiro }}</td><td class="valor" [class.negative]="aba() === 'saidas'">{{ item.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td></tr>
           } @empty { <tr><td colspan="6" class="empty">{{ busca() ? 'Nenhum lançamento encontrado para esta busca.' : 'Nenhum lançamento neste período.' }}</td></tr> }
         </tbody>
       </table></div>
       <footer><span>{{ itens().length }} lançamento(s) encontrado(s)</span><div><button aria-label="Página anterior" [disabled]="pagina() === 0" (click)="pagina.set(pagina() - 1)">‹</button><span>Página {{ pagina() + 1 }} de {{ paginas() }}</span><button aria-label="Próxima página" [disabled]="pagina() + 1 >= paginas()" (click)="pagina.set(pagina() + 1)">›</button></div></footer>
     </section>
-    <p class="note">Atendimentos pela data de finalização e mensalidades pela data do pagamento. Despesas representam comissões geradas, sem controle de quitação. Pontos de planos mensais não compõem as despesas em dinheiro.</p>
+    <p class="note">Comandas pela data de fechamento e mensalidades pela data do pagamento. Despesas representam comissões geradas, sem controle de quitação. Pontos de planos mensais não compõem as despesas em dinheiro.</p>
   }
 </app-admin-layout>

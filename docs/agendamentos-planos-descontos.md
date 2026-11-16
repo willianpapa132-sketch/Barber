@@ -19,10 +19,12 @@ Na atualizacao, omitir o campo preserva os descontos; enviar uma lista vazia rem
 
 O agendamento guarda o detalhamento dos precos, descontos, cobertura e minutos em `agendamento_servicos_plano`. Alterar o plano ou o catalogo depois de agendar nao recalcula essas condicoes. O horario considera a duracao de todos os servicos, mas so os incluidos geram pontos.
 
-Na finalizacao, os pontos e a comissao dos extras sao registrados na mesma transacao. A comissao usa o percentual do barbeiro sobre a soma dos precos liquidos dos extras, com arredondamento monetario por servico. Quando ha valor a cobrar, e obrigatorio informar dinheiro, Pix, debito ou credito. `MENSAL` fica disponivel para atendimentos sem cobranca adicional.
+No fechamento da comanda pelo administrador, os pontos e a comissao dos extras sao registrados na mesma transacao. A comissao usa o percentual do barbeiro sobre a soma dos precos liquidos dos extras, com arredondamento monetario por servico. Quando ha valor a cobrar, e obrigatorio informar dinheiro, Pix, debito ou credito. Comandas sem cobranca usam lista vazia de pagamentos; `MENSAL` nao e uma entrada financeira.
 
 Exemplo: corte incluido de 30 minutos + extra de R$ 50 com 20% de desconto + extra de R$ 10 sem desconto = 30 pontos e R$ 50 a cobrar. Se o barbeiro tem 40% de comissao, recebe R$ 20 em comissao.
 
 O esquema e atualizado automaticamente pelo Flyway em `src/main/resources/db/migration`: a V1 cria as tabelas, a V2 aplica o isolamento por empresa e a V3 completa as validacoes do detalhamento e o indice de comissoes. Os antigos scripts manuais de `docs/sql` foram consolidados nessas migrations e removidos. A V3 valida os registros existentes sem recalcular valores; registros invalidos devem ser corrigidos explicitamente antes de reaplicar a migration. Para bancos legados, consulte [Migrations](MIGRATIONS.md).
 
 Agendamentos antigos sem detalhamento usam o plano/catalogo disponivel ao finalizar; quando integralmente cobertos, os pontos preservam a duracao total registrada no agendamento.
+
+O fluxo atual de fechamento, com produtos, descontos adicionais e pagamentos divididos, esta em [Comandas](COMANDAS.md). A comissao passa a considerar o valor liquido de cada item da comanda e seus percentuais registrados.

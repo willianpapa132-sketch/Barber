@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BarbeiroPageIntegrationTest {
     @Autowired MockMvc mvc;
     private final String[] rotas = { "/barbeiro", "/barbeiro/home", "/barbeiro/agenda",
-            "/barbeiro/agenda?data=2026-10-15&status=AGENDADO", "/barbeiro/agendamentos/9/finalizacao" };
+            "/barbeiro/agenda?data=2026-10-15&status=AGENDADO" };
 
     @Test
     void paginasDoBarbeiroAbremAplicacaoAngularInclusiveAcessoDireto() throws Exception {
