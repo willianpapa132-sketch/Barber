@@ -23,15 +23,18 @@ public class PlanoMensalClienteService {
     private final PlanoMensalRepository planoMensalRepository;
     private final ClienteRepository clienteRepository;
     private final PlanoMensalClienteRepository planoMensalClienteRepository;
+    private final bruninho.Barbeiro.repository.BarbeiroRepository barbeiros;
 
     public PlanoMensalClienteService(
             PlanoMensalRepository planoMensalRepository,
             ClienteRepository clienteRepository,
-            PlanoMensalClienteRepository planoMensalClienteRepository
+            PlanoMensalClienteRepository planoMensalClienteRepository,
+            bruninho.Barbeiro.repository.BarbeiroRepository barbeiros
     ) {
         this.planoMensalRepository = planoMensalRepository;
         this.clienteRepository = clienteRepository;
         this.planoMensalClienteRepository = planoMensalClienteRepository;
+        this.barbeiros = barbeiros;
     }
 
     @Transactional(readOnly = true)
@@ -48,12 +51,19 @@ public class PlanoMensalClienteService {
         return new PlanoClientePageResponse(
                 planoAtual != null,
                 planoAtual,
-                planosDisponiveis
+                planosDisponiveis,
+                barbeiros.findAllByAtivoTrueOrderByNomeAsc().stream()
+                        .map(bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse::de).toList()
         );
     }
 
     @Transactional
     public PlanoContratadoResponse contratarPlano(String login, Long planoId) {
+        return contratarPlano(login, planoId, null);
+    }
+
+    @Transactional
+    public PlanoContratadoResponse contratarPlano(String login, Long planoId, Long barbeiroPreferidoId) {
         var cliente = clienteRepository.findByUsuario_Login(login)
                 .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
 
@@ -82,8 +92,27 @@ public class PlanoMensalClienteService {
         planoMensalCliente.setProximoVencimento(planoMensalCliente.getCriadoEm().toLocalDate());
         planoMensalCliente.setAtualizadoEm(LocalDateTime.now());
         planoMensalCliente.setAtivo(true);
+        planoMensalCliente.setBarbeiroPreferido(barbeiroPreferido(barbeiroPreferidoId));
 
         return PlanoContratadoResponse.de(planoMensalClienteRepository.save(planoMensalCliente));
+    }
+
+    @Transactional
+    public PlanoContratadoResponse atualizarPreferencia(String login, Long barbeiroId) {
+        var cliente = clienteRepository.findByUsuario_Login(login)
+                .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
+        var contrato = planoMensalClienteRepository.findByCliente_IdAndAtivoTrue(cliente.getId())
+                .orElseThrow(() -> new NotFoundException("Plano ativo nao encontrado"));
+        contrato.setBarbeiroPreferido(barbeiroPreferido(barbeiroId));
+        contrato.setAtualizadoEm(LocalDateTime.now());
+        return PlanoContratadoResponse.de(contrato);
+    }
+
+    private bruninho.Barbeiro.domain.Barbeiro barbeiroPreferido(Long id) {
+        if (id == null) return null;
+        var barbeiro = barbeiros.findById(id).orElseThrow(() -> new NotFoundException("Barbeiro nao encontrado"));
+        if (!barbeiro.isAtivo()) throw new BusinessException("Escolha um barbeiro ativo para sua preferencia.");
+        return barbeiro;
     }
 
 

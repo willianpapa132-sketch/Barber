@@ -63,30 +63,52 @@ public class AgendamentoClienteController {
                 planoCliente.isPresent(),
                 planoCliente.map(contrato -> contrato.getPlanoMensal().getNomePlano()).orElse(null),
                 barbeirosDisponiveis,
-                servicosDisponiveis
+                servicosDisponiveis,
+                planoCliente.map(p -> p.getBarbeiroPreferido()).map(b -> b.getId()).orElse(null)
         );
     }
 
     @PostMapping({"/agendamentos", "/api/cliente/home/agendar"})
-    public ResponseEntity<AgendamentoResponse> criar(@Valid @RequestBody CriarAgendamentoRequest request) {
+    @Transactional
+    public ResponseEntity<AgendamentoResponse> criar(@Valid @RequestBody CriarAgendamentoRequest request, Authentication authentication) {
+        validarPreferencia(authentication, request.barbeiroId());
         return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoResponse.de(agendamentos.agendar(request)));
     }
 
     @PostMapping({"/agendamentos/plano", "/api/cliente/home/agendar/plano"})
-    public ResponseEntity<AgendamentoResponse> criarComPlano(@Valid @RequestBody CriarAgendamentoRequest request) {
+    @Transactional
+    public ResponseEntity<AgendamentoResponse> criarComPlano(@Valid @RequestBody CriarAgendamentoRequest request, Authentication authentication) {
+        validarPreferencia(authentication, request.barbeiroId());
         return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoResponse.de(agendamentos.agendarComPlano(request)));
     }
 
     @GetMapping({"/agendamentos/disponibilidade/dias", "/api/cliente/home/agendar/disponibilidade/dias"})
+    @Transactional(readOnly = true)
     public List<LocalDate> dias(@RequestParam Long usuarioId, @RequestParam Long clienteId,
-                               @RequestParam Long barbeiroId, @RequestParam List<Long> servicosIds) {
+                               @RequestParam Long barbeiroId, @RequestParam List<Long> servicosIds, Authentication authentication) {
+        validarPreferencia(authentication, barbeiroId);
         return disponibilidade.diasDisponiveis(usuarioId, clienteId, barbeiroId, servicosIds);
     }
 
     @GetMapping({"/agendamentos/disponibilidade/horarios", "/api/cliente/home/agendar/disponibilidade/horarios"})
+    @Transactional(readOnly = true)
     public List<LocalTime> horarios(@RequestParam Long usuarioId, @RequestParam Long clienteId,
             @RequestParam Long barbeiroId, @RequestParam List<Long> servicosIds,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data, Authentication authentication) {
+        validarPreferencia(authentication, barbeiroId);
         return disponibilidade.horariosDiaDisponivel(usuarioId, clienteId, barbeiroId, data, servicosIds);
+    }
+
+    // Preferencia vale para o autoagendamento. As agendas da equipe continuam livres.
+    private void validarPreferencia(Authentication authentication, Long barbeiroId) {
+        if (authentication == null || authentication.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"))) return;
+        var cliente = clientes.findByUsuario_Login(authentication.getName())
+                .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
+        var preferido = planosCliente.findByCliente_IdAndAtivoTrue(cliente.getId())
+                .filter(p -> Boolean.TRUE.equals(p.getPlanoMensal().getAtivo()))
+                .map(p -> p.getBarbeiroPreferido()).orElse(null);
+        if (preferido != null && !preferido.getId().equals(barbeiroId))
+            throw new bruninho.Barbeiro.exception.BusinessException("Agende com seu barbeiro preferido ou altere a preferencia em Meu plano.");
     }
 }

@@ -8,6 +8,7 @@ public record TelaAgendamentoResponse(
         boolean possuiPlano,
         String nomePlano,
         List<BarbeiroAgendamentoResponse> barbeiros,
-        List<ServicoAgendamentoResponse> servicos
+        List<ServicoAgendamentoResponse> servicos,
+        Long barbeiroPreferidoId
 ) {
 }

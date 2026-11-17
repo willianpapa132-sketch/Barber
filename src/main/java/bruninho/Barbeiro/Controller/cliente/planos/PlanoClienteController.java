@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/cliente/planos")
 public class PlanoClienteController {
+    public record Preferencia(@jakarta.validation.constraints.Positive Long barbeiroPreferidoId) {}
     private final PlanoMensalClienteService planosCliente;
 
     public PlanoClienteController(PlanoMensalClienteService planosCliente) {
@@ -27,10 +28,18 @@ public class PlanoClienteController {
     @PostMapping("/{planoId}/contratar")
     public ResponseEntity<PlanoContratadoResponse> contratar(
             @PathVariable Long planoId,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody(required=false) Preferencia preferencia,
             Authentication authentication
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(planosCliente.contratarPlano(authentication.getName(), planoId));
+                .body(planosCliente.contratarPlano(authentication.getName(), planoId,
+                        preferencia == null ? null : preferencia.barbeiroPreferidoId()));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/preferencia")
+    public PlanoContratadoResponse preferencia(Authentication authentication,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody Preferencia preferencia) {
+        return planosCliente.atualizarPreferencia(authentication.getName(), preferencia.barbeiroPreferidoId());
     }
 }

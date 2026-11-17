@@ -88,6 +88,30 @@ class MultiTenancyIntegrationTest {
     }
     @AfterEach void clear() { TenantContext.clear(); }
 
+    @Test void plataformaAtualizaAdministradorSomenteDaEmpresaSelecionada() throws Exception {
+        var owner=owner();var a=create(owner,"credalfa");var b=create(owner,"credbeta");
+        var admins=mvc.perform(get("/api/plataforma/empresas/"+a.id()+"/administradores")
+                .with(host("localhost")).session(owner)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].login").value("admin@empresa.test")).andReturn();
+        long adminId=json.readTree(admins.getResponse().getContentAsString()).get(0).get("id").asLong();
+        String payload=json.writeValueAsString(Map.of("id",adminId,"login","novo@empresa.test","password","Nova-senha-12345"));
+        mvc.perform(put("/api/plataforma/empresas/"+b.id()+"/administradores").with(host("localhost"))
+                .session(owner).with(csrf()).contentType("application/json").content(payload)).andExpect(status().isNotFound());
+        mvc.perform(put("/api/plataforma/empresas/"+a.id()+"/administradores").with(host("localhost"))
+                .session(owner).contentType("application/json").content(payload)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/plataforma/empresas/"+a.id()+"/administradores").with(host("localhost"))
+                .session(owner).with(csrf()).contentType("application/json").content(payload)).andExpect(status().isNoContent());
+        login("credalfa.localhost","novo@empresa.test","Nova-senha-12345");
+        login("credbeta.localhost","admin@empresa.test","Empresa-test-12345");
+        mvc.perform(post("/login").with(host("credalfa.localhost")).with(csrf())
+                .param("username","admin@empresa.test").param("password","Empresa-test-12345")).andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/plataforma/empresas/"+a.id()+"/administradores").with(host("localhost"))
+                .session(owner).with(csrf()).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("id",adminId,"login","outro@empresa.test","password",""))))
+                .andExpect(status().isNoContent());
+        login("credalfa.localhost","outro@empresa.test","Nova-senha-12345");
+    }
+
     @Test void bancoUnicoIsolaLoginCrudConfiguracaoESessao() throws Exception {
         var owner=owner();var a=create(owner,"alfa");var b=create(owner,"beta");
         assertThat(context.getBeansOfType(javax.sql.DataSource.class)).hasSize(1);
@@ -172,6 +196,11 @@ class MultiTenancyIntegrationTest {
         assertThatThrownBy(()->empresa(a.id(),()->{
             var plano=planos.findById(idsA.get(7)).orElseThrow();
             plano.setDescricao("Tentativa");plano.getServicosIncluidos().add(foreign);planos.flush();return null;
+        })).isInstanceOf(RuntimeException.class);
+        var foreignBarber=empresa(b.id(),()->barbeiros.findById(idsB.getFirst()).orElseThrow());
+        assertThatThrownBy(()->empresa(a.id(),()->{
+            var contrato=contratos.findById(idsA.get(8)).orElseThrow();
+            contrato.setBarbeiroPreferido(foreignBarber);contratos.flush();return null;
         })).isInstanceOf(RuntimeException.class);
     }
 

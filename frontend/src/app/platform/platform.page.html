@@ -3,6 +3,23 @@
   @if(error()){<p class="error" role="alert">{{error()}}</p>}
   @if(success()){<p class="success" role="status">{{success()}}</p>}
   <div class="grid">
+    @if(editing();as empresa){
+      <section class="panel credential-editor">
+        <h2>Administrador de {{empresa.nome}}</h2>
+        <p>Atualize o e-mail de acesso e, se necessário, defina uma nova senha.</p>
+        <form #credentialsForm="ngForm" (ngSubmit)="credentialsForm.valid&&salvarAdministrador()">
+          <fieldset [disabled]="saving()">
+            <label>Administrador<select name="administratorId" [(ngModel)]="administratorId" (ngModelChange)="selecionarAdministrador()" required>
+              @for(admin of administrators();track admin.id){<option [ngValue]="admin.id">{{admin.login}}</option>}
+            </select></label>
+            <label>E-mail<input name="administratorLogin" [(ngModel)]="administratorLogin" type="email" email required maxlength="120" autocomplete="off"></label>
+            <label>Nova senha<input name="administratorPassword" [(ngModel)]="administratorPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password"></label>
+            <small>Deixe a senha vazia para manter a atual. Uma nova senha deve ter pelo menos 8 caracteres.</small>
+            <div class="credential-actions"><button class="gold" type="submit" [disabled]="credentialsForm.invalid||saving()">{{saving()?'Salvando...':'Salvar acesso'}}</button><button type="button" (click)="cancelarAdministrador()">Cancelar</button></div>
+          </fieldset>
+        </form>
+      </section>
+    }
     <section class="panel"><h2>Nova empresa</h2><p>Defina o endereço e o acesso inicial do responsável.</p>
       <form #form="ngForm" (ngSubmit)="form.valid&&criar()"><fieldset [disabled]="loading()||saving()">
         <label>Nome da empresa<input name="nome" [(ngModel)]="nome" required maxlength="150" placeholder="Barbearia Carlos"></label>
@@ -30,7 +47,10 @@
       @if(loading()){<p role="status">Carregando empresas...</p>}
       @else{@for(c of empresas();track c.id){<article><div class="title"><h3>{{c.nome}}</h3><span class="badge" [class.off]="c.estado!=='ATIVA'">{{c.estado}}</span></div><p>{{c.responsavel}}</p>
           @if(c.estado==='ATIVA'){<a [href]="endereco(c)" target="_blank" rel="noopener noreferrer">{{c.host}} ↗</a>}@else{<small>{{c.host}}</small>}
-          @if(c.estado==='ATIVA'||c.estado==='SUSPENSA'){<button (click)="alterar(c)" [disabled]="saving()">{{c.estado==='ATIVA'?'Suspender acesso':'Reativar acesso'}}</button>}
+          @if(c.estado==='ATIVA'||c.estado==='SUSPENSA'){
+            <button (click)="editarAdministrador(c)" [disabled]="saving()||loading()">Editar administrador</button>
+            <button (click)="alterar(c)" [disabled]="saving()">{{c.estado==='ATIVA'?'Suspender acesso':'Reativar acesso'}}</button>
+          }
           @if(c.estado==='FALHOU'){<p class="error">A preparação não foi concluída. Verifique o PostgreSQL antes de cadastrar novamente com outro endereço.</p>}
         </article>}@empty{<div class="empty"><h3>Nenhuma empresa cadastrada</h3><p>Crie a primeira empresa pelo formulário ao lado.</p></div>}}
     </section>

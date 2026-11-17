@@ -27,6 +27,15 @@ public class PlatformController {
     public PlatformCompanyService.Company create(@Valid @RequestBody PlatformCompanyService.Create r){
         return service.create(r);
     }
+    @GetMapping("/empresas/{id}/administradores")
+    public List<PlatformCompanyService.Administrator> administrators(@PathVariable UUID id){
+        return service.administrators(id);
+    }
+    @PutMapping("/empresas/{id}/administradores")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void credentials(@PathVariable UUID id,@Valid @RequestBody PlatformCompanyService.Credentials r){
+        service.credentials(id,r);
+    }
     @PutMapping("/empresas/{id}/status")
     public PlatformCompanyService.Company status(@PathVariable UUID id,@Valid @RequestBody PlatformCompanyService.Status r){
         return service.status(id,r.ativa());

@@ -39,6 +39,33 @@ public class PlatformCompanyService {
     ){}
 
     public record Status(@NotNull Boolean ativa){}
+    public record Administrator(Long id, String login) {}
+    public record Credentials(@NotNull Long id, @NotBlank @Email @Size(max=120) String login,
+                              @Size(max=72) String password) {}
+
+    public List<Administrator> administrators(UUID empresaId) {
+        registry.byId(empresaId);
+        return registry.central().query("select id,login from usuario where empresa_id=? and role='ADMIN' order by id",
+                (rs,n) -> new Administrator(rs.getLong("id"),rs.getString("login")),empresaId);
+    }
+
+    public void credentials(UUID empresaId, Credentials r) {
+        registry.byId(empresaId);
+        boolean changePassword = r.password()!=null && !r.password().isEmpty();
+        if(changePassword && (r.password().length()<8 || r.password().getBytes(StandardCharsets.UTF_8).length>72))
+            throw bad("Senha deve ter pelo menos 8 caracteres e no maximo 72 bytes");
+        String login=r.login().trim().toLowerCase(Locale.ROOT);
+        try {
+            int count=changePassword
+                    ? registry.central().update("update usuario set login=?,senha=? where id=? and empresa_id=? and role='ADMIN'",
+                        login,encoder.encode(r.password()),r.id(),empresaId)
+                    : registry.central().update("update usuario set login=? where id=? and empresa_id=? and role='ADMIN'",
+                        login,r.id(),empresaId);
+            if(count!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Administrador nao encontrado nesta empresa");
+        } catch(DuplicateKeyException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Este e-mail ja esta em uso nesta empresa");
+        }
+    }
     private final TenantRegistry registry;
     private final PasswordEncoder encoder;
     private final AppProperties props;

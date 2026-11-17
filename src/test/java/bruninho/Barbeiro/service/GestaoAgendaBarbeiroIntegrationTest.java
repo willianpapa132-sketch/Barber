@@ -110,14 +110,18 @@ class GestaoAgendaBarbeiroIntegrationTest {
         assertThat(clientes.count()).isEqualTo(quantidadeClientes);
     }
 
-    @Test
-    void clienteMensalSegueRegrasERecebeVinculoDoPlano() throws Exception {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"ADMIN","BARBEIRO"})
+    void equipeAgendaComOutroBarbeiroPreservandoPreferenciaERegrasDoPlano(String role) throws Exception {
         var plano = new PlanosMensal(); plano.setNomePlano("Plano da agenda"); plano.setDescricao("Corte");
 
         plano.setValorMensal(new BigDecimal("100.00")); plano.setAtivo(true);
         plano.setServicosIncluidos(new HashSet<>(List.of(corte))); plano.setDiasMaximoAntecedencia(30); plano = planos.save(plano);
         var contrato = new PlanoMensalCliente(); contrato.setCliente(cliente); contrato.setUsuario(cliente.getUsuario());
         contrato.setPlanoMensal(plano); contrato.setValorMensal(plano.getValorMensal()); contrato.setAtivo(true);
+        var preferido = new Barbeiro();preferido.setNome("Barbeiro preferido");preferido.setTelefone("11999993333");
+        preferido.setUsuario(usuario("preferido@demo.com", ROLE.BARBEIRO));preferido=barbeiros.save(preferido);
+        contrato.setBarbeiroPreferido(preferido);
         contrato.setDiasMaximoAntecedencia(30); contrato = contratos.save(contrato);
         var foraDoPlano = new Servico(); foraDoPlano.setNome("Barba"); foraDoPlano.setDuracaoMinutos(10);
         foraDoPlano.setPreco(new BigDecimal("30.00")); foraDoPlano = servicos.save(foraDoPlano);
@@ -132,10 +136,15 @@ class GestaoAgendaBarbeiroIntegrationTest {
                 .andExpect(jsonPath("$.servicos[0].porcentagemDesconto").value(20))
                 .andExpect(jsonPath("$.servicos[0].precoLiquido").value(24))
                 .andExpect(jsonPath("$.servicos[1].inclusoNoPlano").value(true));
-        postJson("/agendamentos", "{\"clienteId\":%d,\"servicosIds\":[%d,%d],\"data\":\"%s\",\"horaInicio\":\"09:10\"}"
-                .formatted(cliente.getId(), corte.getId(), foraDoPlano.getId(), dia)).andExpect(status().isCreated());
+        String path="/api/barbeiro/agenda/agendamentos";String login=LOGIN;
+        if(role.equals("ADMIN")){login="admin-preferencia@demo.com";usuario(login,ROLE.ADMIN);path="/api/admin/agendamentos/"+barbeiro.getId()+"/agendamentos";}
+        mvc.perform(post(path).with(user(login).roles(role)).contentType("application/json")
+                .content("{\"clienteId\":%d,\"servicosIds\":[%d,%d],\"data\":\"%s\",\"horaInicio\":\"09:10\"}"
+                .formatted(cliente.getId(), corte.getId(), foraDoPlano.getId(), dia))).andExpect(status().isCreated());
         var salvo = agendamentos.findAll().getFirst();
         assertThat(salvo.getPlanoMensalCliente().getId()).isEqualTo(contrato.getId());
+        assertThat(salvo.getBarbeiro().getId()).isEqualTo(barbeiro.getId()).isNotEqualTo(preferido.getId());
+        assertThat(contratos.findById(contrato.getId()).orElseThrow().getBarbeiroPreferido().getId()).isEqualTo(preferido.getId());
         assertThat(salvo.getPrecoTotal()).isEqualByComparingTo("24.00");
         assertThat(salvo.getDuracaoServicoMinutos()).isEqualTo(25);
         assertThat(CalculoServicosPlano.pontos(salvo.getServicosPlano())).isEqualTo(15);

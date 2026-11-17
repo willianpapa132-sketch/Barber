@@ -25,6 +25,7 @@ interface BookingScreenResponse {
   clienteId: number;
   possuiPlano: boolean;
   nomePlano: string | null;
+  barbeiroPreferidoId: number | null;
   barbeiros: BarberOption[];
   servicos: ServiceOption[];
 }
@@ -70,6 +71,15 @@ interface BookingScreenResponse {
               <small>Escolha servicos incluidos e extras. Os extras sao cobrados a parte, com os descontos do seu plano.</small>
             </p>
           </section>
+        }
+
+        @if(data.barbeiroPreferidoId){
+          <section class="booking-plan-note"><p><strong>Seu barbeiro: {{selectedBarber?.nome || 'Indisponível'}}</strong>
+            <small>Usamos a preferência do seu plano. <a routerLink="/plano">Alterar preferência</a></small></p></section>
+        }
+
+        @if(data.barbeiroPreferidoId && !selectedBarber){
+          <section class="booking-state-card"><strong>Seu barbeiro de preferência está indisponível.</strong><p>Atualize a preferência no seu plano para continuar.</p><a routerLink="/plano">Ir para meu plano</a></section>
         }
 
         @if (step === 1) {
@@ -143,7 +153,7 @@ interface BookingScreenResponse {
             }
 
             <div class="booking-actions-row">
-              <button type="button" class="booking-secondary-action" (click)="step = 1">Voltar</button>
+              @if(!data.barbeiroPreferidoId){<button type="button" class="booking-secondary-action" (click)="step = 1">Voltar</button>}
               <button type="button" class="booking-primary-action" [disabled]="!selectedServices.length" (click)="goToDays()">Continuar</button>
             </div>
           </section>
@@ -361,7 +371,8 @@ export class NovoAgendamentoPage implements OnInit {
     this.http.get<BookingScreenResponse>('/api/cliente/home/agendar').subscribe({
       next: (response) => {
         this.screen = response;
-        this.selectedBarberId = response.barbeiros[0]?.id ?? null;
+        this.selectedBarberId = response.barbeiroPreferidoId ?? response.barbeiros[0]?.id ?? null;
+        this.step = response.barbeiroPreferidoId ? (this.selectedBarber ? 2 : 0) : 1;
         this.loading = false;
       },
       error: () => {

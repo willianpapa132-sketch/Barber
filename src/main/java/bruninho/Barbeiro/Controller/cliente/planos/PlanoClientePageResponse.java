@@ -5,6 +5,7 @@ import java.util.List;
 public record PlanoClientePageResponse(
         boolean possuiPlano,
         PlanoContratadoResponse planoAtual,
-        List<PlanoMensalResponse> planosDisponiveis
+        List<PlanoMensalResponse> planosDisponiveis,
+        List<bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse> barbeiros
 ) {
 }

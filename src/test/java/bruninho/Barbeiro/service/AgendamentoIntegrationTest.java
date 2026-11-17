@@ -126,6 +126,58 @@ class AgendamentoIntegrationTest {
     }
 
     @Test
+    void contrataPlanoComPreferenciaEAtualizaSemAlterarAgendamentos() throws Exception {
+        var contrato = contratarPlano();var planoId = contrato.getPlanoMensal().getId();
+        planosClientes.deleteAll();
+        mvc.perform(post("/api/cliente/planos/"+planoId+"/contratar").with(user("cliente").roles("CLIENTE"))
+                .contentType("application/json").content("{\"barbeiroPreferidoId\":"+barbeiro.getId()+"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.barbeiroPreferidoId").value(barbeiro.getId()));
+        mvc.perform(get("/api/cliente/planos").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.planoAtual.barbeiroPreferidoNome").value("Barbeiro"))
+                .andExpect(jsonPath("$.barbeiros[0].id").value(barbeiro.getId()));
+        mvc.perform(get("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.barbeiroPreferidoId").value(barbeiro.getId()));
+        var salvo=service.agendar(request(LocalTime.of(10,0)));
+        mvc.perform(put("/api/cliente/planos/preferencia").with(user("cliente").roles("CLIENTE"))
+                .contentType("application/json").content("{\"barbeiroPreferidoId\":null}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.barbeiroPreferidoId").isEmpty());
+        assertThat(agendamentos.findById(salvo.getId()).orElseThrow().getBarbeiro().getId()).isEqualTo(barbeiro.getId());
+        mvc.perform(get("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.barbeiroPreferidoId").isEmpty());
+    }
+
+    @Test
+    void preferenciaRejeitaBarbeiroInativoOuInexistente() throws Exception {
+        contratarPlano();barbeiro.setAtivo(false);barbeiros.save(barbeiro);
+        mvc.perform(put("/api/cliente/planos/preferencia").with(user("cliente").roles("CLIENTE"))
+                .contentType("application/json").content("{\"barbeiroPreferidoId\":"+barbeiro.getId()+"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/cliente/planos/preferencia").with(user("cliente").roles("CLIENTE"))
+                .contentType("application/json").content("{\"barbeiroPreferidoId\":9223372036854775807}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void clienteUsaPreferenciaMasAdministradorPodeAgendarComOutroBarbeiro() throws Exception {
+        var outro = new Barbeiro();outro.setNome("Preferido");outro.setTelefone("11999992222");
+        outro.setUsuario(novoUsuario("preferido", ROLE.BARBEIRO));outro=barbeiros.save(outro);
+        var contrato=contratarPlano();contrato.setBarbeiroPreferido(outro);planosClientes.save(contrato);
+        String payload="""
+                {"usuarioId":%d,"clienteId":%d,"barbeiroId":%d,"servicosIds":[%d],"data":"%s","horaInicio":"10:00"}
+                """.formatted(usuario.getId(),cliente.getId(),barbeiro.getId(),corte.getId(),dia);
+        mvc.perform(post("/api/cliente/home/agendar").with(user("cliente").roles("CLIENTE"))
+                .contentType("application/json").content(payload)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value(containsString("barbeiro preferido")));
+        mvc.perform(get("/api/cliente/home/agendar/disponibilidade/dias").with(user("cliente").roles("CLIENTE"))
+                .param("usuarioId",usuario.getId().toString()).param("clienteId",cliente.getId().toString())
+                .param("barbeiroId",barbeiro.getId().toString()).param("servicosIds",corte.getId().toString()))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/cliente/home/agendar").with(user("admin").roles("ADMIN"))
+                .contentType("application/json").content(payload)).andExpect(status().isCreated());
+        assertThat(agendamentos.findAll().getFirst().getBarbeiro().getId()).isEqualTo(barbeiro.getId());
+    }
+
+    @Test
     void clienteComPlanoUsaFluxoDePlanoAutomaticamente() {
         var planoCliente = contratarPlano();
 

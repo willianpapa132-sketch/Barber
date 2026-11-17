@@ -52,6 +52,10 @@ public class PlanoMensalCliente extends bruninho.Barbeiro.platform.EmpresaScoped
     @JoinColumn(name = "plano_mensal_id")
     private PlanosMensal planoMensal;
 
+    @ManyToOne
+    @JoinColumn(name = "barbeiro_preferido_id")
+    private Barbeiro barbeiroPreferido;
+
     @Positive
     private Integer diasMaximoAntecedencia;
 

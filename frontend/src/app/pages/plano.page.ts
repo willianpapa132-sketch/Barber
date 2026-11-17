@@ -2,6 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BottomNav } from '../shared/bottom-nav';
+import { FormsModule } from '@angular/forms';
+
+interface BarbeiroPreferencia { id: number; nome: string }
 
 interface ServicoPlano {
   id: number;
@@ -22,17 +25,21 @@ interface PlanoDisponivel {
 interface PlanoAtual extends PlanoDisponivel {
   planoMensalId: number;
   contratadoEm: string;
+  barbeiroPreferidoId: number | null;
+  barbeiroPreferidoNome: string | null;
 }
 
 interface PlanoPageResponse {
   possuiPlano: boolean;
   planoAtual: PlanoAtual | null;
   planosDisponiveis: PlanoDisponivel[];
+  barbeiros: BarbeiroPreferencia[];
 }
 
 @Component({
   selector: 'app-plano-page',
-  imports: [RouterLink, BottomNav],
+  imports: [RouterLink, BottomNav, FormsModule],
+  styles: [`.preference-card{margin:20px 0;padding:20px;border:1px solid #354650;border-radius:14px;background:#12212a;color:#edf2f5}.preference-card label{display:block;margin-bottom:10px}.preference-card select{width:100%;padding:12px;border-radius:8px;background:#0b1923;color:#edf2f5;border:1px solid #354650;font:inherit}.preference-card p{font-size:14px;line-height:1.5}.preference-card button{margin-top:14px}.plan-feedback{padding:12px;color:#ff9ca5}.plan-feedback.success{color:#64dca4}`],
   template: `
     <main class="client-shell plan-page-shell">
       <header class="plan-topbar">
@@ -50,6 +57,23 @@ interface PlanoPageResponse {
           <button type="button" (click)="loadPlans()">Tentar novamente</button>
         </section>
       } @else {
+        @if(operationError){<p class="plan-feedback" role="alert">{{operationError}}</p>}
+        @if(successMessage){<p class="plan-feedback success" role="status">{{successMessage}}</p>}
+        <section class="preference-card">
+          <label for="barbeiro-preferido">Barbeiro de preferência (opcional)</label>
+          <select id="barbeiro-preferido" [(ngModel)]="barbeiroPreferidoId" [disabled]="savingPlanId !== null || savingPreference">
+            <option [ngValue]="null">Sem preferência — escolher ao agendar</option>
+            @if(planoAtual?.barbeiroPreferidoId && !preferidoDisponivel){
+              <option [ngValue]="planoAtual!.barbeiroPreferidoId" disabled>{{planoAtual!.barbeiroPreferidoNome}} (indisponível)</option>
+            }
+            @for(barbeiro of barbeiros;track barbeiro.id){<option [ngValue]="barbeiro.id">{{barbeiro.nome}}</option>}
+          </select>
+          <p>Se escolher um profissional, seus próximos agendamentos abrirão com ele selecionado. A equipe pode agendar com outro barbeiro quando necessário.</p>
+          @if(planoAtual){
+            <p>Preferência atual: <strong>{{planoAtual.barbeiroPreferidoNome || 'Sem preferência'}}</strong></p>
+            <button class="choose-plan-button" type="button" (click)="salvarPreferencia()" [disabled]="savingPreference || savingPlanId !== null">{{savingPreference ? 'Salvando...' : 'Salvar preferência'}}</button>
+          }
+        </section>
         @if (planoAtual && !showAvailablePlans) {
           <section class="current-plan-view">
             <h2>Seu plano atual</h2>
@@ -138,7 +162,7 @@ interface PlanoPageResponse {
                     <button
                       class="choose-plan-button"
                       type="button"
-                      [disabled]="savingPlanId === plano.id"
+                      [disabled]="savingPlanId !== null || savingPreference"
                       (click)="contratarPlano(plano.id)"
                     >
                       {{ savingPlanId === plano.id ? 'Contratando...' : 'Escolher plano' }}
@@ -168,6 +192,21 @@ export class PlanoPage implements OnInit {
   protected savingPlanId: number | null = null;
   protected planoAtual: PlanoAtual | null = null;
   protected planosDisponiveis: PlanoDisponivel[] = [];
+  protected barbeiros: BarbeiroPreferencia[] = [];
+  protected barbeiroPreferidoId: number | null = null;
+  protected savingPreference = false;
+  protected operationError = '';
+  protected successMessage = '';
+  protected get preferidoDisponivel(): boolean { return this.barbeiros.some(b => b.id === this.planoAtual?.barbeiroPreferidoId); }
+
+  protected salvarPreferencia(): void {
+    if(this.savingPreference || this.savingPlanId !== null)return;
+    this.savingPreference=true;this.operationError='';this.successMessage='';
+    this.http.put<PlanoAtual>('/api/cliente/planos/preferencia',{barbeiroPreferidoId:this.barbeiroPreferidoId}).subscribe({
+      next: plano => { this.planoAtual=plano;this.savingPreference=false;this.successMessage='Preferência atualizada. Seus agendamentos existentes foram mantidos.'; },
+      error: error => { this.operationError=error.error?.mensagem || 'Não foi possível salvar a preferência.';this.savingPreference=false; }
+    });
+  }
 
   ngOnInit(): void {
     this.loadPlans();
@@ -181,6 +220,8 @@ export class PlanoPage implements OnInit {
       next: (response) => {
         this.planoAtual = response.planoAtual;
         this.planosDisponiveis = response.planosDisponiveis;
+        this.barbeiros = response.barbeiros;
+        this.barbeiroPreferidoId = response.planoAtual?.barbeiroPreferidoId ?? null;
         this.showAvailablePlans = !response.possuiPlano;
         this.loading = false;
       },
@@ -192,18 +233,19 @@ export class PlanoPage implements OnInit {
   }
 
   protected contratarPlano(planoId: number): void {
+    if(this.savingPlanId !== null || this.savingPreference)return;
     this.savingPlanId = planoId;
-    this.errorMessage = '';
+    this.operationError = '';this.successMessage='';
 
-    this.http.post<PlanoAtual>(`/api/cliente/planos/${planoId}/contratar`, {}).subscribe({
+    this.http.post<PlanoAtual>(`/api/cliente/planos/${planoId}/contratar`, {barbeiroPreferidoId:this.barbeiroPreferidoId}).subscribe({
       next: (planoAtual) => {
         this.planoAtual = planoAtual;
         this.showAvailablePlans = false;
         this.savingPlanId = null;
         this.loadPlans();
       },
-      error: () => {
-        this.errorMessage = 'Nao foi possivel contratar o plano selecionado.';
+      error: (error) => {
+        this.operationError = error.error?.mensagem || 'Nao foi possivel contratar o plano selecionado.';
         this.savingPlanId = null;
       },
     });

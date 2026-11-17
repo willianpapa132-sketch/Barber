@@ -16,7 +16,9 @@ public record PlanoContratadoResponse(
         BigDecimal valorMensal,
         Integer diasMaximoAntecedencia,
         LocalDateTime contratadoEm,
-        List<ServicoPlanoResponse> servicos
+        List<ServicoPlanoResponse> servicos,
+        Long barbeiroPreferidoId,
+        String barbeiroPreferidoNome
 ) {
     public static PlanoContratadoResponse de(PlanoMensalCliente planoCliente) {
         var plano = planoCliente.getPlanoMensal();
@@ -32,7 +34,9 @@ public record PlanoContratadoResponse(
                 plano.getServicosIncluidos().stream()
                         .sorted(Comparator.comparing(Servico::getNome))
                         .map(ServicoPlanoResponse::de)
-                        .toList()
+                        .toList(),
+                planoCliente.getBarbeiroPreferido() == null ? null : planoCliente.getBarbeiroPreferido().getId(),
+                planoCliente.getBarbeiroPreferido() == null ? null : planoCliente.getBarbeiroPreferido().getNome()
         );
     }
 }

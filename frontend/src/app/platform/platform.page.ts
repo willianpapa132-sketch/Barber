@@ -4,6 +4,32 @@ interface Company {id:string;nome:string;responsavel:string;slug:string;host:str
 interface Horario {diaSemana:string;horarioInicio:string;horarioFim:string;fechado:boolean;intervaloMinimoEntreAgendamentos:number;permiteAgendamentoPlano:boolean}
 @Component({selector:'app-platform',imports:[FormsModule],templateUrl:'./platform.page.html',styleUrl:'./platform.page.scss'})
 export class PlatformPage implements OnInit {
+  editing=signal<Company|null>(null);
+  administrators=signal<{id:number;login:string}[]>([]);
+  administratorId:number|null=null;
+  administratorLogin='';administratorPassword='';
+  async editarAdministrador(c:Company){
+    if(this.saving())return;
+    this.saving.set(true);this.error.set('');this.success.set('');this.cancelarAdministrador();
+    try{
+      const admins=await this.request<{id:number;login:string}[]>(`/empresas/${c.id}/administradores`);
+      if(!admins.length)throw new Error('Esta empresa não possui administrador cadastrado.');
+      this.administrators.set(admins);this.administratorId=admins[0].id;this.administratorLogin=admins[0].login;this.editing.set(c);
+    }catch(e){this.error.set((e as Error).message);}finally{this.saving.set(false);}
+  }
+  selecionarAdministrador(){
+    this.administratorLogin=this.administrators().find(a=>a.id===this.administratorId)?.login??'';
+    this.administratorPassword='';
+  }
+  cancelarAdministrador(){this.editing.set(null);this.administrators.set([]);this.administratorId=null;this.administratorLogin='';this.administratorPassword='';}
+  async salvarAdministrador(){
+    const c=this.editing();if(!c||this.saving())return;
+    this.saving.set(true);this.error.set('');this.success.set('');
+    try{
+      await this.request<void>(`/empresas/${c.id}/administradores`,{method:'PUT',body:JSON.stringify({id:this.administratorId,login:this.administratorLogin,password:this.administratorPassword})});
+      this.cancelarAdministrador();this.success.set(`Acesso do administrador de ${c.nome} atualizado.`);
+    }catch(e){this.error.set((e as Error).message);}finally{this.saving.set(false);}
+  }
   empresas=signal<Company[]>([]);loading=signal(true);saving=signal(false);error=signal('');success=signal('');
   nome='';responsavel='';slug='';adminLogin='';adminPassword='';private csrf:{token:string;headerName:string}|null=null;
   telefone='';enderecoEmpresa='';
