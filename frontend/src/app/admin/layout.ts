@@ -13,6 +13,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         <nav aria-label="Menu administrativo">
           <a routerLink="/admin/home" routerLinkActive="selected" ariaCurrentWhenActive="page">⌂ <span>Home</span></a>
           <a routerLink="/admin/agendamentos" routerLinkActive="selected" ariaCurrentWhenActive="page">▦ <span>Agendamentos</span></a>
+          <a routerLink="/admin/comandas" routerLinkActive="selected" ariaCurrentWhenActive="page">? <span>Comandas</span></a>
           <a routerLink="/admin/dashboard" routerLinkActive="selected" ariaCurrentWhenActive="page">▥ <span>Dashboard</span></a>
           <a routerLink="/admin/cadastros" routerLinkActive="selected" ariaCurrentWhenActive="page">♙ <span>Cadastros</span></a>
           <a routerLink="/admin/comissao" routerLinkActive="selected" ariaCurrentWhenActive="page">% <span>Comissões</span></a>

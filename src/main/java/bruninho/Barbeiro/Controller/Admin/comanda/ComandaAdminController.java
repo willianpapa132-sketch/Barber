@@ -12,6 +12,7 @@ public class ComandaAdminController {
     private final ServicoRepository servicos;
     private final ProdutoRepository produtos;
     public ComandaAdminController(ComandaService s,ServicoRepository sr,ProdutoRepository pr){service=s;servicos=sr;produtos=pr;}
+    @GetMapping public List<ComandaService.Resumo> listar(@RequestParam java.time.LocalDate de,@RequestParam java.time.LocalDate ate,@RequestParam(defaultValue="false") boolean encerradas){return service.listar(de,ate,encerradas);}
     @GetMapping("/agendamento/{id}") public ComandaResponse consultar(@PathVariable Long id){return service.consultar(id);}
     @PostMapping("/agendamento/{id}/previa") public ComandaResponse previa(@PathVariable Long id,@Valid @RequestBody FecharComandaRequest r){return service.previa(id,r);}
     @PostMapping("/agendamento/{id}/fechar") public ComandaResponse fechar(@PathVariable Long id,@Valid @RequestBody FecharComandaRequest r,Authentication auth){return service.fechar(id,r,auth.getName());}

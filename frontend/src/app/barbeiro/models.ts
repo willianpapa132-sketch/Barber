@@ -1,5 +1,6 @@
 export interface Appointment {
   id: number; nomeCliente: string; horaInicio: string; horaFinalizacao: string;
+  semanaPagamentoPlano?: boolean; vencimentoPlano?: string | null;
   duracaoMinutos: number; servicos: string[]; status: string;
 }
 export interface BarberHome {

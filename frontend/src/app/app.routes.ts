@@ -13,6 +13,8 @@ export const routes: Routes = [
   { path: 'admin/configuracao', loadComponent: () => import('./admin/configuracao.page').then(m => m.AdminConfiguracaoPage), title: 'Configurações' },
   { path: 'admin/dashboard', loadComponent: () => import('./admin/dashboard.page').then(m => m.AdminDashboardPage), title: 'Dashboard' },
   { path: 'admin/comissao', loadComponent: () => import('./admin/comissao.page').then(m => m.AdminComissaoPage), title: 'Comissões' },
+  { path: 'admin/comandas', loadComponent: () => import('./admin/comandas.page').then(m => m.AdminComandasPage), title: 'Comandas' },
+  { path: 'admin/comandas/:id', loadComponent: () => import('./admin/comanda.page').then(m => m.AdminComandaPage), title: 'Comanda' },
   { path: 'admin/agendamentos/:id/comanda', loadComponent: () => import('./admin/comanda.page').then(m => m.AdminComandaPage), title: 'Fechar comanda' },
   { path: 'admin/agendamentos', loadComponent: () => import('./admin/agendamentos.page').then(m => m.AdminAgendamentosPage), title: 'Agendamentos' },
   { path: 'admin/caixa/:id/movimentacoes', loadComponent: () => import('./admin/caixa-movimentacoes.page').then(m => m.CaixaMovimentacoesPage), title: 'Movimentações do caixa' },

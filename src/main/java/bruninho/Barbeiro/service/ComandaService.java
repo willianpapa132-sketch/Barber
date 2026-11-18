@@ -31,6 +31,16 @@ public class ComandaService {
         agendamentos=a;comandas=c;servicos=s;produtos=p;comissoes=cb;pontos=cp;this.caixa=caixa;this.cobranca=cobranca;
         clock=Clock.system(ZoneId.of(props.getZone()));
     }
+    public record Resumo(Long agendamentoId,String cliente,String barbeiro,LocalDate data,LocalTime horaInicio,boolean fechada,String fechadoPor,LocalDateTime fechadoEm) {}
+    @Transactional(readOnly=true)
+    public List<Resumo> listar(LocalDate de,LocalDate ate,boolean encerradas) {
+        if(de.isAfter(ate))throw erro(400,"Data inicial deve ser anterior ou igual a data final");
+        var fechadas=comandas.findAll().stream().filter(c->!c.getAgendamento().getData().isBefore(de)&&!c.getAgendamento().getData().isAfter(ate)).collect(java.util.stream.Collectors.toMap(c->c.getAgendamento().getId(),c->c));
+        return agendamentos.findByDataBetweenOrderByDataAsc(de,ate).stream()
+            .filter(a->encerradas?fechadas.containsKey(a.getId()):a.getStatus()==StatusAgendamento.AGENDADO&&!fechadas.containsKey(a.getId()))
+            .sorted(Comparator.comparing(Agendamento::getData).thenComparing(Agendamento::getHoraInicio).thenComparing(Agendamento::getId))
+            .map(a->{var c=fechadas.get(a.getId());return new Resumo(a.getId(),a.getNomeCliente()!=null?a.getNomeCliente():a.getCliente()!=null?a.getCliente().getNome():"Cliente avulso",a.getBarbeiro().getNome(),a.getData(),a.getHoraInicio(),c!=null,c==null?null:c.getFechadoPor(),c==null?null:c.getFechadoEm());}).toList();
+    }
     @Transactional(readOnly=true)
     public ComandaResponse consultar(Long agendamentoId) {
         var existente=comandas.findByAgendamento_Id(agendamentoId);
