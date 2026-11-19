@@ -15,14 +15,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlanoClienteController {
     public record Preferencia(@jakarta.validation.constraints.Positive Long barbeiroPreferidoId) {}
     private final PlanoMensalClienteService planosCliente;
+    private final bruninho.Barbeiro.service.CancelamentoPlanoClienteService cancelamento;
 
-    public PlanoClienteController(PlanoMensalClienteService planosCliente) {
+    public PlanoClienteController(PlanoMensalClienteService planosCliente, bruninho.Barbeiro.service.CancelamentoPlanoClienteService cancelamento) {
         this.planosCliente = planosCliente;
+        this.cancelamento=cancelamento;
     }
 
     @GetMapping
     public PlanoClientePageResponse listar(Authentication authentication) {
         return planosCliente.buscarTelaPlanos(authentication.getName());
+    }
+
+    @PostMapping("/cancelar")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<Void> cancelar(Authentication authentication) {
+        cancelamento.cancelar(authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{planoId}/contratar")

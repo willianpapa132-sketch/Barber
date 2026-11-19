@@ -50,7 +50,7 @@ public class AgendamentoService {
     @Transactional
     public Agendamento agendar(CriarAgendamentoRequest request) {
         var cliente = validacao.validarCliente(request.usuarioId(), request.clienteId());
-        var planoCliente = planosCliente.findByCliente_IdAndAtivoTrue(cliente.getId());
+        var planoCliente = planosCliente.bloquearAtivoPorCliente(cliente.getId());
 
         if (planoCliente.isPresent()) {
             return agendarComPlano(request, cliente, planoCliente.get());
@@ -62,7 +62,7 @@ public class AgendamentoService {
     @Transactional
     public Agendamento agendarComPlano(CriarAgendamentoRequest request) {
         var cliente = validacao.validarCliente(request.usuarioId(), request.clienteId());
-        var planoCliente = planosCliente.findByCliente_IdAndAtivoTrue(cliente.getId())
+        var planoCliente = planosCliente.bloquearAtivoPorCliente(cliente.getId())
                 .orElseThrow(() -> new BusinessException("Cliente nao possui plano mensal ativo"));
 
         return agendarComPlano(request, cliente, planoCliente);

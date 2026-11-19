@@ -33,7 +33,6 @@ public class ClienteService {
 
         cliente.setNome(request.nome().trim());
         cliente.setTelefone(request.telefone().trim());
-        cliente.setImgUrl(normalizarImagem(request.imgUrl()));
         cliente.setAtualizadoEm(LocalDateTime.now());
 
         return ClientePerfilResponse.de(clienteRepository.save(cliente));
@@ -42,10 +41,4 @@ public class ClienteService {
 
 
 
-    private String normalizarImagem(String imgUrl) {
-        if (imgUrl == null || imgUrl.isBlank()) {
-            return null;
-        }
-        return imgUrl.trim();
-    }
 }

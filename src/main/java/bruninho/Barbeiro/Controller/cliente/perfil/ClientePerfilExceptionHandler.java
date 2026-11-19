@@ -17,6 +17,6 @@ public class ClientePerfilExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErroPerfil> entrada() {
-        return ResponseEntity.badRequest().body(new ErroPerfil("Informe nome, telefone e imagem validos."));
+        return ResponseEntity.badRequest().body(new ErroPerfil("Informe nome e telefone validos."));
     }
 }

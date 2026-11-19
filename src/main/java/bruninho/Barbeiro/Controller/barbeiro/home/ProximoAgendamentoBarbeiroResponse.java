@@ -15,7 +15,6 @@ public record ProximoAgendamentoBarbeiroResponse(
         LocalTime horaFinalizacao,
         int duracaoMinutos,
         String nomeCliente,
-        String clienteImgUrl,
         List<String> servicos,
         StatusAgendamento status
 ) {
@@ -33,7 +32,7 @@ public record ProximoAgendamentoBarbeiroResponse(
         return new ProximoAgendamentoBarbeiroResponse(
                 agendamento.getId(), agendamento.getData(), agendamento.getHoraInicio(),
                 agendamento.getHoraFinalizacao(), agendamento.getDuracaoServicoMinutos(),
-                nome, cliente == null ? null : cliente.getImgUrl(), servicos, agendamento.getStatus()
+                nome, servicos, agendamento.getStatus()
         );
     }
 }

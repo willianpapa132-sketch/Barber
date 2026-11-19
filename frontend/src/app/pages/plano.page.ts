@@ -34,6 +34,7 @@ interface PlanoPageResponse {
   planoAtual: PlanoAtual | null;
   planosDisponiveis: PlanoDisponivel[];
   barbeiros: BarbeiroPreferencia[];
+  cancelamento: {permitido:boolean;mensagem:string} | null;
 }
 
 @Component({
@@ -59,21 +60,6 @@ interface PlanoPageResponse {
       } @else {
         @if(operationError){<p class="plan-feedback" role="alert">{{operationError}}</p>}
         @if(successMessage){<p class="plan-feedback success" role="status">{{successMessage}}</p>}
-        <section class="preference-card">
-          <label for="barbeiro-preferido">Barbeiro de preferência (opcional)</label>
-          <select id="barbeiro-preferido" [(ngModel)]="barbeiroPreferidoId" [disabled]="savingPlanId !== null || savingPreference">
-            <option [ngValue]="null">Sem preferência — escolher ao agendar</option>
-            @if(planoAtual?.barbeiroPreferidoId && !preferidoDisponivel){
-              <option [ngValue]="planoAtual!.barbeiroPreferidoId" disabled>{{planoAtual!.barbeiroPreferidoNome}} (indisponível)</option>
-            }
-            @for(barbeiro of barbeiros;track barbeiro.id){<option [ngValue]="barbeiro.id">{{barbeiro.nome}}</option>}
-          </select>
-          <p>Se escolher um profissional, seus próximos agendamentos abrirão com ele selecionado. A equipe pode agendar com outro barbeiro quando necessário.</p>
-          @if(planoAtual){
-            <p>Preferência atual: <strong>{{planoAtual.barbeiroPreferidoNome || 'Sem preferência'}}</strong></p>
-            <button class="choose-plan-button" type="button" (click)="salvarPreferencia()" [disabled]="savingPreference || savingPlanId !== null">{{savingPreference ? 'Salvando...' : 'Salvar preferência'}}</button>
-          }
-        </section>
         @if (planoAtual && !showAvailablePlans) {
           <section class="current-plan-view">
             <h2>Seu plano atual</h2>
@@ -101,6 +87,25 @@ interface PlanoPageResponse {
                 </div>
               </div>
             </article>
+
+            @if(planoAtual.barbeiroPreferidoNome){<p>Barbeiro de preferência: <strong>{{planoAtual.barbeiroPreferidoNome}}</strong></p>}
+
+            <section class="cancel-plan-card" aria-labelledby="cancel-plan-title">
+              <h3 id="cancel-plan-title">Cancelar plano mensal</h3>
+              @if(cancelamento && !cancelamento.permitido){
+                <p role="status">{{cancelamento.mensagem}}</p>
+                <a routerLink="/agendamentos">Ver meus agendamentos</a>
+              }@else if(confirmarCancelamento){
+                <p role="alert">Ao cancelar, você perderá os descontos e todas as vantagens do plano mensal. Quer mesmo abrir mão desses benefícios?</p>
+                <div class="cancel-plan-actions">
+                  <button type="button" class="cancel-plan-button" (click)="cancelarPlano()" [disabled]="cancelando">{{cancelando?'Cancelando...':'Sim, cancelar plano'}}</button>
+                  <button type="button" class="keep-plan-button" (click)="confirmarCancelamento=false" [disabled]="cancelando">Manter meu plano</button>
+                </div>
+              }@else{
+                <p>Antes de cancelar, verificamos os agendamentos e as parcelas. O prazo de tolerância não altera essa validação.</p>
+                <button type="button" class="cancel-plan-button" (click)="confirmarCancelamento=true">Cancelar meu plano</button>
+              }
+            </section>
 
             <button class="upgrade-card" type="button" (click)="showAvailablePlans = true">
               <span aria-hidden="true">&#8599;</span>
@@ -159,15 +164,27 @@ interface PlanoPageResponse {
                         <p>Agende com ate<br />{{ plano.diasMaximoAntecedencia }} dias de antecedencia</p>
                       </div>
                     </div>
-                    <button
+                    @if(selectedPlanId===plano.id){
+                      <section class="preference-card">
+                        <label [for]="'barbeiro-preferido-'+plano.id">Barbeiro de preferência (opcional)</label>
+                        <select [id]="'barbeiro-preferido-'+plano.id" [(ngModel)]="barbeiroPreferidoId" [disabled]="savingPlanId!==null">
+                          <option [ngValue]="null">Sem preferência — escolher ao agendar</option>
+                          @for(barbeiro of barbeiros;track barbeiro.id){<option [ngValue]="barbeiro.id">{{barbeiro.nome}}</option>}
+                        </select>
+                        <p>Se escolher um profissional, os próximos agendamentos abrirão com ele selecionado.</p>
+                        <button class="choose-plan-button" type="button" (click)="contratarPlano(plano.id)" [disabled]="savingPlanId!==null">{{savingPlanId===plano.id?'Contratando...':'Confirmar contratação'}}</button>
+                        <button class="plan-inline-back" type="button" (click)="selectedPlanId=null" [disabled]="savingPlanId!==null">Voltar aos planos</button>
+                      </section>
+                    }@else{<button
                       class="choose-plan-button"
                       type="button"
-                      [disabled]="savingPlanId !== null || savingPreference"
-                      (click)="contratarPlano(plano.id)"
+                      [disabled]="savingPlanId !== null || cancelando"
+                      (click)="selecionarPlano(plano.id)"
                     >
-                      {{ savingPlanId === plano.id ? 'Contratando...' : 'Escolher plano' }}
+                      Escolher plano
                       <span aria-hidden="true">&rsaquo;</span>
                     </button>
+                    }
                   </article>
                 }
               </div>
@@ -194,20 +211,33 @@ export class PlanoPage implements OnInit {
   protected planosDisponiveis: PlanoDisponivel[] = [];
   protected barbeiros: BarbeiroPreferencia[] = [];
   protected barbeiroPreferidoId: number | null = null;
-  protected savingPreference = false;
+  protected cancelando = false;
+  protected confirmarCancelamento = false;
+  protected selectedPlanId: number | null = null;
+  protected cancelamento: {permitido:boolean;mensagem:string} | null = null;
   protected operationError = '';
   protected successMessage = '';
-  protected get preferidoDisponivel(): boolean { return this.barbeiros.some(b => b.id === this.planoAtual?.barbeiroPreferidoId); }
 
-  protected salvarPreferencia(): void {
-    if(this.savingPreference || this.savingPlanId !== null)return;
-    this.savingPreference=true;this.operationError='';this.successMessage='';
-    this.http.put<PlanoAtual>('/api/cliente/planos/preferencia',{barbeiroPreferidoId:this.barbeiroPreferidoId}).subscribe({
-      next: plano => { this.planoAtual=plano;this.savingPreference=false;this.successMessage='Preferência atualizada. Seus agendamentos existentes foram mantidos.'; },
-      error: error => { this.operationError=error.error?.mensagem || 'Não foi possível salvar a preferência.';this.savingPreference=false; }
-    });
+  protected selecionarPlano(planoId: number): void {
+    this.selectedPlanId=planoId;this.barbeiroPreferidoId=null;this.operationError='';
   }
 
+  protected cancelarPlano(): void {
+    if(this.cancelando || !this.confirmarCancelamento)return;
+    this.cancelando=true;this.operationError='';this.successMessage='';
+    this.http.post<void>('/api/cliente/planos/cancelar',{}).subscribe({
+      next: () => {
+        this.cancelando=false;this.confirmarCancelamento=false;
+        this.successMessage='Plano cancelado. Se mudar de ideia, você pode escolher um novo plano.';
+        this.loadPlans();
+      },
+      error: error => {
+        this.cancelando=false;this.confirmarCancelamento=false;
+        this.operationError=error.error?.mensagem || 'Não foi possível cancelar o plano.';
+        this.loadPlans();
+      }
+    });
+  }
   ngOnInit(): void {
     this.loadPlans();
   }
@@ -219,6 +249,9 @@ export class PlanoPage implements OnInit {
     this.http.get<PlanoPageResponse>('/api/cliente/planos').subscribe({
       next: (response) => {
         this.planoAtual = response.planoAtual;
+        this.cancelamento = response.cancelamento;
+        this.confirmarCancelamento = false;
+        this.selectedPlanId = null;
         this.planosDisponiveis = response.planosDisponiveis;
         this.barbeiros = response.barbeiros;
         this.barbeiroPreferidoId = response.planoAtual?.barbeiroPreferidoId ?? null;
@@ -233,7 +266,7 @@ export class PlanoPage implements OnInit {
   }
 
   protected contratarPlano(planoId: number): void {
-    if(this.savingPlanId !== null || this.savingPreference)return;
+    if(this.savingPlanId !== null || this.cancelando)return;
     this.savingPlanId = planoId;
     this.operationError = '';this.successMessage='';
 

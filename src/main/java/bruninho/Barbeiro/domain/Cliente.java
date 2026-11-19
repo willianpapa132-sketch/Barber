@@ -30,9 +30,6 @@ public class Cliente extends bruninho.Barbeiro.platform.EmpresaScopedEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 500)
-    private String imgUrl;
-
     @Column(nullable = false)
     @NotBlank
     private String nome;

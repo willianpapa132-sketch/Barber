@@ -30,6 +30,8 @@ class GerenciamentoPlanosIntegrationTest {
     @Autowired ConfiguracaoBarbeariaRepository configs;
     @Autowired GerenciamentoPlanosService gestao;
     @Autowired ValidacaoAgendamentoService validacao;
+    @Autowired AgendamentoRepository agendamentos;
+    @Autowired BarbeiroRepository barbeiros;
     private PlanoMensalCliente contrato;
     private final LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
     private String base;
@@ -49,6 +51,80 @@ class GerenciamentoPlanosIntegrationTest {
     @Test void marcadorLegadoNaoPodeSerUsadoEmNovosRecebimentos(){
         var erro=assertThrows(org.springframework.web.server.ResponseStatusException.class,()->gestao.receber(contrato.getId(),contrato.getProximoVencimento(),hoje,FormaPagamento.LEGADO,null,"admin"));
         assertEquals(400,erro.getStatusCode().value());assertTrue(erro.getReason().contains("forma de pagamento"));
+    }
+
+    @Test void clienteCancelaPlanoSemUsoEPodeContratarNovamenteSemApagarHistorico() throws Exception {
+        mvc.perform(get("/api/cliente/planos").with(user("gestao-cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.cancelamento.permitido").value(true));
+        cancelarCliente().andExpect(status().isNoContent());
+        assertFalse(contrato.getAtivo());
+        mvc.perform(post("/api/cliente/planos/"+contrato.getPlanoMensal().getId()+"/contratar")
+                .with(user("gestao-cliente").roles("CLIENTE")).contentType("application/json").content("{}"))
+                .andExpect(status().isCreated());
+        assertEquals(2,contratos.count());
+        assertNotEquals(contrato.getId(),contratos.findByCliente_IdAndAtivoTrue(contrato.getCliente().getId()).orElseThrow().getId());
+    }
+
+    @Test void agendamentoAtivoBloqueiaAteClienteCancelarAgendamento() throws Exception {
+        var agendamento=atendimento(StatusAgendamento.AGENDADO,hoje.plusDays(1).atTime(10,0));
+        cancelarCliente().andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("agendamento ativo")));
+        assertTrue(contrato.getAtivo());
+        agendamento.setStatus(StatusAgendamento.CANCELADO);agendamentos.saveAndFlush(agendamento);
+        cancelarCliente().andExpect(status().isNoContent());
+    }
+
+    @Test void atendimentoAposPagamentoExigeUltimaParcelaEHistoricoPermanece() throws Exception {
+        pagamento(hoje.minusDays(3),hoje.minusMonths(1));
+        contrato.setProximoVencimento(hoje.plusDays(5));
+        var agendamento=atendimento(StatusAgendamento.CONCLUIDO,hoje.minusDays(1).atTime(10,0));
+        cancelarCliente().andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("quite a última parcela")));
+        gestao.receber(contrato.getId(),contrato.getProximoVencimento(),hoje,FormaPagamento.PIX,null,"admin");
+        cancelarCliente().andExpect(status().isNoContent());
+        assertEquals(2,recebimentos.findByContrato_IdOrderByVencimentoDesc(contrato.getId()).size());
+        assertEquals(StatusAgendamento.CONCLUIDO,agendamentos.findById(agendamento.getId()).orElseThrow().getStatus());
+    }
+
+    @Test void vencimentoHojeBloqueiaMesmoComToleranciaELiberacaoAdministrativa() throws Exception {
+        pagamento(hoje.minusDays(3),hoje.minusMonths(1));
+        contrato.setProximoVencimento(hoje);contrato.setLiberadoAte(hoje.plusDays(10));
+        configs.atual().orElseThrow().setDiasToleranciaPagamentoPlano(30);
+        mvc.perform(get("/api/cliente/planos").with(user("gestao-cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.cancelamento.permitido").value(false));
+        cancelarCliente().andExpect(status().isBadRequest());assertTrue(contrato.getAtivo());
+    }
+
+    @Test void atendimentoSemPagamentoNaoPermiteCancelar() throws Exception {
+        atendimento(StatusAgendamento.CONCLUIDO,hoje.minusDays(1).atTime(10,0));
+        cancelarCliente().andExpect(status().isBadRequest());assertTrue(contrato.getAtivo());
+    }
+
+    @Test void perfilDoClienteNaoEnviaNemExigeFoto() throws Exception {
+        mvc.perform(get("/api/cliente/perfil").with(user("gestao-cliente").roles("CLIENTE")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.imgUrl").doesNotExist());
+        mvc.perform(put("/api/cliente/perfil").with(user("gestao-cliente").roles("CLIENTE"))
+                .contentType("application/json").content("{\"nome\":\"Cliente atualizado\",\"telefone\":\"11988887777\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nome").value("Cliente atualizado"))
+                .andExpect(jsonPath("$.imgUrl").doesNotExist());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions cancelarCliente() throws Exception {
+        return mvc.perform(post("/api/cliente/planos/cancelar").with(user("gestao-cliente").roles("CLIENTE")));
+    }
+
+    private void pagamento(LocalDate data,LocalDate vencimento) {
+        var r=new RecebimentoPlano();r.setContrato(contrato);r.setDataPagamento(data);r.setVencimento(vencimento);
+        r.setValor(contrato.getValorMensal());r.setFormaPagamento(FormaPagamento.PIX);
+        r.setRegistradoEm(data.atTime(9,0));r.setRegistradoPor("admin");recebimentos.saveAndFlush(r);
+    }
+
+    private Agendamento atendimento(StatusAgendamento status,LocalDateTime data) {
+        var u=new Usuario();u.setLogin("barbeiro-cancelamento");u.setSenha("hash");u.setAtivo(true);u.setRole(ROLE.BARBEIRO);usuarios.save(u);
+        var b=new Barbeiro();b.setNome("Barbeiro");b.setTelefone("119999999");b.setUsuario(u);barbeiros.save(b);
+        var a=new Agendamento();a.setCliente(contrato.getCliente());a.setBarbeiro(b);a.setPlanoMensalCliente(contrato);
+        a.setNomeCliente(contrato.getCliente().getNome());a.setStatus(status);a.setData(data.toLocalDate());
+        a.setHoraInicio(data.toLocalTime());a.setHoraFinalizacao(data.toLocalTime().plusMinutes(30));
+        if(status==StatusAgendamento.CONCLUIDO)a.setFinalizadoEm(data.plusMinutes(30));
+        return agendamentos.saveAndFlush(a);
     }
     @Test void bloqueioAutomaticoEDesbloqueioSemRegistrarPagamento() throws Exception {
         assertThrows(bruninho.Barbeiro.exception.BusinessException.class, () -> validacao.validarPagamentoPlano(contrato));

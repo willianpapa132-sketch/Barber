@@ -75,11 +75,11 @@ interface BookingScreenResponse {
 
         @if(data.barbeiroPreferidoId){
           <section class="booking-plan-note"><p><strong>Seu barbeiro: {{selectedBarber?.nome || 'Indisponível'}}</strong>
-            <small>Usamos a preferência do seu plano. <a routerLink="/plano">Alterar preferência</a></small></p></section>
+            <small>Usamos a preferência do seu plano. <a routerLink="/plano">Ver meu plano</a></small></p></section>
         }
 
         @if(data.barbeiroPreferidoId && !selectedBarber){
-          <section class="booking-state-card"><strong>Seu barbeiro de preferência está indisponível.</strong><p>Atualize a preferência no seu plano para continuar.</p><a routerLink="/plano">Ir para meu plano</a></section>
+          <section class="booking-state-card"><strong>Seu barbeiro de preferência está indisponível.</strong><p>Entre em contato com a barbearia para agendar com outro profissional.</p><a routerLink="/plano">Ir para meu plano</a></section>
         }
 
         @if (step === 1) {

@@ -2,13 +2,11 @@
   <section class="home-main">
     <header class="home-topbar">
       <div class="home-client">
-        <img class="home-avatar" [alt]="'Foto de ' + clientName" [src]="avatarUrl(clientAvatarUrl)" />
         <div>
           <span>Ola,</span>
           <strong>{{ clientName }}</strong>
         </div>
       </div>
-      <span class="home-bell" aria-hidden="true">&#128276;</span>
     </header>
 
     @if (loading) {

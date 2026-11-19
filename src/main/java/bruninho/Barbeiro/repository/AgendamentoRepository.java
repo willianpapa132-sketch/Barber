@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento,Long> {
+    List<Agendamento> findByPlanoMensalCliente_Id(Long contratoId);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Agendamento a where a.id=:id")
     Optional<Agendamento> bloquearComanda(@Param("id") Long id);

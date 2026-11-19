@@ -7,7 +7,6 @@ interface ClientePerfil {
   id: number;
   nome: string;
   telefone: string;
-  imgUrl: string | null;
 }
 
 @Component({
@@ -21,10 +20,6 @@ interface ClientePerfil {
       </header>
 
       <section class="profile-summary">
-        <div class="profile-photo-wrap">
-          <img class="profile-photo" [alt]="'Foto de ' + profile.nome" [src]="avatarUrl" />
-          <a class="profile-edit-fab" routerLink="/perfil/editar" aria-label="Editar perfil">&#9998;</a>
-        </div>
         <div>
           <strong>{{ profile.nome }}</strong>
           <p><span aria-hidden="true">&#9742;</span>{{ profile.telefone }}</p>
@@ -66,20 +61,14 @@ interface ClientePerfil {
 })
 export class PerfilPage implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly fallbackAvatar =
-    'https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=300&q=80';
 
   protected errorMessage = '';
   protected profile: ClientePerfil = {
     id: 0,
     nome: 'Cliente',
     telefone: '',
-    imgUrl: null,
   };
 
-  protected get avatarUrl(): string {
-    return this.profile.imgUrl || this.fallbackAvatar;
-  }
 
   ngOnInit(): void {
     this.loadProfile();

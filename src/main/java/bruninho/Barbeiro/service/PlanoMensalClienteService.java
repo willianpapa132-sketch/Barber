@@ -24,17 +24,20 @@ public class PlanoMensalClienteService {
     private final ClienteRepository clienteRepository;
     private final PlanoMensalClienteRepository planoMensalClienteRepository;
     private final bruninho.Barbeiro.repository.BarbeiroRepository barbeiros;
+    private final CancelamentoPlanoClienteService cancelamento;
 
     public PlanoMensalClienteService(
             PlanoMensalRepository planoMensalRepository,
             ClienteRepository clienteRepository,
             PlanoMensalClienteRepository planoMensalClienteRepository,
-            bruninho.Barbeiro.repository.BarbeiroRepository barbeiros
+            bruninho.Barbeiro.repository.BarbeiroRepository barbeiros,
+            CancelamentoPlanoClienteService cancelamento
     ) {
         this.planoMensalRepository = planoMensalRepository;
         this.clienteRepository = clienteRepository;
         this.planoMensalClienteRepository = planoMensalClienteRepository;
         this.barbeiros = barbeiros;
+        this.cancelamento=cancelamento;
     }
 
     @Transactional(readOnly = true)
@@ -42,9 +45,8 @@ public class PlanoMensalClienteService {
         var cliente = clienteRepository.findByUsuario_Login(login)
                 .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
 
-        var planoAtual = planoMensalClienteRepository.findByCliente_IdAndAtivoTrue(cliente.getId())
-                .map(PlanoContratadoResponse::de)
-                .orElse(null);
+        var contrato = planoMensalClienteRepository.findByCliente_IdAndAtivoTrue(cliente.getId()).orElse(null);
+        var planoAtual = contrato==null ? null : PlanoContratadoResponse.de(contrato);
 
         var planosDisponiveis = planosDisponiveis(planoAtual);
 
@@ -53,7 +55,8 @@ public class PlanoMensalClienteService {
                 planoAtual,
                 planosDisponiveis,
                 barbeiros.findAllByAtivoTrueOrderByNomeAsc().stream()
-                        .map(bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse::de).toList()
+                        .map(bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse::de).toList(),
+                contrato==null ? null : cancelamento.avaliar(contrato)
         );
     }
 
@@ -64,14 +67,14 @@ public class PlanoMensalClienteService {
 
     @Transactional
     public PlanoContratadoResponse contratarPlano(String login, Long planoId, Long barbeiroPreferidoId) {
-        var cliente = clienteRepository.findByUsuario_Login(login)
+        var cliente = clienteRepository.bloquearParaPlano(login)
                 .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
 
         if (!Boolean.TRUE.equals(cliente.getUsuario().getAtivo())) {
             throw new BusinessException("Cliente esta desativado.");
         }
 
-        if (planoMensalClienteRepository.existsByCliente_id(cliente.getId())) {
+        if (planoMensalClienteRepository.findByCliente_IdAndAtivoTrue(cliente.getId()).isPresent()) {
             throw new BusinessException("Cliente ja possui um plano cadastrado.");
         }
 

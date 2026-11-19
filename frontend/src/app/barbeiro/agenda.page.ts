@@ -62,13 +62,13 @@ export class BarberAgendaPage implements OnInit, OnDestroy, OnChanges {
       const grade = await this.api.request<Grade>(`${this.apiBase}/grade?${query}`, { signal: controller.signal });
       if (controller.signal.aborted) return;
       this.grade.set(grade); this.date = grade.data; this.buildTimeline(grade);
-      this.notice.set(grade.aviso || (!grade.agendamentos.length ? 'Nenhum agendamento encontrado para este filtro. Os horÃ¡rios da jornada continuam visÃ­veis.' : ''));
+      this.notice.set(grade.aviso || (!grade.agendamentos.length ? 'Nenhum agendamento encontrado para este filtro. Os horários da jornada continuam visíveis.' : ''));
       if (this.adminBarbeiroId === null) await this.router.navigate([], { relativeTo: this.route, queryParams: { data: this.date, status: this.status || null }, replaceUrl: true });
     } catch (e) { if (!controller.signal.aborted) this.error.set((e as Error).message); }
     finally { if (!controller.signal.aborted) this.loading.set(false); }
   }
   async alterarStatus(id:number,acao:'cancelar'|'nao-compareceu') {
-    if(this.saving()||!window.confirm(acao==='cancelar'?'Cancelar este agendamento?':'Registrar que o cliente nÃ£o compareceu?'))return;
+    if(this.saving()||!window.confirm(acao==='cancelar'?'Cancelar este agendamento?':'Registrar que o cliente não compareceu?'))return;
     this.saving.set(true);this.error.set('');
     try{await this.api.request<void>(`/api/barbeiro/agendamentos/${id}/finalizacao/${acao}`,{method:'POST'});}
     catch(e){this.error.set((e as Error).message);}
@@ -167,7 +167,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy, OnChanges {
     if (this.saving() || this.loading()) return;
     let payload: object;
     if (kind === 'block') {
-      if (!this.canFit(this.blockStart, minutes(this.blockEnd) - minutes(this.blockStart))) { this.dialogError.set('Selecione um perÃ­odo livre.'); return; }
+      if (!this.canFit(this.blockStart, minutes(this.blockEnd) - minutes(this.blockStart))) { this.dialogError.set('Selecione um período livre.'); return; }
       payload = { data: this.grade()!.data, horaInicio: this.blockStart, horaFim: this.blockEnd };
     } else {
       if (!this.canSaveAppointment) return;
@@ -183,7 +183,7 @@ export class BarberAgendaPage implements OnInit, OnDestroy, OnChanges {
     finally { this.saving.set(false); }
   }
   async removeBlock(id: number) {
-    if (this.saving() || !window.confirm('Remover este bloqueio e liberar o perÃ­odo?')) return;
+    if (this.saving() || !window.confirm('Remover este bloqueio e liberar o período?')) return;
     this.saving.set(true);
     try { await this.api.request(`${this.apiBase}/bloqueios/${id}`, { method: 'DELETE', signal: this.lifetime.signal }); this.saving.set(false); await this.load(); this.notice.set('Bloqueio removido.'); }
     catch (e) { if (!this.lifetime.signal.aborted) this.error.set((e as Error).message); }

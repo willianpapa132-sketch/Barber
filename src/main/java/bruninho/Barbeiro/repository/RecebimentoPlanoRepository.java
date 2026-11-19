@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface RecebimentoPlanoRepository extends JpaRepository<RecebimentoPlano, Long> {
+    java.util.Optional<RecebimentoPlano> findFirstByContrato_IdOrderByVencimentoDescIdDesc(Long contratoId);
     List<RecebimentoPlano> findByContrato_IdOrderByVencimentoDesc(Long contratoId);
     @EntityGraph(attributePaths = {"contrato", "contrato.cliente", "contrato.planoMensal"})
     List<RecebimentoPlano> findByDataPagamentoBetweenOrderByDataPagamentoDescIdDesc(LocalDate inicio, LocalDate fim);

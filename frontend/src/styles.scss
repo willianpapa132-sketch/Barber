@@ -87,13 +87,6 @@ a {
   font-weight: 400;
 }
 
-.client-avatar {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
-}
 
 .barber-banner {
   min-height: 124px;
@@ -1156,19 +1149,12 @@ a {
 
 .home-client {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: center;
   min-width: 0;
 }
 
-.home-avatar {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #1b1e1f;
-}
 
 .home-client div {
   display: grid;
@@ -1189,15 +1175,6 @@ a {
   white-space: nowrap;
 }
 
-.home-bell {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  color: white;
-  font-size: 25px;
-  line-height: 1;
-}
 
 .home-plan-card,
 .home-next-card,
@@ -2289,7 +2266,7 @@ a {
 
 .profile-summary {
   display: grid;
-  grid-template-columns: 126px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: center;
   margin-bottom: 32px;
@@ -2315,49 +2292,7 @@ a {
   font-size: 22px;
 }
 
-.profile-photo-wrap {
-  position: relative;
-  width: 126px;
-  height: 126px;
-}
 
-.profile-photo-wrap.large {
-  width: 152px;
-  height: 152px;
-}
-
-.profile-photo {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #1c1f1f;
-}
-
-.profile-edit-fab {
-  position: absolute;
-  right: -4px;
-  bottom: 6px;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: var(--profile-yellow);
-  color: #080808;
-  cursor: pointer;
-  font: inherit;
-  font-size: 20px;
-  font-weight: 900;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
-}
-
-.profile-edit-fab.camera {
-  right: -2px;
-  bottom: 12px;
-}
 
 .profile-menu {
   display: grid;
@@ -2470,21 +2405,6 @@ a {
   text-align: center;
 }
 
-.edit-photo-block {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.change-photo-button {
-  border: 0;
-  background: transparent;
-  color: var(--profile-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 16px;
-}
 
 .edit-profile-form {
   display: grid;
@@ -2559,69 +2479,11 @@ a {
   font-size: 29px;
 }
 
-.profile-sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(0, 0, 0, 0.55);
-}
 
-.profile-photo-sheet {
-  position: fixed;
-  right: 0;
-  bottom: 20px;
-  left: 0;
-  z-index: 31;
-  width: min(calc(100% - 34px), 396px);
-  display: grid;
-  gap: 10px;
-  margin: 0 auto;
-  padding: 24px 20px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 22px;
-  background: rgba(25, 28, 29, 0.96);
-  box-shadow: 0 -20px 48px rgba(0, 0, 0, 0.32);
-}
 
-.profile-photo-sheet h2 {
-  margin: 0 0 4px;
-  font-size: 20px;
-  line-height: 1.1;
-  text-align: center;
-}
 
-.profile-photo-sheet button {
-  min-height: 54px;
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: white;
-  cursor: pointer;
-  font: inherit;
-  font-size: 16px;
-  text-align: left;
-}
 
-.profile-photo-sheet button span {
-  font-size: 24px;
-  text-align: center;
-}
 
-.profile-photo-sheet .danger {
-  color: #ff4d4d;
-}
-
-.profile-photo-sheet .cancel {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  margin-top: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  font-weight: 800;
-  text-align: center;
-}
 
 @media (max-width: 380px) {
   .client-shell {
@@ -2638,14 +2500,10 @@ a {
   }
 
   .home-client {
-    grid-template-columns: 50px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 11px;
   }
 
-  .home-avatar {
-    width: 50px;
-    height: 50px;
-  }
 
   .home-client span {
     font-size: 16px;
@@ -2885,3 +2743,11 @@ a {
 @media(max-width:760px){app-admin-comanda .admin-layout .brand{padding-right:105px}app-admin-comanda .admin-layout .brand div{font-size:16px}}
 
 @media print{body:has(app-admin-comanda),app-admin-comanda .admin-layout,app-admin-comanda .workspace{background:#fff!important;color:#111!important}}
+.cancel-plan-card {margin:24px 0;padding:20px;border:1px solid #5e3939;border-radius:14px;background:#211719;color:#f5f3ed}
+.cancel-plan-card h3 {margin:0 0 12px;font-size:18px}
+.cancel-plan-card p {font-size:14px;line-height:1.6;color:#d5c3c3}
+.cancel-plan-card a {color:#f0c56e;text-decoration:underline;font-size:14px}
+.cancel-plan-actions {display:flex;gap:12px;flex-wrap:wrap}
+.cancel-plan-button,.keep-plan-button {padding:12px 16px;border:1px solid #99575d;border-radius:8px;background:transparent;color:#ffb1b8;font:inherit;font-size:14px;cursor:pointer}
+.keep-plan-button {background:#e7bb62;border-color:#e7bb62;color:#211806}
+.cancel-plan-button:disabled,.keep-plan-button:disabled {opacity:.5;cursor:not-allowed}

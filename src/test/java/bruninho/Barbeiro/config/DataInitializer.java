@@ -237,7 +237,6 @@ public class DataInitializer {
         Cliente cliente = clientes.findByUsuario_Login(usuario.getLogin()).orElseGet(Cliente::new);
         cliente.setNome("Cliente Demo");
         cliente.setTelefone("(41) 99999-0000");
-        cliente.setImgUrl("https://images.unsplash.com/photo-1618077360395-f3068be8e001?auto=format&fit=crop&w=300&q=80");
         cliente.setUsuario(usuario);
         cliente.setAtualizadoEm(LocalDateTime.now());
         if (cliente.getCriadoEm() == null) {

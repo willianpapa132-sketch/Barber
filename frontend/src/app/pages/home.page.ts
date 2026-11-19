@@ -6,7 +6,6 @@ import { BottomNav } from '../shared/bottom-nav';
 interface HomeResponse {
   cliente: {
     nome: string;
-    imgUrl: string | null;
   };
   proximoAtendimento: AppointmentSummary | null;
 }
@@ -36,7 +35,6 @@ export class HomePage implements OnInit {
   protected loading = true;
   protected errorMessage = '';
   protected clientName = 'Cliente';
-  protected clientAvatarUrl: string | null = null;
   protected nextAppointment: AppointmentSummary | null = null;
 
   ngOnInit(): void {
@@ -46,7 +44,6 @@ export class HomePage implements OnInit {
     this.http.get<HomeResponse>('/api/cliente/home').subscribe({
       next: (response) => {
         this.clientName = response.cliente.nome;
-        this.clientAvatarUrl = response.cliente.imgUrl;
         this.nextAppointment = response.proximoAtendimento;
         this.loading = false;
       },

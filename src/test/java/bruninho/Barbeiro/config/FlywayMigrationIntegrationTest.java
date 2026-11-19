@@ -38,6 +38,8 @@ class FlywayMigrationIntegrationTest {
             assertThat(result.next()).isTrue();assertThat(result.getInt(1)).isZero();
         }
         var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForObject("select count(*) from information_schema.columns where table_schema='public' and table_name='cliente' and column_name='img_url'",Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("select indexdef from pg_indexes where schemaname='public' and indexname='uk_plano_usuario_ativo'",String.class)).contains("UNIQUE","WHERE (ativo = true)");
         jdbc.update("insert into platform_empresa(id,nome,responsavel,slug,estado) values (?, 'Teste', 'Teste', 'teste', 'ATIVA')", EmpresaTestExecutionListener.EMPRESA);
         var c=new bruninho.Barbeiro.domain.ConfiguracaoBarbearia();c.setNome("Empresa teste de migration");configuracoes.saveAndFlush(c);
         assertThat(flyway.migrate().migrationsExecuted).isZero();

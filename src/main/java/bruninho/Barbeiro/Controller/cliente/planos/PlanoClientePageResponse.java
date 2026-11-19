@@ -6,6 +6,7 @@ public record PlanoClientePageResponse(
         boolean possuiPlano,
         PlanoContratadoResponse planoAtual,
         List<PlanoMensalResponse> planosDisponiveis,
-        List<bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse> barbeiros
+        List<bruninho.Barbeiro.Controller.cliente.home.agendamentos.BarbeiroAgendamentoResponse> barbeiros,
+        bruninho.Barbeiro.service.CancelamentoPlanoClienteService.Situacao cancelamento
 ) {
 }

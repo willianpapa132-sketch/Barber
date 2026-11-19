@@ -35,7 +35,7 @@ public class PlanoMensalCliente extends bruninho.Barbeiro.platform.EmpresaScoped
     private Cliente cliente;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "usuario_id", unique = true)
+    @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
     @Column(name = "valor_mensal", nullable = false, precision = 12, scale = 2)

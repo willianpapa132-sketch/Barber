@@ -1,0 +1,83 @@
+:host {
+  display: block;
+  color: #eef2f5;
+}
+
+h1 { font-size: 30px; margin: 0 0 8px; }
+p { color: #aebdc8; font-size: 13px; margin: 8px 0; line-height: 1.5; }
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.periodo {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+label { display: grid; gap: 6px; font-size: 12px; color: #bdcad3; }
+input, button {
+  font: inherit;
+  border: 1px solid #2b3c47;
+  border-radius: 6px;
+  padding: 10px 13px;
+  background: #101e27;
+  color: #edf2f5;
+}
+input { min-width: 0; color-scheme: dark; font-size: 13px; }
+button { cursor: pointer; white-space: nowrap; font-size: 13px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:hover:not(:disabled) { filter: brightness(1.15); }
+.gold { background: #f7bb52; color: #211806; border-color: #f7bb52; font-weight: 600; }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #263640;
+  margin-bottom: 20px;
+}
+.tabs button {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 15px 18px;
+  color: #b9c8d2;
+  border-bottom: 2px solid transparent;
+}
+.tabs button.active { border-bottom-color: #f6bd51; color: #f6bd51; }
+
+.panel {
+  border: 1px solid #23333d;
+  background: linear-gradient(120deg, #101f28, #0b171e);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+th { color: #b6c7d2; background: #13242e; font-size: 12px; font-weight: 600; }
+th, td { padding: 16px; border-bottom: 1px solid #22333e; }
+td { color: #dce5eb; }
+tbody tr:last-child td { border-bottom: 0; }
+th, td:nth-child(n+3) { white-space: nowrap; }
+td a { color: #f0c56e; font-size: 12px; font-weight: 600; }
+td a:hover { text-decoration: underline; }
+.empty { text-align: center; padding: 48px 16px; color: #9db0bf; white-space: normal; }
+.loading { padding: 20px 0; }
+.error { color: #ff9aa2; padding: 14px; border: 1px solid #73303e; border-radius: 7px; margin-bottom: 20px; }
+:focus-visible { outline: 2px solid #f7bb52; outline-offset: 3px; }
+
+@media (max-width: 650px) {
+  .hero { gap: 20px; }
+  .periodo { width: 100%; }
+  .periodo label { flex: 1 1 140px; }
+  .periodo input { width: 100%; }
+  .periodo .gold { flex: 1 0 100%; }
+  th, td { padding: 12px; }
+}

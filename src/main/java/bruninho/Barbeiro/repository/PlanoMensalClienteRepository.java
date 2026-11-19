@@ -22,6 +22,9 @@ public interface PlanoMensalClienteRepository extends JpaRepository<PlanoMensalC
     List <PlanoMensalCliente> findAllByPlanoMensal_Id(Long id);
     Boolean existsByCliente_id(Long cliente_id);
     Optional<PlanoMensalCliente> findByCliente_IdAndAtivoTrue(Long clienteId);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select p from PlanoMensalCliente p where p.cliente.id=:clienteId and p.ativo=true")
+    Optional<PlanoMensalCliente> bloquearAtivoPorCliente(@org.springframework.data.repository.query.Param("clienteId") Long clienteId);
     Boolean existsByUsuarioAndAtivoTrue(Usuario usuario);
     PlanoMensalCliente findByUsuarioAndAtivoTrue(Usuario usuario);
 

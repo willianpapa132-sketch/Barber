@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ClienteRepository  extends JpaRepository<Cliente, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select c from Cliente c where c.usuario.login = :login")
+    Optional<Cliente> bloquearParaPlano(@org.springframework.data.repository.query.Param("login") String login);
     Optional<Cliente> findByUsuario_Login(String login);
 
     @org.springframework.data.jpa.repository.Query("""
