@@ -1899,23 +1899,6 @@ a {
   letter-spacing: 0;
 }
 
-.appointments-bell {
-  position: relative;
-  font-size: 29px;
-  line-height: 1;
-}
-
-.appointments-bell::after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  right: -3px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--appointments-yellow);
-}
-
 .appointments-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2256,11 +2239,6 @@ a {
 .profile-header h1 {
   margin: 0;
   font-size: 30px;
-  line-height: 1;
-}
-
-.profile-bell {
-  font-size: 29px;
   line-height: 1;
 }
 

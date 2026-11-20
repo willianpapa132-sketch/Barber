@@ -29,7 +29,6 @@ interface AppointmentsPageResponse {
     <main class="client-shell appointments-page-shell">
       <header class="appointments-header">
         <h1>Agendamentos</h1>
-        <span class="appointments-bell" aria-hidden="true">&#128276;</span>
       </header>
 
       <div class="appointments-tabs" role="tablist" aria-label="Filtro de agendamentos">

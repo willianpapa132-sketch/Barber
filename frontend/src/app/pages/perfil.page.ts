@@ -16,7 +16,6 @@ interface ClientePerfil {
     <main class="client-shell profile-page-shell">
       <header class="profile-header">
         <h1>Perfil</h1>
-        <span class="profile-bell" aria-hidden="true">&#128276;</span>
       </header>
 
       <section class="profile-summary">
